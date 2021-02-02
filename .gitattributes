@@ -1,0 +1,2 @@
+trained_models/* !text !filter !merge !diff
+* !text !filter !merge !diff
