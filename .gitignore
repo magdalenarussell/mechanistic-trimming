@@ -1,3 +1,8 @@
+# Misc.
+_ignore/
+slurm*
+general_cluster_submit*
+
 # History files
 .Rhistory
 .Rapp.history
