@@ -36,7 +36,7 @@ RIGHT_NUC_MOTIF_COUNT <<- 4
 source('scripts/pfm_functions.R')
 
 # compile PFM for whole population
-compile_PFMs(group_localID_list = get_subject_partition_by_SNP(), group_name = get_group_name(), trim_lengths_list = 'ALL')
+compile_PFMs(group_localID_list = get_subject_partition_by_SNP(), group_name = get_group_name())
 
 # compile PFM for each significant artemis SNP by genotype
 significant_artemis_v_trim = compile_snps_from_GWAS(phenotype_list = c('v_trim'), gene = 'artemis') 
@@ -45,6 +45,6 @@ artemis_snp_genotypes = get_genotypes_from_GWAS_results(significant_artemis_v_tr
 for (snpID in paste(unique(significant_artemis_v_trim$snp))){
     for (genotype in c(0, 1, 2)){  
 
-        compile_PFMs(group_localID_list = get_subject_partition_by_SNP(snpID, genotypes_df = artemis_snp_genotypes, genotype), group_name = get_group_name(snpID, genotype), trim_lengths_list = 'ALL')
+        compile_PFMs(group_localID_list = get_subject_partition_by_SNP(snpID, genotypes_df = artemis_snp_genotypes, genotype), group_name = get_group_name(snpID, genotype))
     }
 }

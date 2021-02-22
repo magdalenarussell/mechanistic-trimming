@@ -35,11 +35,11 @@ source('scripts/pfm_functions.R')
 source('scripts/plot_functions.R')
 
 
-plot_single_PWM_heatmap(group_name = get_group_name(), trim_lengths_list = 'ALL')
+plot_single_PWM_heatmap(group_name = get_group_name(), weighting = NULL)
 
 significant_artemis_v_trim = compile_snps_from_GWAS(phenotype_list = c('v_trim'), gene = 'artemis')
 ordered_top10_snps = significant_artemis_v_trim[order(pvalue)][1:10]
 
 for (snp in unique(ordered_top10_snps$snp)){
-    plot_PWM_heatmap_by_genotype(snpID = snp, trim_lengths_list = 'ALL', subtitle = generate_subtitle_from_GWAS_pvalue_slope(snpID = snp, GWAS_results = ordered_top10_snps))
+    plot_PWM_heatmap_by_genotype(snpID = snp, weighting = NULL, subtitle = generate_subtitle_from_GWAS_pvalue_slope(snpID = snp, GWAS_results = ordered_top10_snps))
 }

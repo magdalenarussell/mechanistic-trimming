@@ -6,8 +6,7 @@ get_motif_context <- function(whole_gene_seq, trimmed_gene_seq, trim_length){
     original_trimmed_length = trimmed_length
 
     if (nchar(trimmed_gene_seq) < LEFT_NUC_MOTIF_COUNT){
-        missing_nucs = DNAString(strrep('-', LEFT_NUC_MOTIF_COUNT - nchar(trimmed_gene_seq)))
-        trimmed_gene_seq = c(unlist(missing_nucs), unlist(trimmed_gene_seq)) 
+        trimmed_gene_seq = substring(whole_gene_seq, 1, nchar(whole_gene_seq)-trim_length)
         trimmed_length = nchar(trimmed_gene_seq)
     }
 
