@@ -10,6 +10,7 @@ extract_subject_ID <- function(tcr_repertoire_file_path){
     return(localID)
 }
 
+# The following two functions were designed to calculate PFMs by trim_length
 # compute_PFMs_for_all_trim_lengths <- function(data, file_path){
     # for (trim_length in unique(data[[TRIM_TYPE]])){
     #     if (trim_length < 1){
@@ -41,11 +42,16 @@ compute_PFMs_for_all_genes <- function(data, file_path){
         gene_PFM = as.data.frame(matrix(0, ncol = LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT, nrow = 5))
         for (trim_length in unique(data_subset[[TRIM_TYPE]])){
             if (trim_length < 1){
-                next
+                trim_length_PFM = as.data.frame(matrix(0, ncol = LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT, nrow = 5))
+                rownames(trim_length_PFM) = c('A', 'C', 'G', 'T', 'other')
+            } else {
+                trim_length_PFM = as.data.frame(create_PFM_by_trim_length(trim_length, data_subset))
             }
-            trim_length_PFM = as.data.frame(create_PFM_by_trim_length(trim_length, data_subset))
-            colnames(trim_length_PFM) = c(paste0(seq(-LEFT_NUC_MOTIF_COUNT,-1)), paste0(seq(1, RIGHT_NUC_MOTIF_COUNT)))
+            colnames(trim_length_PFM) = c(paste0(seq(LEFT_NUC_MOTIF_COUNT,1)), paste0(seq(-1, -RIGHT_NUC_MOTIF_COUNT)))
             gene_PFM = trim_length_PFM + gene_PFM
+        }
+        if (length(str_split(gene, '/')[[1]]) > 1){
+            gene = str_replace(gene, '/', '_')
         }
         write.table(gene_PFM, file = paste0(file.path(file_path, paste0('PFM_gene_', gene, '.tsv'))), sep = '\t') 
     }
@@ -77,16 +83,36 @@ create_all_PFMs <- function(directory){
     stopImplicitCluster()
 }
 
-compile_PFMs <- function(group_localID_list, group_name, trim_lengths_list = 'ALL'){
+# This function compiled PFMs calculated by trim_length
+# compile_PFMs <- function(group_localID_list, group_name, trim_lengths_list = 'ALL'){
+#     compiled_PFM = matrix(0, ncol = (RIGHT_NUC_MOTIF_COUNT+LEFT_NUC_MOTIF_COUNT), nrow = 5)
+#     trim_length_file_names = paste0('PFM_trim_', trim_lengths_list, '.tsv')
+#     for (subject in group_localID_list){
+#         path = file.path('_ignore', 'pfms', paste0(PFM_TYPE, '_', MOTIF_TYPE), paste0(subject))
+#         files = fs::dir_ls(path = path)
+#         if (trim_lengths_list != 'ALL'){
+#             files = files[files %in% paste0(path, '/', trim_length_file_names)]
+#         }
+#         for (file in files){
+#             temp_matrix = as.matrix(fread(file), rownames = 1)
+#             compiled_PFM = compiled_PFM + temp_matrix
+#         }
+#     }
+
+#     output_path = file.path('_ignore', 'pfms', 'complete') 
+#     dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
+#     write.table(as.data.frame(compiled_PFM), file = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', paste(trim_lengths_list, collapse = ''), '.tsv')), sep = '\t')
+# }
+
+compile_PFMs <- function(group_localID_list, group_name, weighting = NULL){
     compiled_PFM = matrix(0, ncol = (RIGHT_NUC_MOTIF_COUNT+LEFT_NUC_MOTIF_COUNT), nrow = 5)
-    trim_length_file_names = paste0('PFM_trim_', trim_lengths_list, '.tsv')
     for (subject in group_localID_list){
         path = file.path('_ignore', 'pfms', paste0(PFM_TYPE, '_', MOTIF_TYPE), paste0(subject))
         files = fs::dir_ls(path = path)
-        if (trim_lengths_list != 'ALL'){
-            files = files[files %in% paste0(path, '/', trim_length_file_names)]
-        }
         for (file in files){
+            if (!is.null(weighting)){
+                #TODO add weighting scheme
+            }
             temp_matrix = as.matrix(fread(file), rownames = 1)
             compiled_PFM = compiled_PFM + temp_matrix
         }
@@ -94,8 +120,9 @@ compile_PFMs <- function(group_localID_list, group_name, trim_lengths_list = 'AL
 
     output_path = file.path('_ignore', 'pfms', 'complete') 
     dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
-    write.table(as.data.frame(compiled_PFM), file = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', paste(trim_lengths_list, collapse = ''), '.tsv')), sep = '\t')
+    write.table(as.data.frame(compiled_PFM), file = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', weighting, '.tsv')), sep = '\t')
 }
+
 
 find_base_background_frequencies <- function(){
     #TODO not totally sure what to do here, but I think just find the
@@ -104,9 +131,9 @@ find_base_background_frequencies <- function(){
     #OR compute an A/T and G/C background proportion...since pnucs deal with
     #either or...
     whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
-    whole_nucseq$gene_type = paste0(tolower(substr(whole_nucseq$id, 4, 4)), '_gene')
+    whole_nucseq$gene_type = paste0(tolower(substr(whole_nucseq$gene_names, 4, 4)), '_gene')
     whole_nucseq_by_gene = whole_nucseq[gene_type == GENE_NAME]
-    sequence_composition = letterFrequency(DNAStringSet(whole_nucseq_by_gene$cdr3_nucseq), letters = c('T', 'G', 'C', 'A'))
+    sequence_composition = letterFrequency(DNAStringSet(whole_nucseq_by_gene$sequences), letters = c('T', 'G', 'C', 'A'))
     background_frequency = colSums(sequence_composition)/sum(sequence_composition)
     return(background_frequency)
 }
@@ -117,7 +144,7 @@ calculate_PPM_from_PFM <- function(PFM){
     return(PPM)
 }
 
-calculate_PWM_from_PFM <- function(PFM){
+calculate_PWM_from_PFM <- function(PFM, weighting){
     background_freqs = find_base_background_frequencies()
     background_matrix = matrix(background_freqs, length(background_freqs), (RIGHT_NUC_MOTIF_COUNT+LEFT_NUC_MOTIF_COUNT))
 
@@ -125,7 +152,7 @@ calculate_PWM_from_PFM <- function(PFM){
     rownames(background_matrix) = names(background_freqs)
     stopifnot(identical(rownames(background_matrix), rownames(PPM)))
 
-    PWM = log10(PPM/background_matrix)
+    PWM = log(PPM/background_matrix)
     return(PWM)
 }
 
