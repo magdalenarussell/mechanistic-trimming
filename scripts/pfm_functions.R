@@ -1,7 +1,5 @@
 source(paste0('scripts/motif_class_functions/', MOTIF_TYPE, '.R'))
 source(paste0('scripts/pfm_class_functions/', PFM_TYPE, '.R'))
-source('scripts/GWAS_scripts/regression_parameters.R')
-source('scripts/GWAS_scripts/file_paths.R')
 
 extract_subject_ID <- function(tcr_repertoire_file_path){
     file_name = str_split(tcr_repertoire_file_path, "/")[[1]][3]
@@ -10,151 +8,85 @@ extract_subject_ID <- function(tcr_repertoire_file_path){
     return(localID)
 }
 
-# The following two functions were designed to calculate PFMs by trim_length
-# compute_PFMs_for_all_trim_lengths <- function(data, file_path){
-    # for (trim_length in unique(data[[TRIM_TYPE]])){
-    #     if (trim_length < 1){
-    #         next
-    #     }
-    #     trim_length_PFM = as.data.frame(create_PFM_by_trim_length(trim_length, data))
-    #     colnames(trim_length_PFM) = c(paste0(seq(-LEFT_NUC_MOTIF_COUNT,-1)), paste0(seq(1, RIGHT_NUC_MOTIF_COUNT)))
-    #     write.table(trim_length_PFM, file = paste0(file.path(file_path, paste0('PFM_trim_', as.character(trim_length), '.tsv'))), sep = '\t') 
-    # }
-# }
-
-# create_PFMs_for_subject <- function(file_path){
-    # temp_data = fread(file_path)
-    # # TODO, for now, don't remove missing d gene instances
-    # # temp_data = temp_data[d_gene != '-']
-    # subject_id = extract_subject_ID(file_path)
-    
-    # output_path = file.path('_ignore', 'pfms', paste0(PFM_TYPE, '_', MOTIF_TYPE), paste0(subject_id))
-    # dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
-    # whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
-    # temp_data = merge(temp_data, whole_nucseq, by.x = GENE_NAME, by.y = 'gene_names')
-
-    # compute_PFMs_for_all_trim_lengths(temp_data, output_path)
-# }
-
-compute_PFMs_for_all_genes <- function(data, file_path){
-    for (gene in unique(data[[GENE_NAME]])){
-        data_subset = data[get(GENE_NAME)==gene]
-        gene_PFM = as.data.frame(matrix(0, ncol = LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT, nrow = 5))
-        for (trim_length in unique(data_subset[[TRIM_TYPE]])){
-            if (trim_length < 1){
-                trim_length_PFM = as.data.frame(matrix(0, ncol = LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT, nrow = 5))
-                rownames(trim_length_PFM) = c('A', 'C', 'G', 'T', 'other')
-            } else {
-                trim_length_PFM = as.data.frame(create_PFM_by_trim_length(trim_length, data_subset))
-            }
-            colnames(trim_length_PFM) = c(paste0(seq(LEFT_NUC_MOTIF_COUNT,1)), paste0(seq(-1, -RIGHT_NUC_MOTIF_COUNT)))
-            gene_PFM = trim_length_PFM + gene_PFM
-        }
-        if (length(str_split(gene, '/')[[1]]) > 1){
-            gene = str_replace(gene, '/', '_')
-        }
-        write.table(gene_PFM, file = paste0(file.path(file_path, paste0('PFM_gene_', gene, '.tsv'))), sep = '\t') 
-    }
+get_subject_motif_output_location <- function(){
+    output_location = file.path(OUTPUT_PATH, paste0(MOTIF_TYPE, '_', PFM_TYPE))
+    return(output_location)
 }
 
-create_PFMs_for_subject <- function(file_path){
+compile_motifs_for_subject <- function(file_path){
     temp_data = fread(file_path)
     # TODO, for now, don't remove missing d gene instances
     # temp_data = temp_data[d_gene != '-']
     subject_id = extract_subject_ID(file_path)
     
-    output_path = file.path('_ignore', 'pfms', paste0(PFM_TYPE, '_', MOTIF_TYPE), paste0(subject_id))
-    dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
+    output_location = get_subject_motif_output_location() 
+    dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
     temp_data = merge(temp_data, whole_nucseq, by.x = GENE_NAME, by.y = 'gene_names')
 
-    compute_PFMs_for_all_genes(temp_data, output_path)
+    motif_data = get_motifs(temp_data, subject_id)
+    fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
 }
 
 
-
-create_all_PFMs <- function(directory){
+compile_all_motifs <- function(directory){
     files = fs::dir_ls(path = directory)
     registerDoParallel(cores=NCPU)
     foreach(file = files) %dopar% {
-        create_PFMs_for_subject(file)
+        compile_motifs_for_subject(file)
         print(paste0(file))
     }
     stopImplicitCluster()
 }
 
-# This function compiled PFMs calculated by trim_length
-# compile_PFMs <- function(group_localID_list, group_name, trim_lengths_list = 'ALL'){
-#     compiled_PFM = matrix(0, ncol = (RIGHT_NUC_MOTIF_COUNT+LEFT_NUC_MOTIF_COUNT), nrow = 5)
-#     trim_length_file_names = paste0('PFM_trim_', trim_lengths_list, '.tsv')
-#     for (subject in group_localID_list){
-#         path = file.path('_ignore', 'pfms', paste0(PFM_TYPE, '_', MOTIF_TYPE), paste0(subject))
-#         files = fs::dir_ls(path = path)
-#         if (trim_lengths_list != 'ALL'){
-#             files = files[files %in% paste0(path, '/', trim_length_file_names)]
-#         }
-#         for (file in files){
-#             temp_matrix = as.matrix(fread(file), rownames = 1)
-#             compiled_PFM = compiled_PFM + temp_matrix
-#         }
-#     }
+calculate_pdel_seq_and_gene <- function(motif_data){
+    motif_data = as.data.table(motif_data)
+    motif_data[,count_subject_gene_seq := .N, by = .(gene, gene_type, subject, trim_length)]
+    motif_data[,count_subject := .N, by = .(subject)]
+    motif_data[observed == TRUE,pdel_seq_and_gene := count_subject_gene_seq/count_subject]
+    motif_data[observed == FALSE, pdel_seq_and_gene := 0]
+    return(motif_data)
+}
 
-#     output_path = file.path('_ignore', 'pfms', 'complete') 
-#     dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
-#     write.table(as.data.frame(compiled_PFM), file = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', paste(trim_lengths_list, collapse = ''), '.tsv')), sep = '\t')
-# }
+calculate_pdel_seq_and_gene2 <- function(motif_data){
+    motif_data = as.data.table(motif_data)
+    motif_data = motif_data[observed == TRUE]
+    motif_data[,count_subject_gene_trim_length := .N, by = .(gene, gene_type, subject, trim_length)]
+    motif_data[,count_subject := .N, by = .(subject)]
+    motif_data[, count_subject_gene := .N, by = .(gene, subject)]
+    motif_data[, p_trim_and_gene := count_subject_gene_trim_length/count_subject]
+    motif_data[, p_gene := count_subject_gene/count_subject]
+    motif_data[, p_trim_given_gene := p_trim_and_gene/p_gene]
+    return(unique(motif_data))
+}
 
-compile_PFMs <- function(group_localID_list, group_name, weighting = NULL){
-    compiled_PFM = matrix(0, ncol = (RIGHT_NUC_MOTIF_COUNT+LEFT_NUC_MOTIF_COUNT), nrow = 5)
-    for (subject in group_localID_list){
-        path = file.path('_ignore', 'pfms', paste0(PFM_TYPE, '_', MOTIF_TYPE), paste0(subject))
-        files = fs::dir_ls(path = path)
-        for (file in files){
-            if (!is.null(weighting)){
-                #TODO add weighting scheme
-            }
-            temp_matrix = as.matrix(fread(file), rownames = 1)
-            compiled_PFM = compiled_PFM + temp_matrix
-        }
+
+split_motif_column_by_motif_position <- function(motif_dataframe){
+    motif_dataframe = motif_dataframe %>% separate(motif, c(paste0('pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0('pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT)))), sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
+    return(motif_dataframe)
+}
+
+prepare_data_for_regression <- function(motif_data){
+    motif_data = calculate_pdel_seq_and_gene2(motif_data)
+    motif_data = split_motif_column_by_motif_position(motif_data)
+    motif_data[motif_data == '-'] <- NA
+    motif_data = unique(motif_data)
+    return(motif_data)
+}
+
+concatenate_motifs_all_subjects <- function(directory = get_subject_motif_output_location()){
+    files = fs::dir_ls(path = directory)
+    registerDoParallel(cores=NCPU)
+    together = foreach(file = files, .combine=rbind) %dopar% {
+        file_data = fread(file)
+        print(paste(file))
+        prepare_data_for_regression(file_data)
     }
-
-    output_path = file.path('_ignore', 'pfms', 'complete') 
-    dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
-    write.table(as.data.frame(compiled_PFM), file = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', weighting, '.tsv')), sep = '\t')
+    stopImplicitCluster()
+    return(together)
 }
-
-
-find_base_background_frequencies <- function(){
-    #TODO not totally sure what to do here, but I think just find the
-    #frequencies across ALL possible v-genes for example (but maybe I should be
-    #doing this on a per-subject basis...)
-    #OR compute an A/T and G/C background proportion...since pnucs deal with
-    #either or...
-    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
-    whole_nucseq$gene_type = paste0(tolower(substr(whole_nucseq$gene_names, 4, 4)), '_gene')
-    whole_nucseq_by_gene = whole_nucseq[gene_type == GENE_NAME]
-    sequence_composition = letterFrequency(DNAStringSet(whole_nucseq_by_gene$sequences), letters = c('T', 'G', 'C', 'A'))
-    background_frequency = colSums(sequence_composition)/sum(sequence_composition)
-    return(background_frequency)
-}
-
-calculate_PPM_from_PFM <- function(PFM){
-    PFM_filtered = PFM[c('T', 'G', 'C', 'A'),]
-    PPM = t(t(PFM_filtered)/colSums(PFM_filtered))
-    return(PPM)
-}
-
-calculate_PWM_from_PFM <- function(PFM, weighting){
-    background_freqs = find_base_background_frequencies()
-    background_matrix = matrix(background_freqs, length(background_freqs), (RIGHT_NUC_MOTIF_COUNT+LEFT_NUC_MOTIF_COUNT))
-
-    PPM = calculate_PPM_from_PFM(PFM)
-    rownames(background_matrix) = names(background_freqs)
-    stopifnot(identical(rownames(background_matrix), rownames(PPM)))
-
-    PWM = log(PPM/background_matrix)
-    return(PWM)
-}
+    
+source(paste0('scripts/regression_class_functions/', REGRESSION_TYPE, '_model.R'))
 
 compile_snps_from_GWAS <- function(phenotype_list, gene, pvalue_cutoff = 0.05/35481497){
     compiled_data = data.table()
