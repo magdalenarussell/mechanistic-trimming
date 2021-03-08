@@ -1,13 +1,17 @@
-TRIM_TYPE <<- 'v_trim' 
+args = commandArgs(trailingOnly=TRUE)
+
+TRIM_TYPE <<- args[1]
 stopifnot(TRIM_TYPE == 'v_trim')
 
-MOTIF_TYPE <<- 'pnuc_motif' 
+MOTIF_TYPE <<- args[2] 
 stopifnot(MOTIF_TYPE %in% c('pnuc_motif', 'no_pnuc_motif'))
 
-PFM_TYPE <<- 'unbounded'
-stopifnot(PFM_TYPE %in% c('unbounded'))
+PFM_TYPE <<- args[3]
+stopifnot(PFM_TYPE %in% c('bounded', 'unbounded'))
 
-NCPU <<- 4 
+NCPU <<- args[4]
+
+REGRESSION_TYPE <<- 'all_subject' 
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
@@ -16,6 +20,7 @@ stopifnot(GENE_NAME == 'v_gene')
 LEFT_NUC_MOTIF_COUNT <<- 4
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- 4
+
 
 library(speedglm)
 library(foreach)
@@ -35,3 +40,5 @@ OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/exomotif/motif_data'
 together = concatenate_motifs_all_subjects()
 
 
+PWM = get_fitted_PWM(together, conditioning = 'gene')
+PWM_none = get_fitted_PWM(together, conditioning = 'none')
