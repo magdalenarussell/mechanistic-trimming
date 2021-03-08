@@ -1,30 +1,32 @@
-get_PFM <- function(group_name, weighting = NULL){
-    output_path = file.path('_ignore', 'pfms', 'complete') 
-    file = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', weighting, '.tsv'))
-    PFM = as.matrix(fread(file), rownames = 1)
-    return(PFM)
+get_PWM <- function(conditioning){
+    file = get_fitted_PWM_path(conditioning)
+    PWM = as.matrix(fread(file), rownames = 1)
+    return(PWM)
 }
 
 
-create_plot_title <- function(group_name, weighting = NULL){
-    if (group_name == 'ALL'){
-        title = paste0(PFM_TYPE, ' ', MOTIF_TYPE, ' for ', group_name, ' subjects')
-    } else{
-        snp = strsplit(group_name, '_')[[1]][1]
-        title = paste0(PFM_TYPE, ' ', MOTIF_TYPE, ' by genotype for SNP ', snp)
-    }
-    title = ifelse(is.null(weighting), title, paste0(title, ' with gene/nt weighting'))
+create_plot_title <- function(conditioning){
+    if (REGRESSION_TYPE == 'all_subject'){
+    title = paste0(PFM_TYPE, ' ', MOTIF_TYPE, ' conditioned on ', conditioning, ' for ', REGRESSION_TYPE)
+    } 
+    #TODO add per subject stuff
     return(title)
 }
 
-create_file_name <- function(group_name, weighting = NULL, plot_type){
-    output_path = file.path('plots') 
-    dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
-    filename = file.path(output_path, paste0(group_name, '_', PFM_TYPE, '_', MOTIF_TYPE, '_', weighting, '_', plot_type, '.pdf'))
-    return(filename)
+create_file_name <- function(conditioning){
+    name = paste0(paste0('PWM_', REGRESSION_TYPE, '_', MOTIF_TYPE, '_', PFM_TYPE, '_', conditioning, '_conditioning.pdf'))
+    path = file.path('plots', name)
+    return(path)
+}
+
+remap_position_labels <- function(PWM){
+    seq = c(seq(LEFT_NUC_MOTIF_COUNT, 1), seq(-1, -RIGHT_NUC_MOTIF_COUNT))
+    colnames(PWM) = seq
+    return(PWM)
 }
 
 transform_PWM_to_dataframe <- function(PWM){
+    PWM = remap_position_labels(PWM)
     df = PWM %>%
         as.data.frame() %>%
         rownames_to_column('Base') %>%
@@ -32,13 +34,14 @@ transform_PWM_to_dataframe <- function(PWM){
     return(df)
 }
 
-plot_single_PWM_heatmap <- function(group_name, weighting = NULL, subtitle = NULL){
-    PFM = get_PFM(group_name, weighting)
-    plot_title = create_plot_title(group_name, weighting)
-    filename = create_file_name(group_name, weighting, 'PWM_heatmap_with_background_correction')
+
+plot_single_PWM_heatmap <- function(conditioning, subtitle = NULL){
+    PWM = get_PWM(conditioning)
+    plot_title = create_plot_title(conditioning)
+    filename = create_file_name(conditioning)
     
-    PWM = calculate_PWM_from_PFM(PFM, weighting)/log(10)
-    PWM_df = transform_PWM_to_dataframe(PWM)
+    weighted_PWM = PWM/log(10)
+    PWM_df = transform_PWM_to_dataframe(weighted_PWM)
     
     PWM_df$Base = factor(PWM_df$Base, levels = c('T', 'G', 'C', 'A'))
     PWM_df$Position = factor(PWM_df$Position, levels = sort(unique(as.numeric(PWM_df$Position))))
@@ -56,6 +59,7 @@ plot_single_PWM_heatmap <- function(group_name, weighting = NULL, subtitle = NUL
     ggsave(filename, plot = last_plot(), width = 10, height = 5, units = 'in', dpi = 750, device = 'pdf')
 }
 
+#TODO update the following!!
 plot_PWM_heatmap_by_genotype <- function(snpID, weighting = NULL, subtitle = NULL){
     together = data.frame()
     for (genotype in c(0,1,2)){
