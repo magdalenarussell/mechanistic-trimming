@@ -19,9 +19,11 @@ MOTIF_TYPE <<- args[2]
 stopifnot(MOTIF_TYPE %in% c('pnuc_motif', 'no_pnuc_motif'))
 
 PFM_TYPE <<- args[3]
-stopifnot(PFM_TYPE %in% c('unbounded'))
+stopifnot(PFM_TYPE %in% c('unbounded', 'bounded'))
 
 NCPU <<- args[4]
+
+REGRESSION_TYPE <<- 'all_subject'
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
@@ -35,11 +37,12 @@ source('scripts/pfm_functions.R')
 source('scripts/plot_functions.R')
 
 
-plot_single_PWM_heatmap(group_name = get_group_name(), weighting = NULL)
+plot_single_PWM_heatmap(conditioning = 'gene')
+plot_single_PWM_heatmap(conditioning = 'none')
 
-significant_artemis_v_trim = compile_snps_from_GWAS(phenotype_list = c('v_trim'), gene = 'artemis')
-ordered_top10_snps = significant_artemis_v_trim[order(pvalue)][1:10]
+# significant_artemis_v_trim = compile_snps_from_GWAS(phenotype_list = c('v_trim'), gene = 'artemis')
+# ordered_top10_snps = significant_artemis_v_trim[order(pvalue)][1:10]
 
-for (snp in unique(ordered_top10_snps$snp)){
-    plot_PWM_heatmap_by_genotype(snpID = snp, weighting = NULL, subtitle = generate_subtitle_from_GWAS_pvalue_slope(snpID = snp, GWAS_results = ordered_top10_snps))
-}
+# for (snp in unique(ordered_top10_snps$snp)){
+#     plot_PWM_heatmap_by_genotype(snpID = snp, weighting = NULL, subtitle = generate_subtitle_from_GWAS_pvalue_slope(snpID = snp, GWAS_results = ordered_top10_snps))
+# }

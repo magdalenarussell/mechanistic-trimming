@@ -1,51 +1,31 @@
-#TODO adjust for bounded case
-#Not sure what TODO for short v-genes here...some v genes are only 3nt long at
-#full length, so if they are trimmed at all, we can't have a "bounded" motif to
-#the left...
-subset_data_by_trim_length_bound <- function(trim_length, tcr_dataframe, cdr3_variable, lower_bound = NA, upper_bound = NA){
-    tcr_dataframe_subset = tcr_dataframe[get(TRIM_TYPE) == trim_length]
-    temp_subset_columns = c(GENE_NAME, 'gene_full_length_seq', cdr3_variable, TRIM_TYPE)
-    temp_subset = tcr_dataframe_subset[,.N,by = temp_subset_columns]
-    if (!is.na(lower_bound)){
-        temp_subset = temp_subset[nchar(get(cdr3_variable)) > lower_bound]
-    } 
-    if (!is.na(upper_bound)){
-        temp_subset = temp_subset[nchar(get(cdr3_variable)) < upper_bound]
+get_unobserved_motifs <- function(tcr_dataframe, bound){
+    tcr_dataframe_observed = tcr_dataframe[,.N, by = .(gene, trim_length)]
+    unobserved_df = data.frame()
+    for (gene_name in unique(tcr_dataframe_observed$gene)){
+        observed = unique(tcr_dataframe_observed[gene == paste(gene_name)]$trim_length)
+        unobserved = setdiff(seq(bound,20), observed)
+        unobserved_df = rbind(unobserved_df, data.frame(gene = rep(gene_name, length(unobserved)), trim_length = unobserved))
     }
-    return(temp_subset)
+    cols = c('whole_seq', 'gene')
+    tcr_dataframe = unique(tcr_dataframe[,..cols])
+    together = as.data.table(merge(unobserved_df, tcr_dataframe, by = 'gene'))
+    together = together[, motif:= get_motif_context_unobserved(whole_seq, trim_length)] 
+    together$observed = FALSE
+    return(together[,-c('whole_seq')])
 }
 
-create_PFM_by_trim_length <- function(trim_length, tcr_dataframe){
+get_motifs <- function(tcr_dataframe, subject_id){
+    bound = ifelse(MOTIF_TYPE == 'pnuc_motif', RIGHT_NUC_MOTIF_COUNT/2, RIGHT_NUC_MOTIF_COUNT)
+    tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= bound]
     cdr3_variable = paste0('cdr3_nucseq_from_', substring(TRIM_TYPE, 1, 1))
-    temp_subset_full_motif = subset_data_by_trim_length_bound(trim_length, tcr_dataframe, cdr3_variable, lower_bound = 3)
-    motif_vector = c()
-    for (row in seq(1:nrow(temp_subset_full_motif))){
-        motif = get_motif_context(whole_gene_seq = temp_subset_full_motif[row,]$gene_full_length_seq, 
-                                  trimmed_gene_seq = temp_subset_full_motif[row,][[cdr3_variable]])
-        motif_vector = c(motif_vector, rep(toString(motif), temp_subset_full_motif[row,]$N))
-    }
-    motif_vector_DNAString = DNAStringSet(motif_vector)
-    PFM = consensusMatrix(motif_vector_DNAString,baseOnly=TRUE)
-#TODO remove short motif section...update with '-' addition in motif
-    #function...remove 'other' row in resulting PFM
-    temp_subset_short_motif = subset_data_by_trim_length_bound(trim_length, tcr_dataframe, cdr3_variable, upper_bound = 4)
-    #TODO test if this works for short vtrim=1 edge case
-    for (row in seq(1:nrow(temp_subset_short_motif))){
-        trimmed_gene_seq = temp_subset_short_motif[row,][[cdr3_variable]]
-        #TODO for now, skip instances where v gene is fully trimmed back...
-        if (trimmed_gene_seq == ''){
-            next
-        }
-        motif = get_motif_context(whole_gene_seq = temp_subset_short_motif[row,]$gene_full_length_seq, 
-                                  trimmed_gene_seq) 
-        short_motif_vector = rep(toString(motif), temp_subset_short_motif[row,]$N)
-        temp_short_motif_vector = DNAStringSet(short_motif_vector)
-        
-        temp_PFM = consensusMatrix(temp_short_motif_vector,baseOnly=TRUE)
-        empty_position_matrix = matrix(0, ncol = LEFT_NUC_MOTIF_COUNT-nchar(trimmed_gene_seq), nrow = 5)
-        complete_PFM = cbind(empty_position_matrix, temp_PFM)
-        PFM = PFM + complete_PFM
-    }
-    return(PFM)
+    cols = c(paste(cdr3_variable), 'sequences', paste(GENE_NAME), paste(TRIM_TYPE))
+    tcr_dataframe = tcr_dataframe[,..cols]
+    colnames(tcr_dataframe) = c('trimmed_seq', 'whole_seq', 'gene', 'trim_length')
+    tcr_dataframe = tcr_dataframe[,motif:=get_motif_context(whole_seq, trimmed_seq, trim_length)]
+    tcr_dataframe$observed = TRUE
+    unobserved = get_unobserved_motifs(tcr_dataframe, bound)
+    together = rbind(tcr_dataframe[,-c(1,2)], unobserved)
+    together$gene_type = GENE_NAME
+    together$subject = subject_id
+    return(together)
 }
-
