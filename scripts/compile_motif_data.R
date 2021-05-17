@@ -1,3 +1,5 @@
+source('config/config.R')
+
 library(foreach)
 library(doParallel)
 library(tidyverse)
@@ -14,13 +16,13 @@ args = commandArgs(trailingOnly=TRUE)
 TRIM_TYPE <<- args[1]
 stopifnot(TRIM_TYPE == 'v_trim')
 
-MOTIF_TYPE <<- args[2] 
+MOTIF_TYPE <<- 'pnuc_motif' 
 stopifnot(MOTIF_TYPE %in% c('pnuc_motif', 'no_pnuc_motif'))
 
-PFM_TYPE <<- args[3]
+PFM_TYPE <<- 'bounded'
 stopifnot(PFM_TYPE %in% c('bounded', 'unbounded'))
 
-NCPU <<- args[4]
+NCPU <<- args[2]
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
@@ -31,10 +33,10 @@ LEFT_NUC_MOTIF_COUNT <<- 4
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- 4
 
+UPPER_TRIM_BOUND <<- 18
+LOWER_TRIM_BOUND <<- 2
+
 source('scripts/pfm_functions.R')
 
-OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/exomotif/motif_data'
-directory = '_ignore/emerson_stats/'
-
-compile_all_motifs(directory)
+compile_all_motifs(TCR_REPERTOIRE_DATA)
 
