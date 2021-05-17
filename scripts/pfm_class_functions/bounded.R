@@ -3,7 +3,7 @@ get_unobserved_motifs <- function(tcr_dataframe, bound){
     unobserved_df = data.frame()
     for (gene_name in unique(tcr_dataframe_observed$gene)){
         observed = unique(tcr_dataframe_observed[gene == paste(gene_name)]$trim_length)
-        unobserved = setdiff(seq(bound,20), observed)
+        unobserved = setdiff(seq(bound,UPPER_TRIM_BOUND), observed)
         unobserved_df = rbind(unobserved_df, data.frame(gene = rep(gene_name, length(unobserved)), trim_length = unobserved))
     }
     cols = c('whole_seq', 'gene')
@@ -15,8 +15,8 @@ get_unobserved_motifs <- function(tcr_dataframe, bound){
 }
 
 get_motifs <- function(tcr_dataframe, subject_id){
-    bound = ifelse(MOTIF_TYPE == 'pnuc_motif', RIGHT_NUC_MOTIF_COUNT/2, RIGHT_NUC_MOTIF_COUNT)
-    tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= bound]
+    bound = ifelse(MOTIF_TYPE == 'pnuc_motif', LOWER_TRIM_BOUND, RIGHT_NUC_MOTIF_COUNT)
+    tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= bound & get(TRIM_TYPE) <= UPPER_TRIM_BOUND]
     cdr3_variable = paste0('cdr3_nucseq_from_', substring(TRIM_TYPE, 1, 1))
     cols = c(paste(cdr3_variable), 'sequences', paste(GENE_NAME), paste(TRIM_TYPE))
     tcr_dataframe = tcr_dataframe[,..cols]
