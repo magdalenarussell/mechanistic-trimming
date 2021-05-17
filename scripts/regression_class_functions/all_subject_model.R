@@ -1,22 +1,24 @@
 get_regression_formula <- function(conditioning = 'gene'){
-    #TODO add gene conditioning and/or subject conditioning for subject
-    #specific motifs...
-    motif_positions = c(paste0('pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0('pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT))))
-    if (conditioning == 'both-gene-position'){
-        motif_positions = paste0(motif_positions, '*gene')
+    all_motif_sums = c()
+    for (motif_col in c('motif', paste0('motif_trim_', seq(2, 18)))){
+        # get grouped column names for all motifs
+        assign(paste0(motif_col, '_positions'), c(paste0(motif_col, '_pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0(motif_col, '_pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT)))))
+        # sum positions
+        assign(paste0(motif_col, '_positions_sum'), paste0(get(paste0(motif_col, '_positions')), collapse = ' + '))
+        # create weight formula
+        assign(paste0(motif_col, '_positions_formula'), paste0('exp(', get(paste0(motif_col, '_positions_sum')), ')'))
+        # create vector of all motif formulas
+        all_motif_sums = c(all_motif_sums, get(paste0(motif_col, '_positions_formula')))
     }
-    motif_positions_together = paste0(motif_positions, collapse = ' + ')
-    if (conditioning == 'gene'){
-        motif_positions_together = paste0(motif_positions_together, ' + gene')
-    } 
-    if (conditioning == 'gene-position'){
-        motif_positions_gene_interaction = paste0(motif_positions, ':gene')
-        motif_positions_together = paste0(c(motif_positions, motif_positions_gene_interaction), collapse = ' + ')
-    }
-    formula = as.formula(paste('log(pdel_seq_and_gene)', motif_positions_together, sep = ' ~ '))
+     
+    model_denominator = paste0(all_motif_sums[-1], collapse = ' + ')
+    model = paste0('(', motif_positions_sum, ')-log(', model_denominator, ')')
+    formula = as.formula(paste('log(p_trim_given_gene)', model, sep = ' ~ '))
+
     return(formula)
 }
 
+#TODO see notes!!
 set_data_factors <- function(data, ref_base){
     motif_positions = c(paste0('pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0('pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT))))
     for (motif_position in motif_positions){
