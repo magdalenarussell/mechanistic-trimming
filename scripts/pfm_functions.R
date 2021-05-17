@@ -9,14 +9,15 @@ extract_subject_ID <- function(tcr_repertoire_file_path){
 }
 
 get_subject_motif_output_location <- function(){
-    output_location = file.path(OUTPUT_PATH, paste0(MOTIF_TYPE, '_', PFM_TYPE))
+    output_location = file.path(OUTPUT_PATH, TRIM_TYPE, paste0(MOTIF_TYPE, '_', PFM_TYPE))
     return(output_location)
 }
 
 compile_motifs_for_subject <- function(file_path){
     temp_data = fread(file_path)
-    # TODO, for now, don't remove missing d gene instances
-    # temp_data = temp_data[d_gene != '-']
+    if (GENE_NAME == 'd_gene'){
+        temp_data = temp_data[d_gene != '-']
+    }
     subject_id = extract_subject_ID(file_path)
     
     output_location = get_subject_motif_output_location() 
@@ -39,48 +40,52 @@ compile_all_motifs <- function(directory){
     stopImplicitCluster()
 }
 
-calculate_pdel_seq_and_gene <- function(motif_data){
+calculate_pdel_trim_and_gene <- function(motif_data){
     motif_data = as.data.table(motif_data)
-    motif_data[,count_subject_gene_seq := .N, by = .(gene, gene_type, subject, trim_length)]
-    motif_data[,count_subject := .N, by = .(subject)]
-    motif_data[observed == TRUE,pdel_seq_and_gene := count_subject_gene_seq/count_subject]
-    motif_data[observed == FALSE, pdel_seq_and_gene := 0]
-    return(motif_data)
-}
+    motif_data = motif_data[trim_length >= 2 & trim_length <= 18]
+    # compute counts for observed motifs
+    observed_motif_data = motif_data[observed == TRUE]
+    observed_motif_data[,count_subject_gene_trim_length := .N, by = .(gene, gene_type, subject, trim_length)]
+    observed_motif_data[,count_subject := .N, by = .(subject)]
+    observed_motif_data[, count_subject_gene := .N, by = .(gene, subject)]
 
-calculate_pdel_seq_and_gene2 <- function(motif_data){
-    motif_data = as.data.table(motif_data)[trim_length <= 18 & trim_length >= 2]
+    # set counts for unobserved motifs
+    unobserved_motif_data =  motif_data[observed == FALSE]
+    unobserved_motif_data[,count_subject_gene_trim_length := 0]
+    unobserved_motif_data = merge(unobserved_motif_data, unique(observed_motif_data[, c('gene', 'count_subject', 'count_subject_gene')]))
 
-    # process observed motifs
-    motif_data_observed = motif_data[observed == TRUE]
-    motif_data_observed[,count_subject_gene_trim_length := .N, by = .(gene, gene_type, subject, trim_length)]
-    motif_data_observed[,count_subject := .N, by = .(subject)]
-    motif_data_observed[, count_subject_gene := .N, by = .(gene, subject)]
-
-    # process unobserved motifs
-    motif_data_NOT_observed = motif_data[observed == FALSE]
-    motif_data_NOT_observed = merge(motif_data_NOT_observed, unique(motif_data_observed[,c('gene', 'count_subject', 'count_subject_gene')]))
-    motif_data_NOT_observed[,count_subject_gene_trim_length := 0]
- 
-    # combine data
-    motif_data = rbind(motif_data_observed, motif_data_NOT_observed)
+    # merge observed and unobserved
+    together = rbind(observed_motif_data, unobserved_motif_data)
 
     # calculate probabilities
-    motif_data[, p_trim_and_gene := count_subject_gene_trim_length/count_subject]
-    motif_data[, p_gene := count_subject_gene/count_subject]
-    motif_data[, p_trim_given_gene := p_trim_and_gene/p_gene]
-
-    return(unique(motif_data))
+    together[, p_trim_and_gene := count_subject_gene_trim_length/count_subject]
+    together[, p_gene := count_subject_gene/count_subject]
+    together[, p_trim_given_gene := p_trim_and_gene/p_gene]
+    return(unique(together))
 }
 
+get_all_other_motifs <- function(compiled_motif_data){
+    together = data.frame()
+    for (gene_observed in unique(compiled_motif_data$gene)){
+        motifs_alone = unique(compiled_motif_data[, c('gene', 'trim_length', 'motif')][gene == gene_observed])
+        motifs_alone$trim_length = paste0('motif_trim_', motifs_alone$trim_length)
+        gene_observed_motifs = motifs_alone %>% pivot_wider(names_from = trim_length, values_from = motif)
+        together = rbind(together, gene_observed_motifs)
+    }
+    compiled_motif_data_with_all_motifs = merge(compiled_motif_data, as.data.table(together))
+    return(compiled_motif_data_with_all_motifs)
+}
 
 split_motif_column_by_motif_position <- function(motif_dataframe){
-    motif_dataframe = motif_dataframe %>% separate(motif, c(paste0('pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0('pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT)))), sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
+    for (motif_col in c('motif', paste0('motif_trim_', seq(2, 18)))){
+        motif_dataframe = motif_dataframe %>% separate(get(motif_col), c(paste0(motif_col, '_pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0(motif_col, '_pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT)))), sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
+    }
     return(motif_dataframe)
 }
 
 prepare_data_for_regression <- function(motif_data){
-    motif_data = calculate_pdel_seq_and_gene2(motif_data)
+    motif_data = calculate_pdel_trim_and_gene(motif_data)
+    motif_data = get_all_other_motifs(motif_data)
     motif_data = split_motif_column_by_motif_position(motif_data)
     motif_data[motif_data == '-'] <- NA
     motif_data = unique(motif_data)
@@ -88,6 +93,7 @@ prepare_data_for_regression <- function(motif_data){
 }
 
 concatenate_motifs_all_subjects <- function(directory = get_subject_motif_output_location()){
+    #TODO add ability to look at only one subject or group
     files = fs::dir_ls(path = directory)
     registerDoParallel(cores=NCPU)
     together = foreach(file = files, .combine=rbind) %dopar% {
