@@ -1,3 +1,4 @@
+source('config/config.R')
 args = commandArgs(trailingOnly=TRUE)
 
 TRIM_TYPE <<- args[1]
@@ -34,13 +35,18 @@ library(Biostrings)
 library(RhpcBLASctl)
 omp_set_num_threads(NCPU)
 blas_set_num_threads(NCPU)
+library(cowplot)
+library(Cairo)
 
 source('scripts/pfm_functions.R')
+source('plotting_scripts/plot_dist_functions.R')
 
-OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/exomotif/motif_data'
+actual_trim_data = concatenate_motifs_all_subjects()
+predicted_trim_data = fread(get_predicted_dist_file_name())
 
-together = concatenate_motifs_all_subjects()
+genes = get_all_genes() 
 
+for (gene_subset in genes){
+    plot_predicted_trimming_dists(actual_trim_data, predicted_trim_data, gene_subset)
+}
 
-PWM = get_fitted_PWM(together, conditioning = 'gene')
-PWM_none = get_fitted_PWM(together, conditioning = 'none')
