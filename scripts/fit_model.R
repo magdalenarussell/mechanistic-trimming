@@ -26,6 +26,7 @@ GENE_WEIGHT_TYPE <<- 'p_gene_given_subject'
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
+#TODO change this variable to a "group" variable and have data aggregation functions and model specific functions there...
 REGRESSION_TYPE <<- 'all_subject'
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- 4
@@ -37,6 +38,9 @@ LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2
 
 source('scripts/data_compilation_functions.R')
 
-compile_all_motifs(TCR_REPERTOIRE_DATA)
+#TODO add ability to look at different groups or individuals
+motif_data = aggregate_all_subject_data()
 
+#TODO next, model fitting
 
+#TODO then, save coeffiecients, save model object, predict trimming curves...
