@@ -21,13 +21,11 @@ stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded'))
 
 NCPU <<- args[2]
 
-GENE_WEIGHT_TYPE <<- 'p_gene_given_subject'
-
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
-#TODO change this variable to a "group" variable and have data aggregation functions and model specific functions there...
-REGRESSION_TYPE <<- 'all_subject'
+MODEL_GROUP <<- args[3]
+
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- 4
 # 3' motif nucleotide count
@@ -37,9 +35,12 @@ UPPER_TRIM_BOUND <<- 18
 LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
 
 source('scripts/data_compilation_functions.R')
+source('scripts/model_fitting_functions.R')
 
-#TODO add ability to look at different groups or individuals
+# Compile data for all subjects
 motif_data = aggregate_all_subject_data()
+
+# TODO add functionality to compare between individuals, groups
 
 #TODO next, model fitting
 

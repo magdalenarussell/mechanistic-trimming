@@ -21,12 +21,9 @@ stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded'))
 
 NCPU <<- args[2]
 
-GENE_WEIGHT_TYPE <<- 'p_gene_given_subject'
-
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
-REGRESSION_TYPE <<- 'all_subject'
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- 4
 # 3' motif nucleotide count
