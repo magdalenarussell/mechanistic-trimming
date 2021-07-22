@@ -6,6 +6,8 @@ library(tidyverse)
 library(data.table)
 setDTthreads(1)
 library(Biostrings)
+library(ggplot2)
+library(cowplot)
 library(mclogit)
 library(matrixcalc)
 library(RhpcBLASctl)
@@ -27,9 +29,7 @@ GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
 MODEL_GROUP <<- args[3]
-
 GENE_WEIGHT_TYPE <<- args[4]
-stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal'))
 
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
@@ -41,9 +41,14 @@ LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
+source('plotting_scripts/plotting_functions.R')
 
-# Compile data for all subjects
-motif_data = aggregate_all_subject_data()
+# Read in dist data
+predicted_trims = get_predicted_distribution_data() 
 
-# Fit model, write predicted distribution and pwm files
-fit_model_by_group(motif_data)
+for (gene in unique(predicted_trims$gene)){
+    plot_predicted_trimming_dists(predicted_trims, gene)
+    plot_model_residual_boxplot(predicted_trims, gene)
+}
+
+plot_all_model_residuals(predicted_trims)

@@ -3,6 +3,7 @@ _ignore/
 slurm*
 general_cluster_submit*
 plots/
+test* 
 
 # History files
 .Rhistory
