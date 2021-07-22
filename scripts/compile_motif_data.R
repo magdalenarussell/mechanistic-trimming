@@ -19,15 +19,15 @@ stopifnot(TRIM_TYPE == 'v_trim')
 MOTIF_TYPE <<- 'bounded'
 stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded'))
 
-NCPU <<- args[2]
+NCPU <<- as.numeric(args[2])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- 4
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[3]) 
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- 4
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
 
 UPPER_TRIM_BOUND <<- 18
 LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
