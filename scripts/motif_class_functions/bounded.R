@@ -15,7 +15,7 @@ get_unobserved_motifs <- function(tcr_dataframe, bound){
 }
 
 get_motifs <- function(tcr_dataframe, subject_id){
-    bound = ifelse(MOTIF_TYPE == 'pnuc_motif', LOWER_TRIM_BOUND, RIGHT_NUC_MOTIF_COUNT)
+    bound = LOWER_TRIM_BOUND
     tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= bound & get(TRIM_TYPE) <= UPPER_TRIM_BOUND]
     cdr3_variable = paste0('cdr3_nucseq_from_', substring(TRIM_TYPE, 1, 1))
     cols = c(paste(cdr3_variable), 'sequences', 'gene', paste(TRIM_TYPE), paste0(GENE_NAME))
@@ -30,23 +30,3 @@ get_motifs <- function(tcr_dataframe, subject_id){
     return(together)
 }
 
-get_all_motifs_by_gene <- function(gene_subset){
-    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
-    conversion = get_common_genes_from_seqs_general(whole_nucseq)
-    stopifnot(gene_subset %in% conversion$gene)
-
-    cols = c('gene', 'sequences')
-    conversion = unique(conversion[, ..cols])
-    seq = conversion[gene == gene_subset]$sequences
-
-    motifs = data.table()
-    for (trim_length in seq(2, 18)){
-        motif = get_motif_context_unobserved(seq, trim_length)
-        motifs = rbind(motifs, data.table(gene = gene_subset, trim_length = trim_length, motif = motif))
-        #TODO add in trim length 0 and 1?
-    }
-
-    motifs$motif2 = motifs$motif
-    motifs = motifs %>% separate(motif2, c(paste0('motif_pos5_', c(seq(LEFT_NUC_MOTIF_COUNT, 1))), paste0('motif_pos3_', c(seq(1, RIGHT_NUC_MOTIF_COUNT)))), sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
-    return(motifs)
-}
