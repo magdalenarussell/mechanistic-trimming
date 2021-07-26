@@ -6,7 +6,7 @@ get_pwm_matrix_file_name <- function(subgroup){
     return(paste0(MODEL_GROUP, '_weighting_with_', GENE_WEIGHT_TYPE, '.tsv'))
 }
 
-fit_model_by_group <- function(motif_data){
+fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
     options(contrasts = rep("contr.sum", 2))
     model = fit_model(motif_data)
 
@@ -33,7 +33,11 @@ fit_model_by_group <- function(motif_data){
     pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
     location = file.path(pwm_file_path, pwm_file_name)
 
-    fwrite(pwm_dt, location, sep = '\t')
+    if (isTRUE(write_coeffs)){
+        fwrite(pwm_dt, location, sep = '\t')
+    } else {
+        return(pwm_dt)
+    }
 }
 
 get_predicted_distribution_data <- function(){
