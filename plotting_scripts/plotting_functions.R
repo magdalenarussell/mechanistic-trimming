@@ -98,6 +98,11 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
     together$base = factor(together$base, levels = c('T', 'G', 'C', 'A'))
     together$values = factor(together$values)
 
+    if (is.null(limits)){
+        max_val = max(abs(together$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+
     plot = ggplot(together, aes(x=values, y=base, fill=log_10_pdel)) +
         geom_tile() +
         theme_cowplot(font_family = 'Arial') + 
@@ -106,7 +111,8 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
         geom_vline(xintercept = RIGHT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
         guides(fill = guide_colourbar(barheight = 14)) +
-        scale_fill_viridis_c(name = 'log10(probability of deletion)', limits = limits)
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits)
+        # scale_fill_viridis_c(name = 'log10(probability of deletion)', limits = limits)
     
     if (with_values == TRUE){
         plot = plot +
@@ -221,4 +227,93 @@ plot_all_model_residuals_plot <- function(data, file_name){
     
     ggsave(file_name, plot = plot, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
     return(plot) 
+}
+
+get_base_composition_file_path <- function(){
+    path = file.path(PROJECT_PATH, 'plots', 'model_base_composition', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    dir.create(path, recursive = TRUE)
+    return(path)
+}
+
+get_gene_composition_data <- function(motif_data, weighting = 'uniform'){
+    positions = get_positions()
+    if (weighting == 'uniform'){
+        cols = c('gene', 'trim_length', positions)
+        temp = unique(motif_data[, ..cols]) 
+        temp$count = 1
+    } else if (weighting == 'p_gene_marginal'){
+        cols = c('gene', 'trim_length', 'p_gene', positions)
+        temp = unique(motif_data[, ..cols]) 
+        temp$count = temp$p_gene
+    } else if (weighting == 'weighted_observation'){
+        temp = motif_data
+        temp$count = temp$weighted_observation
+    }
+
+    composition = temp[, sum(count), by = positions]
+    setnames(composition, 'V1', 'weighted_obs_sum')
+
+    composition_pivot = composition %>%
+        pivot_longer(!c(weighted_obs_sum), names_to = 'position', values_to = 'base') %>%
+        as.data.table()
+
+    comp_sum = composition_pivot[, sum(weighted_obs_sum), by = .(position, base)]
+    setnames(comp_sum, 'V1', 'weighted_obs_sum')
+
+    return(comp_sum)
+}
+
+plot_gene_composition <- function(motif_data, weighting = 'uniform'){
+    stopifnot(weighting %in% c('uniform', 'p_gene_marginal', 'weighted_observation'))
+    path = get_base_composition_file_path()
+    file_name = paste0(path, '/base_composition_', weighting, '_weighting.pdf')
+
+    comp_sum = get_gene_composition_data(motif_data, weighting) 
+
+    position_values = map_positions_to_values(unique(comp_sum$position))
+    together = merge(comp_sum, position_values, by.x = 'position', by.y = 'positions')
+    together$values = factor(together$values)
+
+    plot = ggplot(together, aes(values, weighted_obs_sum, fill = base)) +
+        geom_bar(stat = 'identity', position = 'fill') +
+        theme_cowplot(font_family = 'Arial') +
+        background_grid(major = 'y') +
+        xlab('Position') +
+        ylab('Proportion') +
+        scale_fill_brewer(palette = 'Set2') +
+        theme(text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) 
+
+    ggsave(file_name, plot = plot, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+    return(plot) 
+}
+
+get_resid_compare_file_path <- function(){
+    path = file.path(PROJECT_PATH, 'plots', 'residual_comparison', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    dir.create(path, recursive = TRUE)
+    return(path)
+}
+
+
+plot_residual_scatter <- function(residual_mse_df, feature_df, annotate = TRUE){
+    together = merge(residual_mse_df, feature_df)
+    path = get_resid_compare_file_path()
+    file_name = paste0(path, '/model_residual_', RESIDUAL_COMPARE_FEATURE, '_scatter.pdf')
+
+    plot = ggplot(together, aes(x = rmse, y = feature)) +
+        geom_point(size = 3, alpha = 0.6) +
+        stat_cor(aes(label=..rr.label..), label.x.npc = 'left', label.y.npc = 'top') +
+        theme_cowplot(font_family = 'Arial') +
+        background_grid(major = 'xy') +
+        xlab('Root mean square error') +
+        ylab(RESIDUAL_COMPARE_FEATURE) +
+        theme(text = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) 
+
+    if (isTRUE(annotate)){
+        plot = plot + 
+            geom_text(aes(label=ifelse(rmse > quantile(together$rmse, 0.5) & feature > quantile(together$feature, 0.5), gene, '')), hjust = 0, nudge_x = 0.002)
+    }
+
+    ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+
+    return(plot)
 }
