@@ -29,7 +29,7 @@ stopifnot(GENE_NAME == 'v_gene')
 MODEL_GROUP <<- args[3]
 
 GENE_WEIGHT_TYPE <<- args[4]
-stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal'))
+stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count'))
 
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
