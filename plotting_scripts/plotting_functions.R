@@ -25,7 +25,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
 }
 
 get_predicted_dist_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'predicted_trimming_distributions', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'predicted_trimming_distributions', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -78,7 +78,7 @@ map_positions_to_values <- function(positions){
 }
 
 get_coef_heatmap_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_coefficient_heatmaps', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'model_coefficient_heatmaps', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
 
     return(path)
@@ -123,7 +123,7 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
 }
 
 get_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'predicted_trimming_residuals', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'predicted_trimming_residuals', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -152,7 +152,7 @@ plot_model_residual_boxplot_single_group <- function(data, gene_name, file_name)
 }
 
 get_coef_variations_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_coefficient_variations', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'model_coefficient_variations', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
 
     return(path)
@@ -201,7 +201,7 @@ plot_model_coefficient_variations <- function(model_coef_matrix){
 }
 
 get_all_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'ALL_predicted_trimming_residuals', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'ALL_predicted_trimming_residuals', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -230,7 +230,7 @@ plot_all_model_residuals_plot <- function(data, file_name){
 }
 
 get_base_composition_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_base_composition', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'model_base_composition', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -241,6 +241,10 @@ get_gene_composition_data <- function(motif_data, weighting = 'uniform'){
         cols = c('gene', 'trim_length', positions)
         temp = unique(motif_data[, ..cols]) 
         temp$count = 1
+    } else if (weighting == 'raw_count'){
+        cols = c('gene', 'trim_length', positions)
+        temp = motif_data[, sum(count), by = cols]
+        setnames(temp, 'V1', 'count')
     } else if (weighting == 'p_gene_marginal'){
         cols = c('gene', 'trim_length', 'p_gene', positions)
         temp = unique(motif_data[, ..cols]) 
@@ -264,7 +268,7 @@ get_gene_composition_data <- function(motif_data, weighting = 'uniform'){
 }
 
 plot_gene_composition <- function(motif_data, weighting = 'uniform'){
-    stopifnot(weighting %in% c('uniform', 'p_gene_marginal', 'weighted_observation'))
+    stopifnot(weighting %in% c('uniform', 'p_gene_marginal', 'weighted_observation', 'raw_count'))
     path = get_base_composition_file_path()
     file_name = paste0(path, '/base_composition_', weighting, '_weighting.pdf')
 
@@ -288,7 +292,7 @@ plot_gene_composition <- function(motif_data, weighting = 'uniform'){
 }
 
 get_resid_compare_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'residual_comparison', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT))
+    path = file.path(PROJECT_PATH, 'plots', 'residual_comparison', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
