@@ -28,16 +28,18 @@ stopifnot(GENE_NAME == 'v_gene')
 
 MODEL_GROUP <<- 'all_subjects'
 
-GENE_WEIGHT_TYPE <<- args[4]
+GENE_WEIGHT_TYPE <<- args[3]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count'))
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 
 UPPER_TRIM_BOUND <<- 18
-LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
+LOWER_TRIM_BOUND <<- 2
+# TODO change this back once we are done comparing models
+# LOWER_TRIM_BOUND <<- max(RIGHT_NUC_MOTIF_COUNT - 2, 1)
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
@@ -47,7 +49,7 @@ source('scripts/model_evaluation_functions.R')
 motif_data = aggregate_all_subject_data()
 
 # Generate a held out sample and motif data subset
-sample_data = generate_hold_out_sample(motif_data, subject_sample_size = 1)
+sample_data = generate_hold_out_sample(motif_data, sample_size = length(unique(motif_data$gene)))
 motif_data_subset = sample_data$motif_data_subset
 sample = sample_data$sample
 

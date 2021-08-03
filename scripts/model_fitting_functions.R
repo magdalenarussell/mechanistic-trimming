@@ -8,9 +8,8 @@ get_positions <- function(){
 
 # Aggregate all subject data
 aggregate_subject_data_by_trim_gene <- function(subject_data){
-    aggregated_subject = subject_data[, .N, by = .(trim_length, gene, motif, gene_type, subject, observed)]
-    setnames(aggregated_subject, 'N', 'count')
-    aggregated_subject[observed == FALSE, count := 0]
+    aggregated_subject = subject_data[, sum(count), by = .(trim_length, gene, motif, gene_type, subject, observed)]
+    setnames(aggregated_subject, 'V1', 'count')
     return(aggregated_subject)
 }
 
@@ -75,7 +74,7 @@ fit_model <- function(group_motif_data){
 }
 
 get_predicted_dist_file_path <- function(){
-    path = file.path(OUTPUT_PATH, 'predicted_trimming_distributions', paste0(MODEL_GROUP,'_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), GENE_WEIGHT_TYPE)
+    path = file.path(OUTPUT_PATH, 'predicted_trimming_distributions', paste0(MODEL_GROUP,'_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), GENE_WEIGHT_TYPE)
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -123,7 +122,7 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base){
 }
 
 get_pwm_matrix_file_path <- function(){
-    path = file.path(OUTPUT_PATH, 'predicted_coefficient_matrix', paste0(MODEL_GROUP, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), GENE_WEIGHT_TYPE)
+    path = file.path(OUTPUT_PATH, 'predicted_coefficient_matrix', paste0(MODEL_GROUP, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), GENE_WEIGHT_TYPE)
     dir.create(path, recursive = TRUE)
     
     return(path)
