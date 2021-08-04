@@ -7,7 +7,6 @@ get_pwm_matrix_file_name <- function(subgroup){
 }
 
 fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
-    options(contrasts = rep("contr.sum", 2))
     model = fit_model(motif_data)
 
     # get predicted probabilities and empirical probabilities
