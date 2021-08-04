@@ -27,12 +27,6 @@ stopifnot(GENE_NAME == 'v_gene')
 LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[3])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
 
-UPPER_TRIM_BOUND <<- 18
-LOWER_TRIM_BOUND <<- 2
-# TODO: Right now, all motifs have a bound of trim=2! This needs to change, but
-# it is good to have consistent trim as we are comparing models
-# LOWER_TRIM_BOUND <<- max(RIGHT_NUC_MOTIF_COUNT - 2, 1) 
-
 source('scripts/data_compilation_functions.R')
 print(LEFT_NUC_MOTIF_COUNT)
 print(RIGHT_NUC_MOTIF_COUNT)

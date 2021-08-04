@@ -36,11 +36,6 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 
-UPPER_TRIM_BOUND <<- 18
-LOWER_TRIM_BOUND <<- 2
-# TODO change this back once we are done comparing models
-# LOWER_TRIM_BOUND <<- max(RIGHT_NUC_MOTIF_COUNT - 2, 1)
-
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('scripts/model_evaluation_functions.R')

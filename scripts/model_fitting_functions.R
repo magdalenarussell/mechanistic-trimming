@@ -43,16 +43,6 @@ get_model_formula <- function(){
     return(formula)
 }
 
-get_contrasts_list <- function(){
-    contrast_list = list()
-    positions = get_positions() 
-
-    for (position in positions){
-        contrast_list[[position]] = 'contr.sum'
-    }
-    return(contrast_list)
-}
-
 get_start_list <- function(){
     positions = get_positions()
     position_count = length(positions)
@@ -62,13 +52,12 @@ get_start_list <- function(){
 
 fit_model <- function(group_motif_data){
     formula = get_model_formula()
-    contrast_list = get_contrasts_list()
+    group_motif_data = set_contrasts(group_motif_data)
     start_list = get_start_list()
 
     model = mclogit(formula, 
                     data = group_motif_data, 
-                    start = start_list, 
-                    contrasts = contrast_list) 
+                    start = start_list) 
 
     return(model)
 }
@@ -79,44 +68,37 @@ get_predicted_dist_file_path <- function(){
     return(path)
 }
 
-relevel_contrasts <- function(group_motif_data, ref_base){
-    positions = get_positions()
-    for (position in positions){
-        group_motif_data[[position]] = as.factor(group_motif_data[[position]])
-        group_motif_data[[position]] = relevel(group_motif_data[[position]], ref_base)
-    }
-    return(group_motif_data)
-}
-
-get_levels <- function(group_motif_data, ref_base){
-    positions = get_positions()
-    options(contrasts = rep("contr.sum", 2))
-    group_motif_data = relevel_contrasts(group_motif_data, ref_base)
-    contrasts = contrasts(group_motif_data[[positions[1]]])
-    levels = data.table(base = rownames(contrasts(group_motif_data[[positions[1]]])), number = c(1, 2, 3, NA))
+get_levels <- function(group_motif_data, ref_base, position){
+    group_motif_data = set_contrasts(group_motif_data, ref_base)
+    contrasts = contrasts(group_motif_data[[position]])
+    levels = data.table(base = rownames(contrasts(group_motif_data[[position]])), number = c(seq(ncol(contrasts(group_motif_data[[position]]))), NA))
     return(levels)
 }
 
-get_coeffiecient_matrix <- function(group_motif_data, ref_base){
-    group_motif_data = relevel_contrasts(group_motif_data, ref_base)
-    model = fit_model(group_motif_data)
 
-    levels = get_levels(group_motif_data, ref_base)
+get_coeffiecient_matrix <- function(group_motif_data, ref_base){
+    group_motif_data = set_contrasts(group_motif_data, ref_base)
+    model = fit_model(group_motif_data)
+    positions = get_positions()
 
     together = matrix(0, nrow = 4, ncol = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT)
-    colnames(together) = get_positions() 
+    colnames(together) = positions
     rownames(together) = c('A', 'C', 'T', 'G')
 
     for (coef in seq(1, length(coef(model)))){
         name = names(coef(model)[coef])
         position = substring(name, 1, 15)
+        levels = get_levels(group_motif_data, ref_base, position)
         num = substring(name, 16, 16)
         base = levels[number == num]$base
         together[base, position] = coef(model)[coef]
     }
 
-    missing_base = levels[is.na(number)]$base
-    together[missing_base,] = -1*colSums(together)
+    for (position in positions){
+        levels = get_levels(group_motif_data, ref_base, position)
+        missing_base = levels[is.na(number)]$base
+        together[missing_base,position] = -1*sum(together[, position])
+    }
 
     return(together)
 }
