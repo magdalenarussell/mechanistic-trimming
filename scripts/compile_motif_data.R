@@ -16,20 +16,19 @@ args = commandArgs(trailingOnly=TRUE)
 TRIM_TYPE <<- args[1]
 stopifnot(TRIM_TYPE == 'v_trim')
 
-MOTIF_TYPE <<- 'bounded'
+MOTIF_TYPE <<- args[2] 
 stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded'))
 
-NCPU <<- as.numeric(args[2])
+NCPU <<- as.numeric(args[3])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[3])
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 
 source('scripts/data_compilation_functions.R')
-print(LEFT_NUC_MOTIF_COUNT)
-print(RIGHT_NUC_MOTIF_COUNT)
+
 compile_all_motifs(TCR_REPERTOIRE_DATA)
 
 
