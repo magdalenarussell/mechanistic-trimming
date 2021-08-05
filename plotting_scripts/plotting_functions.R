@@ -321,3 +321,50 @@ plot_residual_scatter <- function(residual_mse_df, feature_df, annotate = TRUE){
 
     return(plot)
 }
+
+get_model_eval_file_path <- function(){
+    path = file.path(PROJECT_PATH, 'plots', 'model_evaluation', MODEL_GROUP, paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    dir.create(path, recursive = TRUE)
+    return(path)
+}
+
+plot_model_evaluation_heatmap <- function(file_path = get_model_evaluation_file_name(), with_values = FALSE){
+    path = get_model_eval_file_path()
+    file_name = paste0(path, '/model_evaluation_heatmap.pdf')
+    eval_data = fread(file_path)
+    plot = ggplot(eval) +
+        geom_tile(aes(x = motif_length_5_end, y = motif_length_3_end, fill = log_loss)) +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('5\' motif length') +
+        ylab('3\' motif length') +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight = 14)) +
+        scale_fill_viridis_c(name = 'Conditional Log Loss')
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = eval, aes(x = motif_length_5_end, y = motif_length_3_end, label = round(log_loss, 0)))
+    }
+
+    ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+plot_model_evaluation_scatter <- function(file_path = get_model_evaluation_file_name()){
+    path = get_model_eval_file_path()
+    file_name = paste0(path, '/model_evaluation_scatter.pdf')
+    eval_data = fread(file_path)
+    eval_data[, length := motif_length_5_end + motif_length_3_end]
+
+    plot = ggplot(eval) +
+        geom_point(aes(x = length, y = log_loss, color = motif_length_5_end), size = 5) +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Total motif length') +
+        ylab('Conditional log loss') +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight = 14)) + 
+        scale_color_viridis_c(name = '5\' motif length')+
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+
+    ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+}
