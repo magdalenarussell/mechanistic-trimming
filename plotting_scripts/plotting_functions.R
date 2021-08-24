@@ -303,13 +303,13 @@ plot_residual_scatter <- function(residual_mse_df, feature_df, annotate = TRUE){
     path = get_resid_compare_file_path()
     file_name = paste0(path, '/model_residual_', RESIDUAL_COMPARE_FEATURE, '_scatter.pdf')
 
-    plot = ggplot(together, aes(x = rmse, y = feature)) +
+    plot = ggplot(together, aes(y = rmse, x = feature)) +
         geom_point(size = 3, alpha = 0.6) +
         stat_cor(aes(label=..rr.label..), label.x.npc = 'left', label.y.npc = 'top') +
         theme_cowplot(font_family = 'Arial') +
         background_grid(major = 'xy') +
-        xlab('Root mean square error') +
-        ylab(RESIDUAL_COMPARE_FEATURE) +
+        ylab('Root mean square error') +
+        xlab(RESIDUAL_COMPARE_FEATURE) +
         theme(text = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) 
 
     if (isTRUE(annotate)){
@@ -321,6 +321,38 @@ plot_residual_scatter <- function(residual_mse_df, feature_df, annotate = TRUE){
 
     return(plot)
 }
+
+
+plot_positional_residual_scatter <- function(residual_avg_df, features_df, annotate = TRUE){
+    path = get_resid_compare_file_path()
+    file_name = paste0(path, '/model_residual_positional_slope_', RESIDUAL_COMPARE_FEATURE, '_scatter.pdf')
+
+    model = lm(avg_resid ~ trim_length*as.factor(gene), residual_avg_df)
+    residual_avg_df$resid_slope = coef(model)['trim_length'] + coef(model)[paste0('trim_length:as.factor(gene)', residual_avg_df$gene)] 
+    residual_avg_df[gene == 'TRBV1', resid_slope := coef(model)['trim_length']]
+    
+    simple_resid_slopes = unique(residual_avg_df[, c('gene', 'resid_slope')])
+    together = merge(simple_resid_slopes, features_df)
+
+    plot = ggplot(together, aes(y = resid_slope, x = feature))+
+        geom_point(size = 3, alpha = 0.6) +
+        stat_cor(aes(label=..rr.label..), label.x.npc = 'left', label.y.npc = 'top') +
+        theme_cowplot(font_family = 'Arial') +
+        background_grid(major = 'xy') +
+        ylab('Slope of average positional residuals') +
+        xlab(RESIDUAL_COMPARE_FEATURE) +
+        theme(text = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) 
+    if (isTRUE(annotate)){
+        plot = plot + 
+            geom_text(aes(label=ifelse(resid_slope < quantile(together$resid_slope, 0.5) & feature > quantile(together$feature, 0.5), gene, '')), hjust = 0, nudge_x = 0.002)
+    }
+
+    ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+
+    return(plot)
+}
+
+
 
 get_model_eval_file_path <- function(){
     path = file.path(PROJECT_PATH, 'plots', 'model_evaluation', MODEL_GROUP, paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
