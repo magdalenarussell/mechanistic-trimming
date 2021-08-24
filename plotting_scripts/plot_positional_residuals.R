@@ -8,11 +8,13 @@ setDTthreads(1)
 library(Biostrings)
 library(ggplot2)
 library(cowplot)
+library(ggpubr)
 library(mclogit)
 library(matrixcalc)
 library(RhpcBLASctl)
 omp_set_num_threads(1)
 blas_set_num_threads(1)
+
 
 args = commandArgs(trailingOnly=TRUE)
 
@@ -28,14 +30,14 @@ GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
 MODEL_GROUP <<- args[3]
-
 GENE_WEIGHT_TYPE <<- args[4]
-stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+
+RESIDUAL_COMPARE_FEATURE <<- args[7] 
 
 UPPER_TRIM_BOUND <<- 18
 LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
@@ -43,11 +45,11 @@ LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
+source('plotting_scripts/residual_comparison_functions.R')
 
-# Compile data for all subjects
-motif_data = aggregate_all_subject_data()
+# Read in dist data
+predicted_trims = get_predicted_distribution_data() 
+resids = calculate_residual_by_position(predicted_trims)
+features = get_feature(predicted_trims)
 
-plot_gene_composition(motif_data, weighting = 'uniform')
-plot_gene_composition(motif_data, weighting = 'p_gene_marginal')
-plot_gene_composition(motif_data, weighting = 'weighted_observation')
-plot_gene_composition(motif_data, weighting = 'raw_count')
+plot_positional_residual_scatter(resids, features, annotate = FALSE)
