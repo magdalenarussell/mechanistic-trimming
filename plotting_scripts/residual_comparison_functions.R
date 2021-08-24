@@ -1,4 +1,6 @@
-source(paste0('plotting_scripts/residual_comparison_features/', RESIDUAL_COMPARE_FEATURE, '.R'))
+if (!is.null(RESIDUAL_COMPARE_FEATURE)){
+    source(paste0('plotting_scripts/residual_comparison_features/', RESIDUAL_COMPARE_FEATURE, '.R'))
+}
 
 # calculate root mean square error
 calculate_rmse <- function(predicted_trims){
@@ -25,4 +27,14 @@ calculate_rmse <- function(predicted_trims){
     mean_resid_sq_sums[, rmse := sqrt(mean_resid_sq_sum/subject_count)]
 
     return(mean_resid_sq_sums[, -c('mean_resid_sq_sum')])
+}
+
+# calculate root mean square error
+calculate_residual_by_position <- function(predicted_trims){
+    # calculate residuals for each subject, gene, trim
+    predicted_trims[, residual := empirical_prob - predicted_prob]
+
+    avg_resids = predicted_trims[, mean(residual), by = .(gene, trim_length)]
+    setnames(avg_resids, 'V1', 'avg_resid')
+    return(avg_resids)
 }
