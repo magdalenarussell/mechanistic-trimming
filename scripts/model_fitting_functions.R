@@ -53,11 +53,11 @@ get_start_list <- function(){
 fit_model <- function(group_motif_data){
     formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
-    start_list = get_start_list()
+    # start_list = get_start_list()
 
     model = mclogit(formula, 
-                    data = group_motif_data, 
-                    start = start_list) 
+                    data = group_motif_data) 
+                    # start = start_list) 
 
     return(model)
 }
