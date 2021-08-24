@@ -22,7 +22,7 @@ TRIM_TYPE <<- args[1]
 stopifnot(TRIM_TYPE == 'v_trim')
 
 MOTIF_TYPE <<- 'bounded'
-stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded'))
+stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded', 'unbounded_no_pnuc'))
 
 NCPU <<- as.numeric(args[2])
 
