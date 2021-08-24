@@ -4,6 +4,7 @@ slurm*
 general_cluster_submit*
 plots/
 test* 
+temp_*
 
 # History files
 .Rhistory
