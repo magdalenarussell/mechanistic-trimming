@@ -1,13 +1,13 @@
 UPPER_TRIM_BOUND <<- 18
 #MR TODO change to 1 once we are done with model eval
 LOWER_TRIM_BOUND <<- 2 
-PNUC_COUNT <<- 2
+PNUC_COUNT <<- 0
 
 get_motifs <- function(tcr_dataframe, subject_id){
     motif_data = general_get_motifs(tcr_dataframe, subject_id)
     return(motif_data)
 }
-
+ 
 set_contrasts <- function(group_motif_data, ref_base = 'A'){
     positions = get_positions()
     for (position in positions){

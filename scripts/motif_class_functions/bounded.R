@@ -1,5 +1,7 @@
 UPPER_TRIM_BOUND <<- 18
 LOWER_TRIM_BOUND <<- 2
+PNUC_COUNT <<- 2
+ 
 # TODO change this back once we are done comparing models
 # LOWER_TRIM_BOUND <<- max(RIGHT_NUC_MOTIF_COUNT - 2, 1)
 
