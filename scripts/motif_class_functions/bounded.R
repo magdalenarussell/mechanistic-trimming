@@ -1,5 +1,4 @@
-UPPER_TRIM_BOUND <<- 18
-LOWER_TRIM_BOUND <<- 2
+LOWER_TRIM_BOUND <<- 2 
 PNUC_COUNT <<- 2
  
 # TODO change this back once we are done comparing models

@@ -1,4 +1,23 @@
 source(paste0('plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
+source(paste0(PROJECT_PATH, '/scripts/data_compilation_functions.R'))
+
+compile_trims <- function(directory){
+    files = fs::dir_ls(path = directory)
+    registerDoParallel(cores=NCPU)
+    together = foreach(file = files, .combine = 'rbind') %dopar% {
+        temp = fread(file)
+        subject_id = extract_subject_ID(file)
+        temp$subject = subject_id
+        cols = c('subject', 'productive', GENE_NAME, TRIM_TYPE)
+        temp[, .N, by = cols]
+    }
+    stopImplicitCluster()
+    
+    new_cols = c('subject', 'productive', TRIM_TYPE)
+    concat = together[, sum(N), by = new_cols]
+    setnames(concat, 'V1', 'count')
+    return(concat)
+}
 
 get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
     whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
@@ -399,4 +418,23 @@ plot_model_evaluation_scatter <- function(file_path = get_model_evaluation_file_
         panel_border(color = 'gray60', size = 1.5) 
 
     ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+plot_average_trims <- function(directory){
+    data = compile_trims(directory)
+    expanded = as.data.table(lapply(data, rep, data$count))
+    expanded[productive == TRUE, productivity:= 'productive']
+    expanded[productive == FALSE, productivity:= 'non-productive']
+
+    plot = ggplot(expanded, aes(x=get(TRIM_TYPE), group = subject)) +
+           facet_grid(rows = vars(productivity)) +
+           stat_ecdf(geom = "step", size = 0.5, alpha = 0.5) +
+           theme_cowplot(font_family = 'Arial') +
+           theme(legend.position = "none", axis.text = element_text(size = 24), panel.spacing = unit(2, "lines"), strip.text = element_text(size = 22), axis.line = element_blank(), text = element_text(size = 40), axis.ticks = element_line(color = 'gray60', size = 1.5)) +
+            background_grid(major = 'xy') +
+            xlab(TRIM_TYPE) +
+            ylab('Cumulative probability')
+
+    filename = paste0(PROJECT_PATH, '/plots/random/', TRIM_TYPE, '_dist_by_subject.pdf')
+    ggsave(filename, plot = plot, width = 12, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 }
