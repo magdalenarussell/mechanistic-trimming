@@ -1,5 +1,6 @@
 source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
 source(paste0('scripts/model_group_functions/', MODEL_GROUP, '.R'))
+source(paste0('scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 
 get_positions <- function(){
     positions = c(paste0('motif_5end_pos', seq(LEFT_NUC_MOTIF_COUNT, 1)), paste0('motif_3end_pos', seq(1, RIGHT_NUC_MOTIF_COUNT)))
@@ -35,14 +36,6 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
     return(together)
 }
 
-get_model_formula <- function(){
-    motif_positions = get_positions() 
-    motif_positions_together = paste(motif_positions, collapse = ' + ')
-
-    formula = formula(paste0('cbind(weighted_observation, interaction(gene, subject)) ~ ', motif_positions_together))
-    return(formula)
-}
-
 get_start_list <- function(){
     positions = get_positions()
     position_count = length(positions)
@@ -63,7 +56,7 @@ fit_model <- function(group_motif_data){
 }
 
 get_predicted_dist_file_path <- function(){
-    path = file.path(OUTPUT_PATH, 'predicted_trimming_distributions', paste0(MODEL_GROUP,'_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), GENE_WEIGHT_TYPE)
+    path = file.path(OUTPUT_PATH, 'predicted_trimming_distributions', paste0(MODEL_GROUP,'_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), GENE_WEIGHT_TYPE, MODEL_TYPE)
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -84,14 +77,14 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base){
     together = matrix(0, nrow = 4, ncol = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT)
     colnames(together) = positions
     rownames(together) = c('A', 'C', 'T', 'G')
-
-    for (coef in seq(1, length(coef(model)))){
-        name = names(coef(model)[coef])
-        position = substring(name, 1, 15)
+ 
+    for (position in positions){
         levels = get_levels(group_motif_data, ref_base, position)
-        num = substring(name, 16, 16)
-        base = levels[number == num]$base
-        together[base, position] = coef(model)[coef]
+        indices = levels[base %in% c('A', 'C', 'G', 'T') & !is.na(number)]$number
+        for (index in indices){
+            base = levels[number == index]$base
+            together[base, position] = coef(model)[[paste0(position, index)]]
+        }
     }
 
     for (position in positions){
@@ -104,7 +97,7 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base){
 }
 
 get_pwm_matrix_file_path <- function(){
-    path = file.path(OUTPUT_PATH, 'predicted_coefficient_matrix', paste0(MODEL_GROUP, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), GENE_WEIGHT_TYPE)
+    path = file.path(OUTPUT_PATH, 'predicted_coefficient_matrix', paste0(MODEL_GROUP, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), GENE_WEIGHT_TYPE, MODEL_TYPE)
     dir.create(path, recursive = TRUE)
     
     return(path)
