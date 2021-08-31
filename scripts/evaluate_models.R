@@ -26,6 +26,7 @@ NCPU <<- as.numeric(args[3])
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
 
+# NOTE: This method is only applicable for models fit across all subjects!
 MODEL_GROUP <<- 'all_subjects'
 
 GENE_WEIGHT_TYPE <<- args[4]
@@ -37,6 +38,8 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[7]) 
+
+MODEL_TYPE <<- args[8]
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
@@ -55,6 +58,9 @@ model = fit_model(motif_data_subset)
 
 # Compute conditional logistic loss value for held out sample using model
 log_loss = calculate_cond_log_loss(model, sample)
+
+# Write model fit across all data
+fit_model_by_group(motif_data)
 
 # Append results to the end of a file
 write_result_dt(log_loss, sample)
