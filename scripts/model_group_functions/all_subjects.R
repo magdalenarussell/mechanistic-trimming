@@ -21,21 +21,23 @@ fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
     
     fwrite(motif_data, location, sep = '\t')
 
-    # calculate coeffiecients
-    pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')
-    pwm_dt = as.data.table(pwm_matrix)
-    pwm_dt$base = rownames(pwm_matrix)
-    pwm_dt$model_group = MODEL_GROUP
+    if (grepl('motif', MODEL_TYPE, fixed = TRUE)){
+        # calculate coeffiecients
+        pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')
+        pwm_dt = as.data.table(pwm_matrix)
+        pwm_dt$base = rownames(pwm_matrix)
+        pwm_dt$model_group = MODEL_GROUP
 
-    # save coefficients
-    pwm_file_path = get_pwm_matrix_file_path()
-    pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
-    location = file.path(pwm_file_path, pwm_file_name)
+        # save coefficients
+        pwm_file_path = get_pwm_matrix_file_path()
+        pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
+        location = file.path(pwm_file_path, pwm_file_name)
 
-    if (isTRUE(write_coeffs)){
-        fwrite(pwm_dt, location, sep = '\t')
-    } else {
-        return(pwm_dt)
+        if (isTRUE(write_coeffs)){
+            fwrite(pwm_dt, location, sep = '\t')
+        } else {
+            return(pwm_dt)
+        }
     }
 }
 

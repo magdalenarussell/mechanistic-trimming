@@ -23,6 +23,13 @@ set_contrasts <- function(group_motif_data, ref_base = 'A'){
             contrasts(group_motif_data[[position]]) = contrasts
         }
     }
+
+    if (grepl('distance', MODEL_TYPE, fixed = TRUE)){
+        trim_count = UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1
+        group_motif_data$trim_length = as.factor(group_motif_data$trim_length)
+        contrasts(group_motif_data$trim_length) = contr.sum(trim_count) 
+    }
+
     return(group_motif_data)
 }
 

@@ -38,6 +38,8 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[8]) 
 
+MODEL_TYPE <<- args[9]
+
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 

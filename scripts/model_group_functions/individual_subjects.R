@@ -24,17 +24,19 @@ fit_model_by_group <- function(motif_data){
         complete_name = file.path(file_path, file_name)
         fwrite(motif_data_subset, complete_name, sep = '\t')
 
-        # calculate coeffiecients
-        pwm_matrix = get_coeffiecient_matrix(motif_data_subset, ref_base = 'A')
-        pwm_dt = as.data.table(pwm_matrix)
-        pwm_dt$base = rownames(pwm_matrix)
-        pwm_dt$model_group = indiv
+        if (grepl('motif', MODEL_TYPE, fixed = TRUE)){
+            # calculate coeffiecients
+            pwm_matrix = get_coeffiecient_matrix(motif_data_subset, ref_base = 'A')
+            pwm_dt = as.data.table(pwm_matrix)
+            pwm_dt$base = rownames(pwm_matrix)
+            pwm_dt$model_group = indiv
 
-        # save coefficients
-        pwm_file_path = get_pwm_matrix_file_path()
-        pwm_file_name = get_pwm_matrix_file_name(subgroup = indiv)
-        pwm_complete_name = file.path(pwm_file_path, pwm_file_name)
-        fwrite(pwm_dt, pwm_complete_name, sep = '\t')
+            # save coefficients
+            pwm_file_path = get_pwm_matrix_file_path()
+            pwm_file_name = get_pwm_matrix_file_name(subgroup = indiv)
+            pwm_complete_name = file.path(pwm_file_path, pwm_file_name)
+            fwrite(pwm_dt, pwm_complete_name, sep = '\t')
+        }
     }
 }
 

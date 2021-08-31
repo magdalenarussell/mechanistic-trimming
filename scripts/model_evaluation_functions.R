@@ -81,7 +81,7 @@ get_model_evaluation_file_name <- function(){
 
 write_result_dt <- function(log_loss, sample_data){
     file_name = get_model_evaluation_file_name()
-    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, log_loss = log_loss, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND) 
+    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, log_loss = log_loss, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND, model_type = MODEL_TYPE) 
     
     if (file.exists(file_name)){
         results = fread(file_name)
