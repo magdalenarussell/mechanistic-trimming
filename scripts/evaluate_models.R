@@ -36,6 +36,8 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
 
+UPPER_TRIM_BOUND <<- as.numeric(args[7]) 
+
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('scripts/model_evaluation_functions.R')

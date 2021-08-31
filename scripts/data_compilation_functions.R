@@ -175,5 +175,3 @@ compile_all_motifs <- function(directory){
     }
     stopImplicitCluster()
 }
-
-
