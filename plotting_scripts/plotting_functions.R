@@ -44,7 +44,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
 }
 
 get_predicted_dist_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'predicted_trimming_distributions', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_distributions')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -97,9 +97,8 @@ map_positions_to_values <- function(positions){
 }
 
 get_coef_heatmap_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_coefficient_heatmaps', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_heatmaps')
     dir.create(path, recursive = TRUE)
-
     return(path)
 }
 
@@ -142,7 +141,8 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
 }
 
 get_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'predicted_trimming_residuals', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_residuals')
+
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -171,9 +171,9 @@ plot_model_residual_boxplot_single_group <- function(data, gene_name, file_name)
 }
 
 get_coef_variations_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_coefficient_variations', MODEL_GROUP, GENE_WEIGHT_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
-    dir.create(path, recursive = TRUE)
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_variations')
 
+    dir.create(path, recursive = TRUE)
     return(path)
 }
 
@@ -220,7 +220,7 @@ plot_model_coefficient_variations <- function(model_coef_matrix){
 }
 
 get_all_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'ALL_predicted_trimming_residuals', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'ALL_predicted_trimming_residuals')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -232,24 +232,39 @@ plot_all_model_residuals_plot <- function(data, file_name){
     setnames(mean_data, 'V1', 'mean_residual')
     overall_mean_data = data[, mean(residual), by = .(trim_length)]
     setnames(overall_mean_data, 'V1', 'overall_mean_residual')
-    plot = ggplot(data = mean_data, aes(x = trim_length, y = mean_residual, group = gene)) +
-        geom_line(size = 2, alpha = 0.5) +
-        geom_line(data = overall_mean_data, aes(x = trim_length, y = overall_mean_residual), color = 'blue', size = 2, alpha = 0.8) +
+
+    var_data = data[, var(residual), by = .(trim_length)]
+    setnames(var_data, 'V1', 'var')
+
+    plot = ggplot() +
+        geom_line(data = mean_data, aes(x = trim_length, y = mean_residual, group = gene), size = 2, alpha = 0.5) +
         geom_hline(yintercept = 0, color = 'gray', size = 3) +
-        xlab('Number of trimmed nucleotides') +
-        ylab('Observed prob - Predicted prob') +
+        geom_line(data = overall_mean_data, aes(x = trim_length, y = overall_mean_residual), color = 'blue', size = 2, alpha = 0.8) +
+        ylab('Observed prob - Predicted prob\n') +
         theme_cowplot(font_family = 'Arial') + 
-        theme(legend.position = "none", text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+        theme(legend.position = "none", text = element_text(size = 30), axis.text.x=element_blank(), axis.title.x = element_blank(), axis.text.y = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
         ylim(-0.5, 1)
     
-    ggsave(file_name, plot = plot, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+    plot_var = ggplot(var_data, aes(x = trim_length, y = var)) +
+        geom_line(size = 2, color = 'green4') +
+        xlab('Number of trimmed nucleotides') +
+        ylab('Variance of\nper-gene residuals\n') +
+        theme_cowplot(font_family = 'Arial') +
+        theme(text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) +
+        ylim(0, 0.05)
+
+    aligned = align_plots(plot, plot_var, align = 'v', axis = 'l')
+    together = plot_grid(aligned[[1]], aligned[[2]], ncol = 1, rel_heights = c(2, 0.5))
+    ggsave(file_name, plot = together, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
     return(plot) 
 }
 
 get_base_composition_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_base_composition', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_base_composition')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -311,7 +326,7 @@ plot_gene_composition <- function(motif_data, weighting = 'uniform'){
 }
 
 get_resid_compare_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'residual_comparison', MODEL_GROUP, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'residual_comparison')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -374,16 +389,22 @@ plot_positional_residual_scatter <- function(residual_avg_df, features_df, annot
 
 
 get_model_eval_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', 'model_evaluation', MODEL_GROUP, paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, 'model_evaluation', paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
 
-plot_model_evaluation_heatmap <- function(file_path = get_model_evaluation_file_name(), with_values = FALSE){
+plot_model_evaluation_heatmap <- function(file_path = get_model_evaluation_file_name(), with_values = FALSE, model_type_filter = NA){
     path = get_model_eval_file_path()
-    file_name = paste0(path, '/model_evaluation_heatmap.pdf')
+    file_name = paste0(path, '/model_evaluation_heatmap_model_type_filter_', model_type_filter, '.pdf')
     eval_data = fread(file_path)
-    plot = ggplot(eval) +
+    
+    if (!is.na(model_type_filter)){
+        eval_data = eval_data[model_type == model_type_filter]
+    }        
+
+    plot = ggplot(eval_data) +
+        facet_wrap(~model_type) +
         geom_tile(aes(x = motif_length_5_end, y = motif_length_3_end, fill = log_loss)) +
         theme_cowplot(font_family = 'Arial') + 
         xlab('5\' motif length') +
@@ -400,14 +421,23 @@ plot_model_evaluation_heatmap <- function(file_path = get_model_evaluation_file_
     ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_model_evaluation_scatter <- function(file_path = get_model_evaluation_file_name()){
+plot_model_evaluation_scatter <- function(file_path = get_model_evaluation_file_name(), model_type_filter = NA){
     path = get_model_eval_file_path()
-    file_name = paste0(path, '/model_evaluation_scatter.pdf')
+    file_name = paste0(path, '/model_evaluation_scatter_model_type_filter_', model_type_filter, '.pdf')
     eval_data = fread(file_path)
-    eval_data[, length := motif_length_5_end + motif_length_3_end]
 
-    plot = ggplot(eval) +
-        geom_point(aes(x = length, y = log_loss, color = motif_length_5_end), size = 5) +
+    if (!is.na(model_type_filter)){
+        eval_data = eval_data[model_type == model_type_filter]
+    }        
+
+    eval_data[, length := motif_length_5_end + motif_length_3_end]
+    eval_data[!grepl('motif', model_type, fixed = TRUE), length := 0]
+    eval_data[!grepl('motif', model_type, fixed = TRUE), motif_length_5_end := 0] 
+
+    eval_data = unique(eval_data[, c('length', 'log_loss', 'model_type', 'motif_length_5_end')])
+
+    plot = ggplot(eval_data) +
+        geom_point(aes(x = length, y = log_loss, shape = model_type, color = motif_length_5_end), size = 6) +
         theme_cowplot(font_family = 'Arial') + 
         xlab('Total motif length') +
         ylab('Conditional log loss') +

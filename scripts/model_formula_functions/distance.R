@@ -3,4 +3,8 @@ get_model_formula <- function(){
     return(formula)
 }
 
+process_data_for_model_fit <- function(group_motif_data){
+    return(group_motif_data)
+}
+
 
