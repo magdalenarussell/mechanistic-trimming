@@ -44,6 +44,7 @@ get_start_list <- function(){
 }
 
 fit_model <- function(group_motif_data){
+    group_motif_data = process_data_for_model_fit(group_motif_data)
     formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
     # start_list = get_start_list()

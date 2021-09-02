@@ -1,5 +1,7 @@
 source('config/config.R')
 
+library(ggplot2)
+library(cowplot)
 library(foreach)
 library(doParallel)
 library(tidyverse)
@@ -31,14 +33,18 @@ MODEL_GROUP <<- 'all_subjects'
 GENE_WEIGHT_TYPE <<- args[4]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
-# 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
-# 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+LOWER_TRIM_BOUND <<- 2
+UPPER_TRIM_BOUND <<- args[5] 
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 
-plot_model_evaluation_scatter()
+plot_model_evaluation_heatmap(model_type_filter = 'motif')
+plot_model_evaluation_heatmap(model_type_filter = 'motif_distance')
+plot_model_evaluation_heatmap(model_type_filter = 'distance')
 plot_model_evaluation_heatmap()
 
+plot_model_evaluation_scatter(model_type_filter = 'motif')
+plot_model_evaluation_scatter(model_type_filter = 'motif_distance')
+plot_model_evaluation_scatter(model_type_filter = 'distance')
+plot_model_evaluation_scatter()
