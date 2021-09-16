@@ -7,6 +7,7 @@ get_pwm_matrix_file_name <- function(subgroup){
 }
 
 fit_model_by_group <- function(motif_data){
+    motif_data = process_data_for_model_fit(motif_data)
     options(contrasts = rep("contr.sum", 2))
 
     for (indiv in unique(motif_data$subject)){

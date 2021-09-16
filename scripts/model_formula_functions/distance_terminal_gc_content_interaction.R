@@ -1,0 +1,42 @@
+get_model_formula <- function(){
+    formula = formula(paste0('cbind(weighted_observation, interaction(gene, subject)) ~ as.factor(trim_length) * terminal_gc_content'))
+    return(formula)
+}
+
+get_GC_content <- function(){
+    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
+    trims = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)
+    
+    genes = whole_nucseq$gene_names[substring(whole_nucseq$gene_names, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
+    together = data.table(gene = rep(genes, length(trims)), trim_length = rep(trims, length(genes)))
+    together = merge(together, whole_nucseq, by.x = 'gene', by.y = 'gene_names')
+
+    # get length of terminal seq
+    #NOT INCLUDING PNUCS IN THIS TERMINAL GC CONTENT CALCULATION
+    together[, depth := trim_length + LEFT_NUC_MOTIF_COUNT]
+
+    # get terminal seq
+    together[, terminal_seq := substring(sequences, nchar(sequences) - depth + 1, nchar(sequences))]
+
+    # get GC content
+    seq_list = DNAStringSet(together$terminal_seq)
+    base_counts = as.data.table(letterFrequency(seq_list, letters="ACGT", OR = 0))
+    base_counts[, terminal_gc_content := (C+G)/(A+C+G+T)]
+
+    # merge
+    together = cbind(together, base_counts)
+    return(together[, c('gene', 'trim_length', 'terminal_gc_content')])
+}
+
+process_data_for_model_fit <- function(group_motif_data){
+    if (!('terminal_gc_content' %in% colnames(group_motif_data))){
+        terminal_gc = get_GC_content()
+        if (is.factor(group_motif_data$trim_length)){ 
+            terminal_gc$trim_length = as.factor(terminal_gc$trim_length)
+        }
+        together = merge(group_motif_data, terminal_gc, by = c('gene', 'trim_length'))
+    } else {
+        together = group_motif_data
+    }
+    return(together)
+}
