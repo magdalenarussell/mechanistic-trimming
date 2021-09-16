@@ -71,6 +71,7 @@ get_levels <- function(group_motif_data, ref_base, position){
 
 
 get_coeffiecient_matrix <- function(group_motif_data, ref_base){
+    # group_motif_data = process_data_for_model_fit(group_motif_data)
     group_motif_data = set_contrasts(group_motif_data, ref_base)
     model = fit_model(group_motif_data)
     positions = get_positions()
