@@ -388,14 +388,15 @@ plot_positional_residual_scatter <- function(residual_avg_df, features_df, annot
 
 
 
-get_model_eval_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, 'model_evaluation', paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+get_model_eval_file_path <- function(type){
+    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, paste0('model_evaluation_', type), paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
 
-plot_model_evaluation_heatmap <- function(file_path = get_model_evaluation_file_name(), with_values = FALSE, model_type_filter = NA){
-    path = get_model_eval_file_path()
+plot_model_evaluation_heatmap <- function(type, with_values = FALSE, model_type_filter = NA){
+    file_path = get_model_evaluation_file_name(type) 
+    path = get_model_eval_file_path(type)
     file_name = paste0(path, '/model_evaluation_heatmap_model_type_filter_', model_type_filter, '.pdf')
     eval_data = fread(file_path)
     
@@ -403,26 +404,37 @@ plot_model_evaluation_heatmap <- function(file_path = get_model_evaluation_file_
         eval_data = eval_data[model_type == model_type_filter]
     }        
 
+    if (type == 'log_loss'){
+        fill_lab = 'Conditional log loss'
+    } else if (type == 'per_gene'){
+        fill_lab = 'Average root mean\nsquared error\nacross genes'
+    } else if (type == 'per_gene_per_trim'){
+        fill_lab = 'Average root mean\nsquared error\nacross genes, trims'
+    }
+
+    setnames(eval_data, type, 'loss')
+
     plot = ggplot(eval_data) +
         facet_wrap(~model_type) +
-        geom_tile(aes(x = motif_length_5_end, y = motif_length_3_end, fill = log_loss)) +
+        geom_tile(aes(x = motif_length_5_end, y = motif_length_3_end, fill = loss)) +
         theme_cowplot(font_family = 'Arial') + 
         xlab('5\' motif length') +
         ylab('3\' motif length') +
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
         guides(fill = guide_colourbar(barheight = 14)) +
-        scale_fill_viridis_c(name = 'Conditional Log Loss')
+        scale_fill_viridis_c(name = fill_lab)
     
     if (with_values == TRUE){
         plot = plot +
-            geom_text(data = eval, aes(x = motif_length_5_end, y = motif_length_3_end, label = round(log_loss, 0)))
+            geom_text(data = eval, aes(x = motif_length_5_end, y = motif_length_3_end, label = round(loss, 0)))
     }
 
     ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_model_evaluation_scatter <- function(file_path = get_model_evaluation_file_name(), model_type_filter = NA){
-    path = get_model_eval_file_path()
+plot_model_evaluation_scatter <- function(type, model_type_filter = NA){
+    file_path = get_model_evaluation_file_name(type)
+    path = get_model_eval_file_path(type)
     file_name = paste0(path, '/model_evaluation_scatter_model_type_filter_', model_type_filter, '.pdf')
     eval_data = fread(file_path)
 
@@ -434,20 +446,37 @@ plot_model_evaluation_scatter <- function(file_path = get_model_evaluation_file_
     eval_data[!grepl('motif', model_type, fixed = TRUE), length := 0]
     eval_data[!grepl('motif', model_type, fixed = TRUE), motif_length_5_end := 0] 
 
-    eval_data = unique(eval_data[, c('length', 'log_loss', 'model_type', 'motif_length_5_end')])
+    setnames(eval_data, type, 'loss')
+    eval_data = unique(eval_data[, c('length', 'loss', 'model_type', 'motif_length_5_end')])
 
-    plot = ggplot(eval_data) +
-        geom_point(aes(x = length, y = log_loss, shape = model_type, color = motif_length_5_end), size = 6) +
+    if (type == 'log_loss'){
+        ylab = 'Conditional log loss'
+    } else if (type == 'per_gene'){
+        ylab = 'Average root mean squared error across genes'
+    } else if (type == 'per_gene_per_trim'){
+        ylab = 'Average root mean squared error across genes, trims'
+    }
+
+    if (length(unique(eval_data$model_type)) > 3){
+        plot = ggplot(eval_data) +
+            geom_point(aes(x = length, y = loss, color = model_type), size = 6, alpha = 0.7) +
+            scale_color_viridis_d(name = 'Model type')
+    } else {
+        plot = ggplot(eval_data) +
+            geom_point(aes(x = length, y = loss, shape = model_type, color = motif_length_5_end), size = 6, alpha = 0.7) +
+            scale_color_viridis_c(name = '5\' motif length')
+    }
+    
+    final_plot = plot +
         theme_cowplot(font_family = 'Arial') + 
         xlab('Total motif length') +
-        ylab('Conditional log loss') +
+        ylab(ylab) +
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
         guides(fill = guide_colourbar(barheight = 14)) + 
-        scale_color_viridis_c(name = '5\' motif length')+
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) 
 
-    ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+    ggsave(file_name, plot = final_plot, width = 13, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
 plot_average_trims <- function(directory){
