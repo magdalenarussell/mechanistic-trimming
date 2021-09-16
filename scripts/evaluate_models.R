@@ -41,9 +41,12 @@ UPPER_TRIM_BOUND <<- as.numeric(args[7])
 
 MODEL_TYPE <<- args[8]
 
+RESIDUAL_COMPARE_FEATURE <<- NULL
+
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('scripts/model_evaluation_functions.R')
+source('plotting_scripts/residual_comparison_functions.R')
 
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data()
@@ -62,6 +65,11 @@ log_loss = calculate_cond_log_loss(model, sample)
 # Write model fit across all data
 fit_model_by_group(motif_data)
 
+predicted_trims = get_predicted_distribution_data()
+per_gene_per_trim_resid = evaluate_model_per_gene(predicted_trims, type = 'per_gene_per_trim')
+per_gene_resid = evaluate_model_per_gene(predicted_trims, type = 'per_gene')
+
 # Append results to the end of a file
-write_result_dt(log_loss, sample)
-    
+write_result_dt(log_loss, 'log_loss')
+write_result_dt(per_gene_per_trim_resid, 'per_gene_per_trim')
+write_result_dt(per_gene_resid, 'per_gene')

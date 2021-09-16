@@ -67,6 +67,7 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
 
 calculate_cond_log_loss <- function(model, sample_data){
     #TODO switch this function to mclogit.predict (if typo is fixed..."contasts")
+    sample_data = process_data_for_model_fit(sample_data)
     sample_data$prediction = temp_predict(model, newdata = sample_data)
     sample_data$log_prediction = log(sample_data$prediction)
     sample_data$weighted_log_prediction = sample_data$log_prediction * sample_data$count
@@ -74,14 +75,16 @@ calculate_cond_log_loss <- function(model, sample_data){
     return(log_loss)
 }
 
-get_model_evaluation_file_name <- function(){
-    name = file.path(OUTPUT_PATH, 'model_evaluation.tsv')
+get_model_evaluation_file_name <- function(type){
+    stopifnot(type %in% c('log_loss', 'per_gene', 'per_gene_per_trim'))
+    name = file.path(OUTPUT_PATH, paste0('model_evaluation_', type, '.tsv'))
     return(name)
 }
 
-write_result_dt <- function(log_loss, sample_data){
-    file_name = get_model_evaluation_file_name()
-    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, log_loss = log_loss, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND, model_type = MODEL_TYPE) 
+write_result_dt <- function(log_loss, type){
+    file_name = get_model_evaluation_file_name(type)
+    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND, model_type = MODEL_TYPE) 
+    result[[type]] = log_loss
     
     if (file.exists(file_name)){
         results = fread(file_name)
@@ -91,4 +94,15 @@ write_result_dt <- function(log_loss, sample_data){
         fwrite(result, file_name, sep = '\t')
     }
     return(result)
+}
+
+evaluate_model_per_gene <- function(data, type){
+    if (type == 'per_gene'){
+        rmse = calculate_rmse_by_gene(data)
+    } else if (type == 'per_gene_per_trim'){
+        rmse = calculate_rmse(data)
+    }
+
+    mean_abs_resid = mean(rmse$rmse)
+    return(mean_abs_resid)
 }
