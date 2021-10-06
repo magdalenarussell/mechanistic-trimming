@@ -443,8 +443,6 @@ plot_model_evaluation_scatter <- function(type, model_type_filter = NA){
     }        
 
     eval_data[, length := motif_length_5_end + motif_length_3_end]
-    eval_data[!grepl('motif', model_type, fixed = TRUE), length := 0]
-    eval_data[!grepl('motif', model_type, fixed = TRUE), motif_length_5_end := 0] 
 
     setnames(eval_data, type, 'loss')
     eval_data = unique(eval_data[, c('length', 'loss', 'model_type', 'motif_length_5_end')])
@@ -459,8 +457,7 @@ plot_model_evaluation_scatter <- function(type, model_type_filter = NA){
 
     if (length(unique(eval_data$model_type)) > 3){
         plot = ggplot(eval_data) +
-            geom_point(aes(x = length, y = loss, color = model_type), size = 6, alpha = 0.7) +
-            scale_color_viridis_d(name = 'Model type')
+            geom_point(aes(x = length, y = loss, color = model_type), size = 6, alpha = 0.7) 
     } else {
         plot = ggplot(eval_data) +
             geom_point(aes(x = length, y = loss, shape = model_type, color = motif_length_5_end), size = 6, alpha = 0.7) +

@@ -39,8 +39,11 @@ UPPER_TRIM_BOUND <<- args[5]
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 
+model_type_files = list.files(path = 'scripts/model_formula_functions/')
+model_types = str_sub(model_type_files[model_type_files != '_ignore'], end = -3)
+
 for (type in c('per_gene', 'log_loss', 'per_gene_per_trim')){
-    for (model_type in c('motif', 'motif_distance', 'distance', 'motif_distance_terminal_gc_content', 'distance_terminal_gc_content', 'terminal_gc_content', 'motif_terminal_gc_content')){
+    for (model_type in model_types){
         plot_model_evaluation_heatmap(type, model_type_filter = model_type)
         plot_model_evaluation_scatter(type, model_type_filter = model_type)
     }

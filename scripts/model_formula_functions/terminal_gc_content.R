@@ -11,6 +11,10 @@ get_GC_content <- function(){
     together = data.table(gene = rep(genes, length(trims)), trim_length = rep(trims, length(genes)))
     together = merge(together, whole_nucseq, by.x = 'gene', by.y = 'gene_names')
 
+    setnames(together, 'gene', GENE_NAME)
+    map = get_common_genes_from_seqs(together)
+    together = merge(together, map, by = GENE_NAME)[,-c('v_gene')]
+
     # get length of terminal seq
     #NOT INCLUDING PNUCS IN THIS TERMINAL GC CONTENT CALCULATION
     together[, depth := trim_length + LEFT_NUC_MOTIF_COUNT]
@@ -25,10 +29,11 @@ get_GC_content <- function(){
 
     # merge
     together = cbind(together, base_counts)
-    return(together[, c('gene', 'trim_length', 'terminal_gc_content')])
+    return(unique(together[, c('gene', 'trim_length', 'terminal_gc_content')]))
 }
 
 process_data_for_model_fit <- function(group_motif_data){
+    row_count = nrow(group_motif_data)
     if (!('terminal_gc_content' %in% colnames(group_motif_data))){
         terminal_gc = get_GC_content()
         if (is.factor(group_motif_data$trim_length)){ 
@@ -38,6 +43,6 @@ process_data_for_model_fit <- function(group_motif_data){
     } else {
         together = group_motif_data
     }
+    stopifnot(nrow(together) == row_count)
     return(together)
 }
-

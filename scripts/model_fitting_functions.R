@@ -3,7 +3,17 @@ source(paste0('scripts/model_group_functions/', MODEL_GROUP, '.R'))
 source(paste0('scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 
 get_positions <- function(){
-    positions = c(paste0('motif_5end_pos', seq(LEFT_NUC_MOTIF_COUNT, 1)), paste0('motif_3end_pos', seq(1, RIGHT_NUC_MOTIF_COUNT)))
+    if (LEFT_NUC_MOTIF_COUNT > 0){
+        left = paste0('motif_5end_pos', seq(LEFT_NUC_MOTIF_COUNT, 1))    
+    } else {
+        left = c()
+    } 
+    if (RIGHT_NUC_MOTIF_COUNT > 0){
+        right = paste0('motif_3end_pos', seq(1, RIGHT_NUC_MOTIF_COUNT))
+    } else {
+        right = c()
+    }
+    positions = c(left, right)
     return(positions)
 }
 
@@ -16,9 +26,13 @@ aggregate_subject_data_by_trim_gene <- function(subject_data){
 
 split_motif_column_by_motif_position <- function(aggregated_subject_data){
     positions = get_positions()
-    split_data = aggregated_subject_data %>% separate('motif', positions, sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
-    
-    together = merge(aggregated_subject_data, split_data)
+
+    if (LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT > 0){
+        split_data = aggregated_subject_data %>% separate('motif', positions, sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
+        together = merge(aggregated_subject_data, split_data)
+    } else {
+        together = aggregated_subject_data
+    }
     return(together)
 }
 
