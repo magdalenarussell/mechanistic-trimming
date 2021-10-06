@@ -1,12 +1,9 @@
 get_model_formula <- function(){
-    motif_positions = get_positions() 
-    motif_positions_together = paste(motif_positions, collapse = ' + ')
-
-    formula = formula(paste0('cbind(weighted_observation, interaction(gene, subject)) ~ ', motif_positions_together, ' + as.factor(trim_length) + terminal_gc_content'))
+    formula = formula(paste0('cbind(weighted_observation, interaction(gene, subject)) ~ terminal_melting'))
     return(formula)
 }
 
-get_GC_content <- function(){
+get_melting_temp <- function(){
     whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
     trims = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)
     
@@ -28,17 +25,18 @@ get_GC_content <- function(){
     # get GC content
     seq_list = DNAStringSet(together$terminal_seq)
     base_counts = as.data.table(letterFrequency(seq_list, letters="ACGT", OR = 0))
-    base_counts[, terminal_gc_content := (C+G)/(A+C+G+T)]
-
+    base_counts[(C+G+A+T) < 14 , terminal_melting := 4*(C+G)+2*(A+T)]
+    base_counts[(C+G+A+T) >= 14 , terminal_melting := 64.9 + 41*(G+C-16.4)/(A+T+G+C)]
+    
     # merge
     together = cbind(together, base_counts)
-    return(unique(together[, c('gene', 'trim_length', 'terminal_gc_content')]))
+    return(unique(together[, c('gene', 'trim_length', 'terminal_melting')]))
 }
 
 process_data_for_model_fit <- function(group_motif_data){
     row_count = nrow(group_motif_data)
-    if (!('terminal_gc_content' %in% colnames(group_motif_data))){
-        terminal_gc = get_GC_content()
+    if (!('terminal_melting' %in% colnames(group_motif_data))){
+        terminal_gc = get_melting_temp()
         if (is.factor(group_motif_data$trim_length)){ 
             terminal_gc$trim_length = as.factor(terminal_gc$trim_length)
         }
@@ -49,3 +47,4 @@ process_data_for_model_fit <- function(group_motif_data){
     stopifnot(nrow(together) == row_count)
     return(together)
 }
+
