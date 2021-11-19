@@ -175,3 +175,17 @@ compile_all_motifs <- function(directory){
     }
     stopImplicitCluster()
 }
+
+get_background_freq_by_postion <- function(motif_data){
+    positions = get_positions()
+    backgrounds = data.table()
+    for (pos in positions){
+        back = motif_data[, sum(weighted_observation), by =pos]
+        colnames(back) = c('base', 'count')
+        back$total = sum(back$count)
+        back$position = pos
+        back$freq = back$count / back$total
+        backgrounds = rbind(backgrounds, back)
+    }
+    return(backgrounds)
+}
