@@ -27,11 +27,11 @@ plot_predicted_trimming_dists <- function(data, gene_name){
     plot_predicted_trimming_dists_single_group(data, gene_name, complete_path)
 }
 
-plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALSE){
+plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALSE, write_plot = TRUE, limits = NULL){
     file_path = get_coef_heatmap_file_path()
     file_name = get_coef_heatmap_file_name()
     complete_path = file.path(file_path, file_name)
-    plot_model_coefficient_heatmap_single_group(model_coef_matrix, complete_path, with_values)
+    plot_model_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = complete_path, with_values = with_values, write_plot = write_plot, limits = limits)
 }
 
 plot_model_residual_boxplot <- function(data, gene_name){
