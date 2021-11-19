@@ -5,6 +5,8 @@ general_cluster_submit*
 plots/
 test* 
 temp_*
+analysis/
+analysis_scripts/
 
 # History files
 .Rhistory
