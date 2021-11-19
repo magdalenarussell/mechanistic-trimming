@@ -103,7 +103,7 @@ get_coef_heatmap_file_path <- function(){
 }
 
 
-plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL){
+plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
     data = model_coef_matrix %>%
         pivot_longer(!c(base, model_group), names_to = 'position', values_to = 'coef')
 
@@ -137,8 +137,13 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
             geom_text(data = together, aes(x = values, y = base, label = round(log_10_pdel, 2)))
     }
 
-    ggsave(file_name, plot = plot, width = 10, height = 5, units = 'in', dpi = 750, device = cairo_pdf)
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 9, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
 }
+
 
 get_residual_figure_file_path <- function(){
     path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_residuals')
@@ -432,14 +437,18 @@ plot_model_evaluation_heatmap <- function(type, with_values = FALSE, model_type_
     ggsave(file_name, plot = plot, width = 10, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_model_evaluation_scatter <- function(type, model_type_filter = NA){
+plot_model_evaluation_scatter <- function(type, model_type_list = NA){
     file_path = get_model_evaluation_file_name(type)
     path = get_model_eval_file_path(type)
-    file_name = paste0(path, '/model_evaluation_scatter_model_type_filter_', model_type_filter, '.pdf')
+    if (length(model_type_list) == 1){
+        file_name = paste0(path, '/model_evaluation_scatter_model_type_filter_', model_type_list, '.pdf')
+    } else {
+        file_name = paste0(path, '/model_evaluation_scatter_model_type_filter_NA.pdf')
+    }
     eval_data = fread(file_path)
 
-    if (!is.na(model_type_filter)){
-        eval_data = eval_data[model_type == model_type_filter]
+    if (!is.na(model_type_list)){
+        eval_data = eval_data[model_type %in% model_type_list]
     }        
 
     eval_data[, length := motif_length_5_end + motif_length_3_end]
@@ -493,4 +502,28 @@ plot_average_trims <- function(directory){
 
     filename = paste0(PROJECT_PATH, '/plots/random/', TRIM_TYPE, '_dist_by_subject.pdf')
     ggsave(filename, plot = plot, width = 12, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+plot_motif_coefficient_distribution <<- function(model_coef_matrix){
+    data = model_coef_matrix %>%
+        pivot_longer(!c(base, model_group), names_to = 'position', values_to = 'coef') %>%
+        as.data.table()
+    
+    data$log_10_pdel = data$coef/log(10)
+   
+    plot = ggplot(data, aes(x=log_10_pdel)) + 
+        geom_histogram(aes(y=..density..), binwidth=.1, fill = 'blue', alpha = 0.6) +
+        geom_density(alpha=.8, color="black", size = 3) +
+        xlim(-1, 1)
+   
+    final_plot = plot +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Motif coefficient') +
+        ylab('Probability density')
+        ylab(ylab) +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+
+    return(final_plot)
 }
