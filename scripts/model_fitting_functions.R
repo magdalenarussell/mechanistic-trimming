@@ -118,5 +118,3 @@ get_pwm_matrix_file_path <- function(){
     
     return(path)
 }
-
-
