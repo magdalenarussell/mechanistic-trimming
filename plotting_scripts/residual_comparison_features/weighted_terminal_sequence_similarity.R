@@ -1,6 +1,6 @@
 
 get_feature <- function(predicted_trims){
-    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
+    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
     gene_seqs = whole_nucseq[substring(gene_names, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
     colnames(gene_seqs) = c(GENE_NAME, 'sequences')
     gene_groups = get_common_genes_from_seqs(gene_seqs)

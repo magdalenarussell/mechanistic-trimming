@@ -5,4 +5,4 @@ source $HOME/miniconda3/etc/profile.d/conda.sh
 conda activate exomotif2 
 set -eu
 
-Rscript $PWD/scripts/compile_motif_data.R $1 $2 $3 $4 $5 $6
+Rscript $PWD/scripts/compile_motif_data.R $1 $2 $3 $4 $5 $6 $7

@@ -1,14 +1,8 @@
 source(paste0('scripts/motif_class_functions/', MOTIF_TYPE, '.R'))
-
-extract_subject_ID <- function(tcr_repertoire_file_path){
-    file_name = str_split(tcr_repertoire_file_path, "/")[[1]][3]
-    file_root_name = str_split(file_name, ".tsv")[[1]][1]
-    localID = str_split(file_root_name, "_")[[1]][3]
-    return(localID)
-}
+source(paste0('scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
 
 get_subject_motif_output_location <- function(){
-    output_location = file.path(OUTPUT_PATH, TRIM_TYPE, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     return(output_location)
 }
 
@@ -125,47 +119,6 @@ get_unobserved_motifs <- function(tcr_dataframe){
     return(together[,-c('whole_seq')])
 }
 
-general_get_motifs <- function(tcr_dataframe, subject_id){
-    #filter data by trim bounds
-    tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= LOWER_TRIM_BOUND & get(TRIM_TYPE) <= UPPER_TRIM_BOUND]
-    cdr3_variable = paste0('cdr3_nucseq_from_', substring(TRIM_TYPE, 1, 1))
-    cols = c(paste(cdr3_variable), 'sequences', 'gene', paste(TRIM_TYPE), paste0(GENE_NAME))
-    tcr_dataframe = tcr_dataframe[,..cols]
-    colnames(tcr_dataframe) = c('trimmed_seq', 'whole_seq', 'gene', 'trim_length', GENE_NAME)
-    #condense data by gene, trim, etc.
-    condensed_tcr = tcr_dataframe[, .N, by = .(trimmed_seq, whole_seq, gene, trim_length, get(GENE_NAME))]
-    colnames(condensed_tcr) = c('trimmed_seq', 'whole_seq', 'gene', 'trim_length', GENE_NAME, 'count')
-    #get motifs
-    motif_dataframe = condensed_tcr[,motif:=get_motif_context(whole_seq, trimmed_seq, trim_length)]
-    motif_dataframe$observed = TRUE
-    unobserved = get_unobserved_motifs(motif_dataframe)
-    together = rbind(motif_dataframe[,-c(1,2)], unobserved)
-    together$gene_type = GENE_NAME
-    together$subject = subject_id
-    return(together)
-}
-
-compile_motifs_for_subject <- function(file_path){
-    temp_data = fread(file_path)
-    if (GENE_NAME == 'd_gene'){
-        temp_data = temp_data[d_gene != '-']
-    }
-    subject_id = extract_subject_ID(file_path)
-    
-    output_location = get_subject_motif_output_location() 
-    dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
-    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
-    temp_data = merge(temp_data, whole_nucseq, by.x = GENE_NAME, by.y = 'gene_names')
-    gene_seqs = whole_nucseq[substring(gene_names, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
-    colnames(gene_seqs) = c(GENE_NAME, 'sequences')
-    gene_groups = get_common_genes_from_seqs(gene_seqs)
-    together = merge(temp_data, gene_groups, by = GENE_NAME)
-
-    motif_data = get_motifs(together, subject_id)
-
-    fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
-}
-
 compile_all_motifs <- function(directory){
     files = fs::dir_ls(path = directory)
     registerDoParallel(cores=NCPU)
@@ -188,4 +141,10 @@ get_background_freq_by_postion <- function(motif_data){
         backgrounds = rbind(backgrounds, back)
     }
     return(backgrounds)
+}
+
+get_raw_cdr3_seqs <- function(tcr_repertoire_file){
+    data = fread(tcr_repertoire_file)
+    cdr3s = data$cdr3_nucseq
+    return(cdr3s)
 }

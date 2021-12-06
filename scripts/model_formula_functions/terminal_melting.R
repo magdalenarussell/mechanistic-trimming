@@ -4,7 +4,7 @@ get_model_formula <- function(){
 }
 
 get_melting_temp <- function(){
-    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
+    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
     trims = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)
     
     genes = whole_nucseq$gene_names[substring(whole_nucseq$gene_names, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]

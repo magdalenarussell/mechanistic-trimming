@@ -20,7 +20,7 @@ compile_trims <- function(directory){
 }
 
 get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
-    whole_nucseq = fread('_ignore/tcrb_processed_geneseq.tsv')
+    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
     temp_data = whole_nucseq[substring(gene_names, 4, 4) == substring(gene_name, 4, 4)]
     colnames(temp_data) = c(GENE_NAME, 'sequences')
     gene_groups = get_common_genes_from_seqs(temp_data)
@@ -44,7 +44,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
 }
 
 get_predicted_dist_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_distributions')
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_distributions')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -97,7 +97,7 @@ map_positions_to_values <- function(positions){
 }
 
 get_coef_heatmap_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_heatmaps')
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_heatmaps')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -146,7 +146,7 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
 
 
 get_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_residuals')
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_residuals')
 
     dir.create(path, recursive = TRUE)
     return(path)
@@ -176,7 +176,7 @@ plot_model_residual_boxplot_single_group <- function(data, gene_name, file_name)
 }
 
 get_coef_variations_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_variations')
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_variations')
 
     dir.create(path, recursive = TRUE)
     return(path)
@@ -225,7 +225,7 @@ plot_model_coefficient_variations <- function(model_coef_matrix){
 }
 
 get_all_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'ALL_predicted_trimming_residuals')
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'ALL_predicted_trimming_residuals')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -269,7 +269,7 @@ plot_all_model_residuals_plot <- function(data, file_name){
 }
 
 get_base_composition_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_base_composition')
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_base_composition')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -331,7 +331,7 @@ plot_gene_composition <- function(motif_data, weighting = 'uniform'){
 }
 
 get_resid_compare_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'residual_comparison')
+    path = file.path(PROJECT_PATH, 'plots',ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'residual_comparison')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -394,7 +394,7 @@ plot_positional_residual_scatter <- function(residual_avg_df, features_df, annot
 
 
 get_model_eval_file_path <- function(type){
-    path = file.path(PROJECT_PATH, 'plots', MODEL_GROUP, paste0('model_evaluation_', type), paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, paste0('model_evaluation_', type), paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(path, recursive = TRUE)
     return(path)
 }
