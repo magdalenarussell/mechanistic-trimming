@@ -21,6 +21,9 @@ compile_trims <- function(directory){
 
 get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
     whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
+    setnames(whole_nucseq, 'gene', 'gene_names', skip_absent = TRUE)
+    setnames(whole_nucseq, 'sequence', 'sequences', skip_absent = TRUE)
+
     temp_data = whole_nucseq[substring(gene_names, 4, 4) == substring(gene_name, 4, 4)]
     colnames(temp_data) = c(GENE_NAME, 'sequences')
     gene_groups = get_common_genes_from_seqs(temp_data)
