@@ -15,13 +15,16 @@ blas_set_num_threads(1)
 
 args = commandArgs(trailingOnly=TRUE)
 
-TRIM_TYPE <<- args[1]
+ANNOTATION_TYPE <<- args[1]
+stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
+
+TRIM_TYPE <<- args[2]
 stopifnot(TRIM_TYPE == 'v_trim')
 
-MOTIF_TYPE <<- args[2] 
+MOTIF_TYPE <<- args[3] 
 stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded', 'unbounded_no_pnuc'))
 
-NCPU <<- as.numeric(args[3])
+NCPU <<- as.numeric(args[4])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 stopifnot(GENE_NAME == 'v_gene')
@@ -29,17 +32,17 @@ stopifnot(GENE_NAME == 'v_gene')
 # NOTE: This method is only applicable for models fit across all subjects!
 MODEL_GROUP <<- 'all_subjects'
 
-GENE_WEIGHT_TYPE <<- args[4]
+GENE_WEIGHT_TYPE <<- args[5]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[7]) 
+UPPER_TRIM_BOUND <<- as.numeric(args[8]) 
 
-MODEL_TYPE <<- args[8]
+MODEL_TYPE <<- args[9]
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
 
