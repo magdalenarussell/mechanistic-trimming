@@ -47,7 +47,12 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
 }
 
 get_predicted_dist_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_distributions')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_distributions')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -100,7 +105,13 @@ map_positions_to_values <- function(positions){
 }
 
 get_coef_heatmap_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_heatmaps')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_heatmaps')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -149,7 +160,13 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
 
 
 get_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_residuals')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'predicted_trimming_residuals')
 
     dir.create(path, recursive = TRUE)
     return(path)
@@ -179,7 +196,13 @@ plot_model_residual_boxplot_single_group <- function(data, gene_name, file_name)
 }
 
 get_coef_variations_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_variations')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_coefficient_variations')
 
     dir.create(path, recursive = TRUE)
     return(path)
@@ -228,7 +251,13 @@ plot_model_coefficient_variations <- function(model_coef_matrix){
 }
 
 get_all_residual_figure_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'ALL_predicted_trimming_residuals')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'ALL_predicted_trimming_residuals')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -272,7 +301,13 @@ plot_all_model_residuals_plot <- function(data, file_name){
 }
 
 get_base_composition_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_base_composition')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'model_base_composition')
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -334,7 +369,13 @@ plot_gene_composition <- function(motif_data, weighting = 'uniform'){
 }
 
 get_resid_compare_file_path <- function(){
-    path = file.path(PROJECT_PATH, 'plots',ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, MODEL_TYPE, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'residual_comparison')
+    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+
+    path = file.path(PROJECT_PATH, 'plots',ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'residual_comparison')
     dir.create(path, recursive = TRUE)
     return(path)
 }
