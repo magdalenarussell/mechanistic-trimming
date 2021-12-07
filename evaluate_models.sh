@@ -27,5 +27,22 @@ for LEFT_MOTIF_COUNT in {2..6..1}; do
     done
 done
 
+for LEFT_SIDE_TERMINAL_MELT_LENGTH in 5 10 15 20; do
+    for MODEL_TYPE in two_side_terminal_melting distance_two_side_terminal_melting; do
+        COMMAND="sbatch -t 120 -c $NCPU -p $PARTITION -q $PARTITION $HOME/exomotif/evaluate_single_model.sh $ANNOTATION_TYPE $TRIM_TYPE $MOTIF_TYPE $NCPU $GENE_WEIGHT_TYPE 0 0 $UPPER_TRIM_BOUND $MODEL_TYPE $LEFT_SIDE_TERMINAL_MELT_LENGTH"
+        $COMMAND
+        echo "Running \`$COMMAND\`"
+    done
+    for LEFT_MOTIF_COUNT in {2..6..1}; do
+        for RIGHT_MOTIF_COUNT in {2..6..1}; do
+            for MODEL_TYPE in motif_two_side_terminal_melting motif_distance_two_side_terminal_melting; do
+                COMMAND="sbatch -t 120 -c $NCPU -p $PARTITION -q $PARTITION $HOME/exomotif/evaluate_single_model.sh $ANNOTATION_TYPE $TRIM_TYPE $MOTIF_TYPE $NCPU $GENE_WEIGHT_TYPE $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $UPPER_TRIM_BOUND $MODEL_TYPE $LEFT_SIDE_TERMINAL_MELT_LENGTH"
+                $COMMAND
+                echo "Running \`$COMMAND\`"
+            done
+        done
+    done
+done 
+
 sbatch -t 120 -c $NCPU -p $PARTITION -q $PARTITION $HOME/exomotif/evaluate_single_model.sh $ANNOTATION_TYPE $TRIM_TYPE $MOTIF_TYPE $NCPU $GENE_WEIGHT_TYPE 0 0 $UPPER_TRIM_BOUND distance
 echo "Running distance only"
