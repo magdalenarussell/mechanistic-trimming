@@ -44,8 +44,8 @@ UPPER_TRIM_BOUND <<- as.numeric(args[8])
 
 MODEL_TYPE <<- args[9]
 
-if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
+if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }

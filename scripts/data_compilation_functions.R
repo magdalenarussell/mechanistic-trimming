@@ -9,7 +9,9 @@ get_subject_motif_output_location <- function(){
 get_common_genes_from_seqs <- function(subject_data){
     cols = c(GENE_NAME, 'sequences')
     subject_data = unique(subject_data[,..cols])
-    terminal_length = UPPER_TRIM_BOUND + LEFT_NUC_MOTIF_COUNT
+    #TODO making this constant for now...but may want to change back
+    # terminal_length = UPPER_TRIM_BOUND + LEFT_NUC_MOTIF_COUNT
+    terminal_length = UPPER_TRIM_BOUND + 20 
     subject_data$terminal_seq = substring(subject_data$sequences, nchar(subject_data$sequences)-(terminal_length -1), nchar(subject_data$sequences))
     subject_data$gene_class = str_split(subject_data[[GENE_NAME]], fixed('*'), simplify = TRUE)[,1] 
     subject_data[,cdr3_gene_group := .GRP, by = .(terminal_seq, gene_class)]

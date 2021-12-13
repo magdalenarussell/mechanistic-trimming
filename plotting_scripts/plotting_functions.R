@@ -47,7 +47,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
 }
 
 get_predicted_dist_figure_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -94,9 +94,9 @@ map_positions_to_values <- function(positions){
     values = c()
     for (position in positions){
         if (substring(position, 1, 7) == "motif_5"){
-            val = as.numeric(substring(position, nchar(position), nchar(position)))
-        } else if (substring(position, 1, 7) == "motif_3"){
             val = -1 * as.numeric(substring(position, nchar(position), nchar(position)))
+        } else if (substring(position, 1, 7) == "motif_3"){
+            val = as.numeric(substring(position, nchar(position), nchar(position)))
         }
         values = c(values, val)
     }
@@ -105,7 +105,7 @@ map_positions_to_values <- function(positions){
 }
 
 get_coef_heatmap_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -134,6 +134,8 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
         max_val = max(abs(together$log_10_pdel))
         limits = c(-max_val, max_val)
     }
+    
+    motif_length = RIGHT_NUC_MOTIF_COUNT + LEFT_NUC_MOTIF_COUNT
 
     plot = ggplot(together, aes(x=values, y=base, fill=log_10_pdel)) +
         geom_tile() +
@@ -141,9 +143,12 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
         xlab('Position') +
         ylab ('Base') +
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
-        geom_vline(xintercept = RIGHT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
+        geom_vline(xintercept = LEFT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
         guides(fill = guide_colourbar(barheight = 14)) +
-        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits)
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.35, y = 0.25, label = "5\'", size = 8) +  
+        annotate("text", x = motif_length + 0.65, y = 0.25, label = "3\'", size = 8) +  
+        coord_cartesian(ylim = c(1, 4), clip = "off")
         # scale_fill_viridis_c(name = 'log10(probability of deletion)', limits = limits)
     
     if (with_values == TRUE){
@@ -158,9 +163,78 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
     }
 }
 
+get_model_coef_heatmap_compare_file_name <- function(model_type1, model_type2, left_side_terminal_melt_length1 = NA, left_side_terminal_melt_length2 = NA){
+    if (grepl('_side_terminal_melting', model_type1, fixed = TRUE)){
+        stopifnot(!(is.na(left_side_terminal_melt_length1)))
+        model1 = paste0(model_type1, '_', left_side_terminal_melt_length1, '_length_melting_left')
+    } else {
+        model1 = model_type1
+    }
+
+    if (grepl('_side_terminal_melting', model_type2, fixed = TRUE)){
+        stopifnot(!(is.na(left_side_terminal_melt_length2)))
+        model2 = paste0(model_type2, '_', left_side_terminal_melt_length2, '_length_melting_left')
+    } else {
+        model2 = model_type2
+    }
+
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, GENE_WEIGHT_TYPE, paste0('compare_', model1, '-', model2) , paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    dir.create(path, recursive = TRUE)
+    
+    name = file.path(path, 'heatmap_compare.pdf')
+    return(name)
+}
+
+plot_model_coefficient_heatmap_compare <- function(model_coef_matrix1, model_coef_matrix2, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    pos = get_positions()
+    #get difference between two matrices
+    data = model_coef_matrix1[model_coef_matrix2, (pos) := Map(`/`, mget(pos), mget(paste0("i.", pos))), on = .(model_group, base)]
+    data = data %>%
+        pivot_longer(!c(base, model_group), names_to = 'position', values_to = 'coef')
+
+    position_values = map_positions_to_values(unique(data$position))
+    together = merge(data, position_values, by.x = 'position', by.y = 'positions')
+
+    # convert to log_10
+    # order variables
+    together$base = factor(together$base, levels = c('T', 'G', 'C', 'A'))
+    together$values = factor(together$values)
+
+    if (is.null(limits)){
+        max_val = max(abs(together$coef))
+        limits = c(-max_val, max_val)
+    }
+    
+    plot = ggplot(together, aes(x=values, y=base, fill=coef)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Position') +
+        ylab ('Base') +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        geom_vline(xintercept = RIGHT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
+        guides(fill = guide_colourbar(barheight = 14)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.35, y = 0.32, label = "5\'", size = 8) +  
+        annotate("text", x = 8.65, y = 0.32, label = "3\'", size = 8) +  
+        coord_cartesian(ylim = c(1, 4), clip = "off")
+        # scale_fill_viridis_c(name = 'log10(probability of deletion)', limits = limits)
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = together, aes(x = values, y = base, label = round(coef, 2)))
+    }
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 9, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
+
+
 
 get_residual_figure_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -196,7 +270,7 @@ plot_model_residual_boxplot_single_group <- function(data, gene_name, file_name)
 }
 
 get_coef_variations_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -251,7 +325,7 @@ plot_model_coefficient_variations <- function(model_coef_matrix){
 }
 
 get_all_residual_figure_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -301,7 +375,7 @@ plot_all_model_residuals_plot <- function(data, file_name){
 }
 
 get_base_composition_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -369,7 +443,7 @@ plot_gene_composition <- function(motif_data, weighting = 'uniform'){
 }
 
 get_resid_compare_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -570,4 +644,23 @@ plot_motif_coefficient_distribution <<- function(model_coef_matrix){
         panel_border(color = 'gray60', size = 1.5) 
 
     return(final_plot)
+}
+
+scatter_two_covariates <- function(motif_data, cov1, cov2){
+    plot = ggplot(motif_data) + 
+        geom_jitter(aes(x = get(cov1), y = get(cov2)), size = 4, alpha = 0.4)
+        geom_histogram(aes(y=..density..), binwidth=.1, fill = 'blue', alpha = 0.6) +
+        geom_density(alpha=.8, color="black", size = 3) +
+        xlim(-1, 1)
+   
+    final_plot = plot +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Motif coefficient') +
+        ylab('Probability density')
+        ylab(ylab) +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+
+
 }

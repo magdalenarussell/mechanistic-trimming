@@ -68,22 +68,19 @@ together[model_type %like% 'distance', terms := terms + 16]
 together[model_type %like% 'terminal_melting', terms := terms + 1]
 together[model_type %like% 'two_side_terminal_melting', terms := terms + 1]
 
-together$model_type = factor(together$model_type, levels = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting'))
+# together$model_type = factor(together$model_type, levels = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting'))
 
 together$neat_model_type = mapvalues(together$model_type, from = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting', 'two_side_terminal_melting', 'distance_two_side_terminal_melting', 'motif_distance_two_side_terminal_melting', 'motif_two_side_terminal_melting'), to = c('motif', 'sequence breathing', 'distance', 'distance + sequence breathing', 'motif + sequence breathing', 'motif + distance', 'motif + distance + sequence breathing', 'two-side sequence breathing', 'distance + two-side sequence breathing', 'motif + distance + two-side sequence breathing', 'motif + two-side sequence breathing'))
 
 plot = ggplot(together) +
-    # geom_point(aes(y = log_loss, x = terms, color = model_type), size = 5)+
-    geom_text_repel(aes(y = log_loss, x = terms, color = model_type, label = neat_model_type), size = 5, direction = 'y', hjust = 0) + 
+    geom_point(aes(y = log_loss, x = terms, color = model_type), size = 5)+
     theme_cowplot(font_family = 'Arial') + 
     xlab('Total number of terms') +
     ylab('Conditional log loss') +
-    theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), legend.position = 'none') +
+    theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) +
     background_grid(major = 'xy') + 
-    panel_border(color = 'gray60', size = 1.5) +
-    scale_x_continuous(breaks = seq(0, 70, 2), limits = c(0, 70))+
-    ylim(410000, 500000)
+    panel_border(color = 'gray60', size = 1.5) 
 
 path = get_model_eval_file_path('log_loss')
-file_name = paste0(path, '/neat_log_loss_term_count_scatter.pdf')
+file_name = paste0(path, '/neat_log_loss_term_count_scatter_no_label.pdf')
 ggsave(file_name, plot = plot, width = 14, height = 7, units = 'in', dpi = 750, device = cairo_pdf)

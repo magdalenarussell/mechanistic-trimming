@@ -71,7 +71,7 @@ fit_model <- function(group_motif_data){
 }
 
 get_predicted_dist_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -118,7 +118,7 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base){
 }
 
 get_pwm_matrix_file_path <- function(){
-    if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
