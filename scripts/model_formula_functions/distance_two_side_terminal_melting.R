@@ -1,5 +1,5 @@
 get_model_formula <- function(){
-    formula = formula(paste0('cbind(weighted_observation, interaction(gene, subject)) ~ left_terminal_melting + left_terminal_melting + as.factor(trim_length)'))
+    formula = formula(paste0('cbind(weighted_observation, interaction(gene, subject)) ~ right_terminal_melting + left_terminal_melting + as.factor(trim_length)'))
     return(formula)
 }
 

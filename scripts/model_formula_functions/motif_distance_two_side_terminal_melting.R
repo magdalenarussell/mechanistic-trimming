@@ -48,7 +48,6 @@ get_melting_temp <- function(){
     return(unique(together[, c('gene', 'trim_length', 'left_terminal_melting', 'right_terminal_melting')]))
 }
 
-
 process_data_for_model_fit <- function(group_motif_data){
     row_count = nrow(group_motif_data)
     if (!('left_terminal_melting' %in% colnames(group_motif_data))){

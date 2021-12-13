@@ -42,7 +42,7 @@ LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2
 
 MODEL_TYPE <<- args[10]
 
-if (grepl('two_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -55,4 +55,4 @@ source('plotting_scripts/plotting_functions.R')
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
 
-plot_model_coefficient_heatmap(pwm, with_values = TRUE)
+plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.3, 0.3))

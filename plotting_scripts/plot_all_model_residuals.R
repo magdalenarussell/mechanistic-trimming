@@ -8,7 +8,6 @@ setDTthreads(1)
 library(Biostrings)
 library(ggplot2)
 library(cowplot)
-library(ggpubr)
 library(mclogit)
 library(matrixcalc)
 library(RhpcBLASctl)
@@ -51,11 +50,8 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/residual_comparison_functions.R')
 
 # Read in dist data
 predicted_trims = get_predicted_distribution_data() 
-resids = calculate_rmse(predicted_trims)
-features = get_feature(predicted_trims)
 
-plot_residual_scatter(resids, features, annotate = FALSE)
+plot_all_model_residuals(predicted_trims)

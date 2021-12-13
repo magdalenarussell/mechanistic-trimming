@@ -8,7 +8,6 @@ setDTthreads(1)
 library(Biostrings)
 library(ggplot2)
 library(cowplot)
-library(ggpubr)
 library(mclogit)
 library(matrixcalc)
 library(RhpcBLASctl)
@@ -40,10 +39,10 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
 LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
 
-MODEL_TYPE <<- args[10]
+MODEL_TYPE <<- 'motif_distance_two_side_terminal_melting' 
 
 if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
@@ -51,11 +50,7 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/residual_comparison_functions.R')
 
-# Read in dist data
-predicted_trims = get_predicted_distribution_data() 
-resids = calculate_rmse(predicted_trims)
-features = get_feature(predicted_trims)
-
-plot_residual_scatter(resids, features, annotate = FALSE)
+# Compile data for all subjects
+motif_data = aggregate_all_subject_data()
+motif_data = process_data_for_model_fit(motif_data)
