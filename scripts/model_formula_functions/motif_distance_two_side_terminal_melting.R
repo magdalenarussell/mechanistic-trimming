@@ -9,6 +9,6 @@ get_model_formula <- function(){
 }
 
 process_data_for_model_fit <- function(group_motif_data){
-    together = process_for_two_side_terminal_melting(group_motif_data)
+    together = process_for_two_side_terminal_melting(group_motif_data, 'simple')
     return(together)
 }
