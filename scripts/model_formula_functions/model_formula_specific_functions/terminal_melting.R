@@ -1,26 +1,43 @@
 simple_terminal_melting_calculation <- function(sequence_list){
+    seq_list = DNAStringSet(sequence_list)
     # simple terminal melting calculation 
     base_counts = as.data.table(letterFrequency(seq_list, letters="ACGT", OR = 0))
     base_counts[(C+G+A+T) < 14 , terminal_melting := 4*(C+G)+2*(A+T)]
     base_counts[(C+G+A+T) >= 14 , terminal_melting := 64.9 + 41*(G+C-16.4)/(A+T+G+C)]
  
-    return(base_counts)
+    temps = data.table(terminal_seq = sequence_list, terminal_melting = base_counts$terminal_melting)
+    return(temps)
 }
 
 nearest_neighbors_terminal_melting_calculation <- function(sequence_list){
     require(rmelting)
-    melting_list = foreach(seq = sequence_list) %do% {
-        temp = melting(seq, nucleic.acid.conc = 2e-06, hybridisation.type = "dnadna", Na.conc=1) 
-        unlist(temp)[names(unlist(temp)) == 'Results.Melting temperature (C)']
-    }
-    cleaned = unlist(melting_list)
-    names(cleaned) = NULL
-    column = data.table(terminal_melting = cleaned)
-    return(column)
+    require(parallel)
+    cluster = makeCluster(NCPU)
+    melting_list = parLapply(cluster, sequence_list, function(x){
+                                 melting = rmelting::melting(x, nucleic.acid.conc = 2e-06, hybridisation.type = "dnadna", Na.conc=1)
+                                 temp = unlist(melting)[names(unlist(melting)) == 'Results.Melting temperature (C)']
+                                 data.table::data.table(terminal_seq = x, terminal_melting = temp)
+})
+    stopCluster(cluster)
+    
+    cleaned = bind_rows(melting_list)
+    cleaned$terminal_melting = as.numeric(cleaned$terminal_melting)
+    return(cleaned)
+}
+
+combo_terminal_melting_calculation <- function(sequence_list){
+    short_seqs = sequence_list[nchar(sequence_list) <= 8]
+    long_seqs = sequence_list[nchar(sequence_list) > 8]
+    
+    # use simple melting temp calculation for short sequences and the nearest neighbors approach for long sequences
+    short_temps = simple_terminal_melting_calculation(short_seqs)
+    long_temps = nearest_neighbors_terminal_melting_calculation(long_seqs)
+
+    return(rbind(short_temps, long_temps))
 }
 
 get_melting_temp <- function(calculation_type){
-    stopifnot(calculation_type %in% c('simple', 'nearest_neighbors'))
+    stopifnot(calculation_type %in% c('simple', 'nearest_neighbors', 'combo'))
     whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
     setnames(whole_nucseq, 'gene', 'gene_names', skip_absent = TRUE)
     setnames(whole_nucseq, 'sequence', 'sequences', skip_absent = TRUE)
@@ -43,15 +60,16 @@ get_melting_temp <- function(calculation_type){
     together[, terminal_seq := substring(sequences, nchar(sequences) - depth + 1, nchar(sequences))]
 
     if (calculation_type == 'simple'){
-        seq_list = DNAStringSet(together$terminal_seq)
-        melting_temps = simple_terminal_melting_calculation(seq_list) 
+        melting_temps = simple_terminal_melting_calculation(together$terminal_seq) 
     } else if (calculation_type == 'nearest_neighbors'){
-        seq_list = together$terminal_seq
-        melting_temps =  nearest_neighbors_terminal_melting_calculation(seq_list) 
+        melting_temps =  nearest_neighbors_terminal_melting_calculation(together$terminal_seq) 
+    } else if (calculation_type == 'combo'){
+        melting_temps = combo_terminal_melting_calculation(together$terminal_seq)    
     }
 
     # merge
-    together = cbind(together, melting_temps)
+    together = merge(together, unique(melting_temps), by = 'terminal_seq')
+
     return(unique(together[, c('gene', 'trim_length', 'terminal_melting')]))
 }
 

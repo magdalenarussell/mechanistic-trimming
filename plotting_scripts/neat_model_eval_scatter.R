@@ -42,6 +42,8 @@ stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'ra
 LOWER_TRIM_BOUND <<- 2
 UPPER_TRIM_BOUND <<- args[6] 
 
+TYPE <<- args[7]
+
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 
@@ -50,9 +52,7 @@ model_types = str_sub(model_type_files[model_type_files != '_ignore'], end = -3)
 model_types_neat = model_types[!grepl('gc_content', model_types)]
 model_types_neat = model_types_neat[order(model_types_neat)]
 
-type = 'log_loss'
-
-file_path = get_model_evaluation_file_name(type)
+file_path = get_model_evaluation_file_name(TYPE)
 eval_data = fread(file_path)
 eval_data = eval_data[model_type %in% model_types_neat]
 
@@ -68,12 +68,15 @@ together[model_type %like% 'distance', terms := terms + 16]
 together[model_type %like% 'terminal_melting', terms := terms + 1]
 together[model_type %like% 'two_side_terminal_melting', terms := terms + 1]
 
-# together$model_type = factor(together$model_type, levels = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting'))
+together[model_type %like% 'terminal_melting_', melting_type := sapply(model_type, function(x) tail(str_split(x, '_')[[1]], 1))]
+together[model_type %like% 'terminal_melting' & is.na(melting_type), melting_type := 'simple']
+together[is.na(melting_type), melting_type := 'NA']
 
-together$neat_model_type = mapvalues(together$model_type, from = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting', 'two_side_terminal_melting', 'distance_two_side_terminal_melting', 'motif_distance_two_side_terminal_melting', 'motif_two_side_terminal_melting'), to = c('motif', 'sequence breathing', 'distance', 'distance + sequence breathing', 'motif + sequence breathing', 'motif + distance', 'motif + distance + sequence breathing', 'two-side sequence breathing', 'distance + two-side sequence breathing', 'motif + distance + two-side sequence breathing', 'motif + two-side sequence breathing'))
+together[model_type %like% 'terminal_melting_NN', model_type := substring(model_type, 1, nchar(model_type)- 3)]
+together[model_type %like% 'terminal_melting_combo', model_type := substring(model_type, 1, nchar(model_type)- 6)]
 
 plot = ggplot(together) +
-    geom_point(aes(y = log_loss, x = terms, color = model_type), size = 5)+
+    geom_point(aes(y = get(TYPE), x = terms, color = model_type, shape = melting_type), size = 5)+
     theme_cowplot(font_family = 'Arial') + 
     xlab('Total number of terms') +
     ylab('Conditional log loss') +
@@ -81,6 +84,6 @@ plot = ggplot(together) +
     background_grid(major = 'xy') + 
     panel_border(color = 'gray60', size = 1.5) 
 
-path = get_model_eval_file_path('log_loss')
-file_name = paste0(path, '/neat_log_loss_term_count_scatter_no_label.pdf')
-ggsave(file_name, plot = plot, width = 14, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+path = get_model_eval_file_path(TYPE)
+file_name = paste0(path, '/neat_', TYPE, '_term_count_scatter_no_label.pdf')
+ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
