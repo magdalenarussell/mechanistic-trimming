@@ -68,9 +68,21 @@ together[model_type %like% 'distance', terms := terms + 16]
 together[model_type %like% 'terminal_melting', terms := terms + 1]
 together[model_type %like% 'two_side_terminal_melting', terms := terms + 1]
 
-together$model_type = factor(together$model_type, levels = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting'))
+together$neat_model_type = mapvalues(together$model_type, from = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 
+                                                                   'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting', 
+                                                                   'two_side_terminal_melting', 'distance_two_side_terminal_melting', 'motif_distance_two_side_terminal_melting', 'motif_two_side_terminal_melting',
+                                                                   'terminal_melting_NN', 'distance_terminal_melting_NN', 'motif_terminal_melting_NN', 'motif_distance_terminal_melting_NN', 
+                                                                   'two_side_terminal_melting_NN', 'distance_two_side_terminal_melting_NN', 'motif_distance_two_side_terminal_melting_NN', 'motif_two_side_terminal_melting_NN',
+                                                                   'terminal_melting_combo', 'distance_terminal_melting_combo', 'motif_terminal_melting_combo', 'motif_distance_terminal_melting_combo', 
+                                                                   'two_side_terminal_melting_combo', 'distance_two_side_terminal_melting_combo', 'motif_distance_two_side_terminal_melting_combo', 'motif_two_side_terminal_melting_combo'),
+                                     to = c('motif', 'sequence breathing', 'distance', 'distance + sequence breathing', 
+                                            'motif + sequence breathing', 'motif + distance', 'motif + distance + sequence breathing', 
+                                            'two-side sequence breathing', 'distance + two-side sequence breathing', 'motif + distance + two-side sequence breathing', 'motif + two-side sequence breathing',
+                                            'sequence breathing (NN)', 'distance + sequence breathing (NN)', 'motif + sequence breathing (NN)', 'motif + distance + sequence breathing (NN)', 
+                                            'two-side sequence breathing (NN)', 'distance + two-side sequence breathing (NN)', 'motif + distance + two-side sequence breathing (NN)', 'motif + two-side sequence breathing (NN)',
+                                            'sequence breathing (combo)', 'distance + sequence breathing (combo)', 'motif + sequence breathing (combo)', 'motif + distance + sequence breathing (combo)', 
+                                            'two-side sequence breathing (combo)', 'distance + two-side sequence breathing (combo)', 'motif + distance + two-side sequence breathing (combo)', 'motif + two-side sequence breathing (combo)'))
 
-together$neat_model_type = mapvalues(together$model_type, from = c('motif', 'terminal_melting', 'distance', 'distance_terminal_melting', 'motif_terminal_melting', 'motif_distance', 'motif_distance_terminal_melting', 'two_side_terminal_melting', 'distance_two_side_terminal_melting', 'motif_distance_two_side_terminal_melting', 'motif_two_side_terminal_melting'), to = c('motif', 'sequence breathing', 'distance', 'distance + sequence breathing', 'motif + sequence breathing', 'motif + distance', 'motif + distance + sequence breathing', 'two-side sequence breathing', 'distance + two-side sequence breathing', 'motif + distance + two-side sequence breathing', 'motif + two-side sequence breathing'))
 
 plot = ggplot(together) +
     # geom_point(aes(y = log_loss, x = terms, color = model_type), size = 5)+
@@ -81,9 +93,9 @@ plot = ggplot(together) +
     theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), legend.position = 'none') +
     background_grid(major = 'xy') + 
     panel_border(color = 'gray60', size = 1.5) +
-    scale_x_continuous(breaks = seq(0, 70, 2), limits = c(0, 70))+
+    scale_x_continuous(breaks = seq(0, 80, 2), limits = c(0, 80))+
     ylim(410000, 500000)
 
 path = get_model_eval_file_path('log_loss')
 file_name = paste0(path, '/neat_log_loss_term_count_scatter.pdf')
-ggsave(file_name, plot = plot, width = 14, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
