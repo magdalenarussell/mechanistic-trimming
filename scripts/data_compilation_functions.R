@@ -1,6 +1,6 @@
 source(paste0('scripts/motif_class_functions/', MOTIF_TYPE, '.R'))
 source(paste0('scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
-source(paste0('scripts/gene_specific_functions/', GENE_NAME, '.R'))
+source(paste0('scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 
 get_subject_motif_output_location <- function(){
     output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
@@ -29,6 +29,45 @@ get_common_genes_from_seqs <- function(subject_data){
     data_subset = subject_data[, ..return_cols]
     setnames(data_subset, 'gene_class', 'gene')
     return(data_subset)
+}
+
+get_motif_context <- function(whole_gene_seqs, trimmed_gene_seqs, trim_lengths){
+     stopifnot(length(whole_gene_seqs) == length(trimmed_gene_seqs))
+     stopifnot(length(whole_gene_seqs) == length(trim_lengths))
+     motifs = c()
+     for (index in seq(1, length(whole_gene_seqs))){
+        whole_gene_seq = DNAString(whole_gene_seqs[index])
+        trimmed_gene_seq = DNAString(trimmed_gene_seqs[index])
+        trimmed_length = nchar(trimmed_gene_seqs[index])
+        original_trimmed_length = trimmed_length
+        trim_length = trim_lengths[index]
+
+        if (nchar(trimmed_gene_seq) < LEFT_NUC_MOTIF_COUNT){
+            trimmed_gene_seq = substring(whole_gene_seq, 1, nchar(whole_gene_seq)-trim_length)
+            trimmed_length = nchar(trimmed_gene_seq)
+        }
+
+        left_nuc_motif = substring(trimmed_gene_seq, trimmed_length - (LEFT_NUC_MOTIF_COUNT - 1), trimmed_length) 
+
+        if (PNUC_COUNT > 0){
+            possible_pnucs_5_to_3 = substring(reverseComplement(whole_gene_seq),1, PNUC_COUNT)
+        } else {
+            possible_pnucs_5_to_3 = DNAString() 
+        }
+        whole_gene_and_pnucs = c(unlist(whole_gene_seq), unlist(possible_pnucs_5_to_3))
+        seq_right_of_trim = substring(whole_gene_and_pnucs, nchar(whole_gene_and_pnucs)-(trim_length + PNUC_COUNT) + 1, nchar(whole_gene_and_pnucs))
+
+        if (nchar(seq_right_of_trim) < RIGHT_NUC_MOTIF_COUNT){
+            missing_nucs = DNAString(strrep('-', RIGHT_NUC_MOTIF_COUNT - nchar(seq_right_of_trim)))
+            seq_right_of_trim = c(unlist(seq_right_of_trim), unlist(missing_nucs))
+        }
+
+        right_nuc_motif = substring(seq_right_of_trim, 1, RIGHT_NUC_MOTIF_COUNT)
+
+        motif = c(unlist(left_nuc_motif), unlist(right_nuc_motif))
+        motifs = c(motifs, as.character(motif))
+    }
+    return(motifs)
 }
 
 get_oriented_full_sequences <- function(subject_data){
