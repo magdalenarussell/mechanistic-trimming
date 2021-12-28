@@ -22,7 +22,9 @@ TRIM_TYPE <<- args[2]
 stopifnot(TRIM_TYPE == 'v_trim')
 
 MOTIF_TYPE <<- args[3] 
-stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded', 'unbounded_no_pnuc'))
+motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = str_sub(motif_types, end = -3)
+stopifnot(MOTIF_TYPE %in% motif_types)
 
 NCPU <<- as.numeric(args[4])
 
@@ -55,4 +57,4 @@ source('plotting_scripts/plotting_functions.R')
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
 
-plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.3, 0.3))
+plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = NULL)

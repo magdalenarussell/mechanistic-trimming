@@ -21,7 +21,9 @@ TRIM_TYPE <<- args[2]
 stopifnot(TRIM_TYPE == 'v_trim')
 
 MOTIF_TYPE <<- args[3] 
-stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded', 'unbounded_no_pnuc'))
+motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = str_sub(motif_types, end = -3)
+stopifnot(MOTIF_TYPE %in% motif_types)
 
 NCPU <<- as.numeric(args[4])
 
@@ -54,8 +56,16 @@ motif_data = aggregate_all_subject_data()
 positions = get_positions()
 composition = data.table(base = c('A', 'T', 'C', 'G'))
 
+# This is how you would get empirical PWM...
+# for (pos in positions){
+#     temp = motif_data[, sum(count), by = get(pos)]
+#     colnames(temp) = c('base', pos)
+#     composition = merge(composition, temp)
+# }
+
+# get the occurrance frequency of bases at each position (without actual counts)
 for (pos in positions){
-    temp = motif_data[, sum(count), by = get(pos)]
+    temp = motif_data[, .N, by = get(pos)]
     colnames(temp) = c('base', pos)
     composition = merge(composition, temp)
 }
@@ -85,7 +95,7 @@ plot = ggplot(together, aes(x=values, y=base, fill=pwm)) +
        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
        geom_vline(xintercept = LEFT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
        guides(fill = guide_colourbar(barheight = 14)) +
-       scale_fill_distiller(palette = 'PuOr', name = 'log2(position base frequency/\noverall base frequency)', limits = c(-1.6, 1.6)) +
+       scale_fill_distiller(palette = 'PuOr', name = 'log2(position base frequency/\noverall base frequency)', limits = c(-0.5, 0.5)) +
        annotate("text", x = 0.35, y = 0.25, label = "5\'", size = 8) +  
        annotate("text", x = motif_length + 0.65, y = 0.25, label = "3\'", size = 8) +  
        coord_cartesian(ylim = c(1, 4), clip = "off") + 

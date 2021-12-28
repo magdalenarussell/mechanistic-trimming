@@ -336,41 +336,56 @@ get_all_residual_figure_file_path <- function(){
     return(path)
 }
 
+plot_all_model_residuals_hist <- function(data, file_name){
+    data$residual = data$empirical_prob - data$predicted_prob
+    mean_data = data[, mean(abs(residual)), by = .(gene)]
+    setnames(mean_data, 'V1', 'mean_residual')
+    overall_mean_data = data[, mean(abs(residual))]
 
-plot_all_model_residuals_plot <- function(data, file_name){
+    plot = ggplot() +
+        geom_histogram(data = mean_data, mapping = aes(x = mean_residual), alpha = 0.75) +
+        geom_vline(xintercept = 0, color = 'gray', size = 3) +
+        geom_vline(xintercept = overall_mean_data, color = 'blue', size = 2, alpha = 0.8) +
+        xlab('abs(Observed prob - Predicted prob)') +
+        theme_cowplot(font_family = 'Arial') + 
+        theme(legend.position = "none", text = element_text(size = 30), axis.text = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+    ggsave(file_name, plot = plot, width = 14, height = 8, units = 'in', dpi = 750, device = cairo_pdf)
+    return(plot) 
+}
+
+
+plot_all_model_residuals_plot <- function(data, file_name, color_gene_list = NULL){
     data$residual = data$empirical_prob - data$predicted_prob
     mean_data = data[, mean(residual), by = .(gene, trim_length)]
     setnames(mean_data, 'V1', 'mean_residual')
     overall_mean_data = data[, mean(residual), by = .(trim_length)]
     setnames(overall_mean_data, 'V1', 'overall_mean_residual')
 
-    var_data = data[, var(residual), by = .(trim_length)]
-    setnames(var_data, 'V1', 'var')
+    # var_data = data[, var(residual), by = .(trim_length)]
+    # setnames(var_data, 'V1', 'var')
 
-    plot = ggplot() +
-        geom_line(data = mean_data, aes(x = trim_length, y = mean_residual, group = gene), size = 2, alpha = 0.5) +
+    if (!is.null(color_gene_list)){
+        mean_data[, outlier := FALSE]
+        mean_data[gene %in% color_gene_list, outlier := TRUE]
+        plot = ggplot() +
+            geom_line(data = mean_data, aes(x = trim_length, y = mean_residual, group = gene, color = outlier), size = 2, alpha = 0.5) 
+    } else {
+        plot = ggplot() +
+            geom_line(data = mean_data, aes(x = trim_length, y = mean_residual, group = gene), size = 2, alpha = 0.5) 
+    }
+    
+    plot = plot +
         geom_hline(yintercept = 0, color = 'gray', size = 3) +
         geom_line(data = overall_mean_data, aes(x = trim_length, y = overall_mean_residual), color = 'blue', size = 2, alpha = 0.8) +
         ylab('Observed prob - Predicted prob\n') +
         theme_cowplot(font_family = 'Arial') + 
-        theme(legend.position = "none", text = element_text(size = 30), axis.text.x=element_blank(), axis.title.x = element_blank(), axis.text.y = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+        theme(legend.position = "none", text = element_text(size = 30), axis.text = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
         ylim(-0.5, 1)
-    
-    plot_var = ggplot(var_data, aes(x = trim_length, y = var)) +
-        geom_line(size = 2, color = 'green4') +
-        xlab('Number of trimmed nucleotides') +
-        ylab('Variance of\nper-gene residuals\n') +
-        theme_cowplot(font_family = 'Arial') +
-        theme(text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
-        background_grid(major = 'xy') + 
-        panel_border(color = 'gray60', size = 1.5) +
-        ylim(0, 0.05)
-
-    aligned = align_plots(plot, plot_var, align = 'v', axis = 'l')
-    together = plot_grid(aligned[[1]], aligned[[2]], ncol = 1, rel_heights = c(2, 0.5))
-    ggsave(file_name, plot = together, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+    ggsave(file_name, plot = plot, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
     return(plot) 
 }
 
@@ -522,10 +537,8 @@ plot_model_evaluation_heatmap <- function(type, with_values = FALSE, model_type_
     path = get_model_eval_file_path(type)
     file_name = paste0(path, '/model_evaluation_heatmap_model_type_filter_', model_type_filter, '.pdf')
     eval_data = fread(file_path)
-    
-    if (!is.na(model_type_filter)){
-        eval_data = eval_data[model_type == model_type_filter]
-    }        
+    eval_data = process_model_evaluation_file(eval_data, model_types_neat = model_type_filter)
+    eval_data = eval_data[motif_type == MOTIF_TYPE]
 
     if (type == 'log_loss'){
         fill_lab = 'Conditional log loss'
@@ -564,10 +577,8 @@ plot_model_evaluation_scatter <- function(type, model_type_list = NA){
         file_name = paste0(path, '/model_evaluation_scatter_model_type_filter_NA.pdf')
     }
     eval_data = fread(file_path)
-
-    if (!is.na(model_type_list)){
-        eval_data = eval_data[model_type %in% model_type_list]
-    }        
+    eval_data = process_model_evaluation_file(eval_data, model_types_neat = model_type_list)
+    eval_data = eval_data[motif_type == MOTIF_TYPE]
 
     eval_data[, length := motif_length_5_end + motif_length_3_end]
 
@@ -662,5 +673,25 @@ scatter_two_covariates <- function(motif_data, cov1, cov2){
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) 
 
+
+}
+
+plot_pwm_profiles <- function(condensed_pwm_data, model_name){
+    max_data = condensed_pwm_data[, max_pwm_score := max(pwm_score), by = gene]
+    max_data = max_data[max_pwm_score == pwm_score]
+    median = condensed_pwm_data[, median(pwm_score), by = .(trim_length)]
+    setnames(median, 'V1', 'median_pwm_score')
+    
+    plot = ggplot(condensed_pwm_data) + 
+        geom_line(aes(x=trim_length, y = pwm_score, group = gene), size = 2, alpha = 0.6)+
+        geom_line(data = median, mapping = aes(x=trim_length, y = median_pwm_score), size = 2, color = 'blue')+
+        geom_point(data = max_data, mapping = aes(x=trim_length, y = pwm_score), size = 4, color = 'red', alpha = 0.6) +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Trimming length') +
+        ylab(paste0('Motif PWM score')) +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+    
 
 }
