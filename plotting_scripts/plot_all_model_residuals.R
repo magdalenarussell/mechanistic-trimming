@@ -21,7 +21,9 @@ TRIM_TYPE <<- args[2]
 stopifnot(TRIM_TYPE == 'v_trim')
 
 MOTIF_TYPE <<- args[3] 
-stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded', 'unbounded_no_pnuc'))
+motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = str_sub(motif_types, end = -3)
+stopifnot(MOTIF_TYPE %in% motif_types)
 
 NCPU <<- as.numeric(args[4])
 

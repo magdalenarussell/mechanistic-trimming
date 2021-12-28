@@ -60,29 +60,27 @@ eval_data = fread(file_path)
 # process evaluation file
 eval_data = process_model_evaluation_file(eval_data, model_types_neat)
 eval_data = eval_data[motif_type == MOTIF_TYPE]
+eval_data = eval_data[model_type %like% 'two_side_terminal_melting']
 
 # filter models (for now, comparing only 4x4 motifs and terminal melting 5' length of 10 (or NA))
-motifs = eval_data[model_type %like% 'motif' & motif_length_5_end == 4 & motif_length_3_end == 4 & terminal_melting_5_end_length %in% c(NA, 10)]
-terminal = eval_data[!(model_type %like% 'motif') & model_type %like% 'terminal' & motif_length_5_end %in% c(0, 4) & terminal_melting_5_end_length %in% c(NA, 10)]
-distance = eval_data[model_type == 'distance']
+motifs = eval_data[model_type %like% 'motif' & motif_length_5_end == 4 & motif_length_3_end == 4]
+terminal = eval_data[!(model_type %like% 'motif') & model_type %like% 'terminal' & motif_length_5_end %in% c(0, 4)]
 
-together = rbind(motifs, terminal, distance)
-
-# get total model term count for each model
-together = get_term_count(together, 4, 4)
+together = rbind(motifs, terminal)
 
 # create a new column with melting_type
 # together = get_terminal_melting_calculation_type(together)
 
 plot = ggplot(together) +
-    geom_point(aes(y = get(TYPE), x = terms, color = model_type), size = 5)+
+    geom_line(aes(y = get(TYPE), x = terminal_melting_5_end_length, color = model_type, group = model_type), size = 2) +
+    geom_point(aes(y = get(TYPE), x = terminal_melting_5_end_length, color = model_type), size = 5)+
     theme_cowplot(font_family = 'Arial') + 
-    xlab('Total number of terms') +
+    xlab('Number of nucleotides used to calculate 5\' melting') +
     ylab('Conditional log loss') +
     theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) +
     background_grid(major = 'xy') + 
     panel_border(color = 'gray60', size = 1.5) 
 
 path = get_model_eval_file_path(TYPE)
-file_name = paste0(path, '/neat_', TYPE, '_term_count_scatter_no_label.pdf')
+file_name = paste0(path, '/neat_', TYPE, '_two_side_terminal_melting_size_evaluation.pdf')
 ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
