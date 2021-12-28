@@ -1,10 +1,11 @@
 get_feature <- function(predicted_trims){
-    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
-    gene_seqs = whole_nucseq[substring(gene_names, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
-    colnames(gene_seqs) = c(GENE_NAME, 'sequences')
+    whole_nucseq = get_whole_nucseqs()
+    gene_seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
+    setnames(gene_seqs, 'gene', GENE_NAME)
+    colnames(gene_seqs) = c(GENE_NAME, 'sequence')
     gene_groups = get_common_genes_from_seqs(gene_seqs)
     together = merge(gene_groups, gene_seqs, by = 'v_gene')
-    together$terminal_seqs = get_terminal_seq(together$sequences)
+    together$terminal_seqs = get_terminal_seq(together$sequence)
     together$GC_freq = get_GC_content(together$terminal_seqs) 
     subset = together[, c('gene', 'GC_freq')]
     setnames(subset, 'GC_freq', 'feature')
