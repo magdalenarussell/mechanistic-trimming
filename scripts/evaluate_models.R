@@ -19,7 +19,9 @@ ANNOTATION_TYPE <<- args[1]
 stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
 
 TRIM_TYPE <<- args[2]
-stopifnot(TRIM_TYPE == 'v_trim')
+trim_types = list.files(path = 'scripts/gene_specific_functions/')
+trim_types = str_sub(trim_types, end = -3)
+stopifnot(TRIM_TYPE %in% trim_types)
 
 MOTIF_TYPE <<- args[3] 
 motif_types = list.files(path = 'scripts/motif_class_functions/')
@@ -29,7 +31,6 @@ stopifnot(MOTIF_TYPE %in% motif_types)
 NCPU <<- as.numeric(args[4])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
-stopifnot(GENE_NAME == 'v_gene')
 
 # NOTE: This method is only applicable for models fit across all subjects!
 MODEL_GROUP <<- 'all_subjects'

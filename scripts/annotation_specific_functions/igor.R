@@ -1,4 +1,3 @@
-#TODO update this
 extract_subject_ID <- function(tcr_repertoire_file_path){
     file_name = str_split(tcr_repertoire_file_path, "/")[[1]][3]
     file_root_name = str_split(file_name, ".tsv")[[1]][1]
@@ -33,26 +32,7 @@ general_get_motifs <- function(tcr_dataframe, subject_id){
     return(recondensed)
 }
 
-compile_motifs_for_subject <- function(file_path){
-    temp_data = fread(file_path)
-    if (GENE_NAME == 'd_gene'){
-        temp_data = temp_data[d_gene != '-']
-    }
-    subject_id = extract_subject_ID(file_path)
-    
-    output_location = get_subject_motif_output_location() 
-    dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
+get_whole_nucseqs <- function(){
     whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))[, -c('name')]
-    temp_data = merge(temp_data, whole_nucseq, by.x = GENE_NAME, by.y = 'gene')
-    gene_seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
-    setnames(gene_seqs, 'gene', GENE_NAME)
-    setnames(gene_seqs, 'sequence', 'sequences')
-    gene_groups = get_common_genes_from_seqs(gene_seqs)
-    together = merge(temp_data, gene_groups, by = GENE_NAME)
-
-    motif_data = get_motifs(together, subject_id)
-
-    fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
+    return(whole_nucseq[, c('gene', 'sequence')])
 }
-
-

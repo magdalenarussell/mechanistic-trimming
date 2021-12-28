@@ -1,13 +1,10 @@
 get_GC_content <- function(){
-    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
-    setnames(whole_nucseq, 'gene', 'gene_names', skip_absent = TRUE)
-    setnames(whole_nucseq, 'sequence', 'sequences', skip_absent = TRUE)
- 
+    whole_nucseq = get_whole_nucseqs()
     trims = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)
     
-    genes = whole_nucseq$gene_names[substring(whole_nucseq$gene_names, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
+    genes = whole_nucseq$gene[substring(whole_nucseq$gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
     together = data.table(gene = rep(genes, length(trims)), trim_length = rep(trims, length(genes)))
-    together = merge(together, whole_nucseq, by.x = 'gene', by.y = 'gene_names')
+    together = merge(together, whole_nucseq, by = 'gene')
 
     setnames(together, 'gene', GENE_NAME)
     map = get_common_genes_from_seqs(together)
@@ -17,7 +14,7 @@ get_GC_content <- function(){
     together[, depth := trim_length + LEFT_NUC_MOTIF_COUNT]
 
     # get terminal seq (only interested in double stranded end (not including pnucs or pnuc pairs))
-    together[, terminal_seq := substring(sequences, nchar(sequences) - depth + 1, nchar(sequences)-abs(PNUC_COUNT))]
+    together[, terminal_seq := substring(sequence, nchar(sequence) - depth + 1, nchar(sequence)-abs(PNUC_COUNT))]
 
     # get GC content
     seq_list = DNAStringSet(together$terminal_seq)
