@@ -53,11 +53,10 @@ get_melting_temp <- function(calculation_type){
     together = merge(together, map, by = GENE_NAME)[,-c('v_gene')]
 
     # get length of terminal seq
-    #NOT INCLUDING PNUCS IN THIS TERMINAL GC CONTENT CALCULATION
     together[, depth := trim_length + LEFT_NUC_MOTIF_COUNT]
 
-    # get terminal seq
-    together[, terminal_seq := substring(sequences, nchar(sequences) - depth + 1, nchar(sequences))]
+    # get terminal seq (only interested in double stranded end (not including pnucs or pnuc pairs))
+    together[, terminal_seq := substring(sequences, nchar(sequences) - depth + 1, nchar(sequences)-abs(PNUC_COUNT))]
 
     if (calculation_type == 'simple'){
         melting_temps = simple_terminal_melting_calculation(together$terminal_seq) 

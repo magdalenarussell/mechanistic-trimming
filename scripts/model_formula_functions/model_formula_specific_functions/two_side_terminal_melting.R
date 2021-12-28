@@ -56,9 +56,8 @@ get_melting_temp <- function(calculation_type){
         together = together[, -c('name')]
     }
 
-    #NOT INCLUDING PNUCS IN THIS TERMINAL GC CONTENT CALCULATION
     # get terminal seq
-    together[, right_seq := substring(sequences, nchar(sequences) - trim_length + 1, nchar(sequences))]
+    together[, right_seq := substring(sequences, nchar(sequences) - trim_length + 1, nchar(sequences)-abs(PNUC_COUNT))]
     together[, left_seq := substring(sequences, nchar(sequences) - (trim_length + LEFT_SIDE_TERMINAL_MELT_LENGTH) + 1, nchar(sequences)-trim_length)]
 
     if (calculation_type == 'simple'){
