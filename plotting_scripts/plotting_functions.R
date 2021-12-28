@@ -20,18 +20,16 @@ compile_trims <- function(directory){
 }
 
 get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
-    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
-    setnames(whole_nucseq, 'gene', 'gene_names', skip_absent = TRUE)
-    setnames(whole_nucseq, 'sequence', 'sequences', skip_absent = TRUE)
-
-    temp_data = whole_nucseq[substring(gene_names, 4, 4) == substring(gene_name, 4, 4)]
-    colnames(temp_data) = c(GENE_NAME, 'sequences')
+    whole_nucseq = get_oriented_whole_nucseqs()
+    temp_data = whole_nucseq[substring(gene, 4, 4) == substring(GENE_NAME, 4, 4)]
+    setnames(whole_nucseq, 'gene', GENE_NAME)
+    colnames(temp_data) = c(GENE_NAME, 'sequence')
     gene_groups = get_common_genes_from_seqs(temp_data)
-    together = unique(merge(temp_data, gene_groups)[, c('gene', 'sequences')]) 
+    together = unique(merge(temp_data, gene_groups)[, c('gene', 'sequence')]) 
     gene = together[gene == gene_name][1]
 
     # get sequence
-    whole_gene_seq = DNAString(gene$sequences)
+    whole_gene_seq = DNAString(gene$sequence)
     possible_pnucs_5_to_3 = substring(reverseComplement(whole_gene_seq),1, pnuc_count)
     whole_gene_with_pnucs = c(unlist(whole_gene_seq), unlist(possible_pnucs_5_to_3))
     subset = substring(whole_gene_with_pnucs, nchar(whole_gene_with_pnucs) - (gene_seq_length + pnuc_count-1), nchar(whole_gene_with_pnucs))

@@ -14,7 +14,9 @@ blas_set_num_threads(1)
 args = commandArgs(trailingOnly=TRUE)
 
 TRIM_TYPE <<- args[1]
-stopifnot(TRIM_TYPE == 'v_trim')
+trim_types = list.files(path = 'scripts/gene_specific_functions/')
+trim_types = str_sub(trim_types, end = -3)
+stopifnot(TRIM_TYPE %in% trim_types)
 
 NCPU <<- as.numeric(args[2])
 
@@ -22,7 +24,6 @@ MOTIF_TYPE <<- 'bounded'
 MODEL_GROUP <<- 'all_subjects'
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
-stopifnot(GENE_NAME == 'v_gene')
 
 source('scripts/data_compilation_functions.R')
 source('plotting_scripts/plotting_functions.R')
