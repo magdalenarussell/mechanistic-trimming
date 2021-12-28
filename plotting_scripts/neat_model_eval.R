@@ -27,7 +27,9 @@ TRIM_TYPE <<- args[2]
 stopifnot(TRIM_TYPE == 'v_trim')
 
 MOTIF_TYPE <<- args[3] 
-stopifnot(MOTIF_TYPE %in% c('bounded', 'unbounded', 'unbounded_no_pnuc'))
+motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = str_sub(motif_types, end = -3)
+stopifnot(MOTIF_TYPE %in% motif_types)
 
 NCPU <<- as.numeric(args[4])
 
@@ -40,7 +42,7 @@ GENE_WEIGHT_TYPE <<- args[5]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
 LOWER_TRIM_BOUND <<- 2
-UPPER_TRIM_BOUND <<- args[6] 
+UPPER_TRIM_BOUND <<- as.numeric(args[6])
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
@@ -55,6 +57,12 @@ type = 'log_loss'
 file_path = get_model_evaluation_file_name(type)
 eval_data = fread(file_path)
 eval_data = eval_data[model_type %in% model_types_neat]
+eval_data = unique(eval_data)
+eval_data = eval_data[motif_type == MOTIF_TYPE]
+eval_data = eval_data[gene_weight_type == GENE_WEIGHT_TYPE]
+eval_data = eval_data[lower_bound == LOWER_TRIM_BOUND]
+eval_data = eval_data[upper_bound == UPPER_TRIM_BOUND]
+
 
 motifs = eval_data[model_type %like% 'motif' & motif_length_5_end == 4 & motif_length_3_end == 4 & terminal_melting_5_end_length %in% c(NA, 10)]
 terminal = eval_data[!(model_type %like% 'motif') & model_type %like% 'terminal' & motif_length_5_end %in% c(0, 4) & terminal_melting_5_end_length %in% c(NA, 10)]
