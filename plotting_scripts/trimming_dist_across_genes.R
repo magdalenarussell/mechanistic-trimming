@@ -18,7 +18,9 @@ trim_types = list.files(path = 'scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-NCPU <<- as.numeric(args[2])
+PRODUCTIVITY <<- args[2]
+
+NCPU <<- as.numeric(args[3])
 
 MOTIF_TYPE <<- 'bounded'
 MODEL_GROUP <<- 'all_subjects'
