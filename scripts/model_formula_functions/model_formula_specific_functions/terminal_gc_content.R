@@ -1,5 +1,5 @@
 get_GC_content <- function(){
-    whole_nucseq = get_whole_nucseqs()
+    whole_nucseq = get_oriented_whole_nucseqs()
     trims = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)
     
     genes = whole_nucseq$gene[substring(whole_nucseq$gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
@@ -8,7 +8,9 @@ get_GC_content <- function(){
 
     setnames(together, 'gene', GENE_NAME)
     map = get_common_genes_from_seqs(together)
-    together = merge(together, map, by = GENE_NAME)[,-c('v_gene')]
+    together = merge(together, map, by = GENE_NAME)
+    cols = c('trim_length', 'sequence', 'gene')
+    together = together[, ..cols]
 
     # get length of terminal seq
     together[, depth := trim_length + LEFT_NUC_MOTIF_COUNT]
