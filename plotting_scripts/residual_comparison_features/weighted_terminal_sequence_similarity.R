@@ -1,11 +1,11 @@
 
 get_feature <- function(predicted_trims){
-    whole_nucseq = get_whole_nucseqs()
+    whole_nucseq = get_oriented_whole_nucseqs()
     gene_seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
     setnames(gene_seqs, 'gene', GENE_NAME)
     colnames(gene_seqs) = c(GENE_NAME, 'sequence')
     gene_groups = get_common_genes_from_seqs(gene_seqs)
-    together = merge(gene_groups, gene_seqs, by = 'v_gene')
+    together = merge(gene_groups, gene_seqs, by = GENE_NAME)
     together$terminal_seqs = get_terminal_seq(together$sequence)
 
     resids = calculate_rmse(predicted_trims)

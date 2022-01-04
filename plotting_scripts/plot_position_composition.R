@@ -102,7 +102,7 @@ plot = ggplot(together, aes(x=values, y=base, fill=pwm)) +
        coord_cartesian(ylim = c(1, 4), clip = "off") + 
        geom_text(data = together, aes(x = values, y = base, label = round(pwm, 3)))
 
-path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, MODEL_GROUP, 'base_frequency', paste0(MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, MODEL_GROUP, 'base_frequency', paste0(MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
 dir.create(path, recursive = TRUE)
 
 ggsave(paste0(path, '/freq_heatmap.pdf'), plot = plot, width = 9, height = 4.2, units = 'in', dpi = 750, device = cairo_pdf)
