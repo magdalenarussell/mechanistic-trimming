@@ -23,30 +23,32 @@ trim_types = list.files(path = 'scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-MOTIF_TYPE <<- args[3] 
+PRODUCTIVITY <<- args[3]
+
+MOTIF_TYPE <<- args[4] 
 motif_types = list.files(path = 'scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
-NCPU <<- as.numeric(args[4])
+NCPU <<- as.numeric(args[5])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 
 MODEL_GROUP <<- 'all_subjects' 
-GENE_WEIGHT_TYPE <<- args[5]
+GENE_WEIGHT_TYPE <<- args[6]
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[8]) 
+UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
 LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
 
-MODEL_TYPE <<- args[9]
+MODEL_TYPE <<- args[10]
 model_type1 = MODEL_TYPE
 
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- args[10]
+LEFT_SIDE_TERMINAL_MELT_LENGTH <<- args[11]
 
 if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(LEFT_SIDE_TERMINAL_MELT_LENGTH)
@@ -64,10 +66,10 @@ source('plotting_scripts/plotting_functions.R')
 pwm1 = get_model_coefficient_data() 
 
 # get model type for the second heatmap 
-MODEL_TYPE <<- args[11]
+MODEL_TYPE <<- args[12]
 model_type2 = MODEL_TYPE
 
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- args[12]
+LEFT_SIDE_TERMINAL_MELT_LENGTH <<- args[13]
 
 if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(LEFT_SIDE_TERMINAL_MELT_LENGTH)
