@@ -77,7 +77,7 @@ calculate_cond_log_loss <- function(model, sample_data){
 
 get_model_evaluation_file_name <- function(type){
     stopifnot(type %in% c('log_loss', 'per_gene', 'per_gene_per_trim'))
-    name = file.path(OUTPUT_PATH, paste0('model_evaluation_', type, '_', ANNOTATION_TYPE, '.tsv'))
+    name = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, paste0('model_evaluation_', type, '.tsv'))
     return(name)
 }
 

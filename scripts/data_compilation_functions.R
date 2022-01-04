@@ -3,7 +3,7 @@ source(paste0('scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
 source(paste0('scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 
 get_subject_motif_output_location <- function(){
-    output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data')
     return(output_location)
 }
 

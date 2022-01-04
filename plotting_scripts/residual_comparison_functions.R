@@ -16,7 +16,7 @@ calculate_rmse_by_gene <- function(predicted_trims){
     # calculate residual sum by subject, gene
     resid_sq_sums = predicted_trims[, sum(residual_sq), by = .(gene, subject)]
     setnames(resid_sq_sums, 'V1', 'resid_sq_sum')
-    together = merge(resid_sq_sums, subj_counts)
+    together = merge(resid_sq_sums, subj_counts, by = 'gene')
 
     # calculate mean residual sum by gene, calculate root mean square error by dividing by subject count
     mean_resid_sq_sums = together[, sum(resid_sq_sum), by = .(gene, subject_count)]
