@@ -3,7 +3,7 @@ source(paste0('scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
 source(paste0('scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 
 get_subject_motif_output_location <- function(){
-    output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data')
+    output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data')
     return(output_location)
 }
 
@@ -134,13 +134,23 @@ get_unobserved_motifs <- function(tcr_dataframe){
     return(together[,-c('whole_seq')])
 }
 
+filter_by_productivity <- function(data){
+    stopifnot(PRODUCTIVITY %in% c('productive', 'nonproductive', 'both'))
+    if (PRODUCTIVITY == 'productive'){
+        data = data[productive == TRUE]
+    } else if (PRODUCTIVITY == 'nonproductive'){
+        data = data[productive == FALSE]
+    }
+    return(data)
+}
+
 compile_motifs_for_subject <- function(file_path){
     temp_data = fread(file_path)
     if (GENE_NAME == 'd_gene'){
         temp_data = temp_data[d_gene != '-']
     }
     subject_id = extract_subject_ID(file_path)
-    
+    temp_data = filter_by_productivity(temp_data)    
     output_location = get_subject_motif_output_location() 
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     together = get_oriented_full_sequences(temp_data)

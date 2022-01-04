@@ -20,19 +20,21 @@ trim_types = list.files(path = 'scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-MOTIF_TYPE <<- args[3] 
+PRODUCTIVITY <<- args[3]
+
+MOTIF_TYPE <<- args[4] 
 motif_types = list.files(path = 'scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
-NCPU <<- as.numeric(args[4])
+NCPU <<- as.numeric(args[5])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[7]) 
+UPPER_TRIM_BOUND <<- as.numeric(args[8]) 
 
 TCR_REPERTOIRE_DATA <<- get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))
 
