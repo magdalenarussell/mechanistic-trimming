@@ -6,7 +6,6 @@ plots/
 test* 
 temp_*
 analysis/
-analysis_scripts/
 
 # History files
 .Rhistory
