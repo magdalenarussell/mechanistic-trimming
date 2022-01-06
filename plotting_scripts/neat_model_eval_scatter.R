@@ -28,34 +28,34 @@ trim_types = list.files(path = 'scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-PRODUCTIVITY <<- args[4]
+PRODUCTIVITY <<- args[3]
 
-MOTIF_TYPE <<- args[5] 
+MOTIF_TYPE <<- args[4] 
 motif_types = list.files(path = 'scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
-NCPU <<- as.numeric(args[6])
+NCPU <<- as.numeric(args[5])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 
 MODEL_GROUP <<- 'all_subjects'
 
-GENE_WEIGHT_TYPE <<- args[7]
+GENE_WEIGHT_TYPE <<- args[6]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
 LOWER_TRIM_BOUND <<- 2
-UPPER_TRIM_BOUND <<- as.numeric(args[8])
+UPPER_TRIM_BOUND <<- as.numeric(args[7])
 
-TYPE <<- args[9]
+TYPE <<- args[8]
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
 # get model types
-model_types_neat = filter_model_types(remove_types_with_string = c('gc_content'))
-
+# model_types_neat = filter_model_types(remove_types_with_string = c('gc_content'))
+model_types_neat = filter_model_types() 
 # load evaluation file
 file_path = get_model_evaluation_file_name(TYPE)
 eval_data = fread(file_path)

@@ -60,4 +60,4 @@ source('plotting_scripts/plotting_functions.R')
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
 
-plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = NULL)
+plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
