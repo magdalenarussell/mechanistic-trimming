@@ -1,9 +1,11 @@
-filter_model_types <- function(remove_types_with_string){
+filter_model_types <- function(remove_types_with_string = NA){
     model_type_files = list.files(path = 'scripts/model_formula_functions/')
     model_types = str_sub(model_type_files[model_type_files != '_ignore' & model_type_files != "model_formula_specific_functions"], end = -3)
     model_types_neat = model_types
-    for (string in remove_types_with_string){
-        model_types_neat = model_types_neat[!grepl(string, model_types_neat)]
+    if (!(is.na(remove_types_with_string))){
+        for (string in remove_types_with_string){
+            model_types_neat = model_types_neat[!grepl(string, model_types_neat)]
+        }
     }
     model_types_neat = model_types_neat[order(model_types_neat)]
     return(model_types_neat)
