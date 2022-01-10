@@ -4,7 +4,11 @@ filter_model_types <- function(remove_types_with_string = NA){
     model_types_neat = model_types
     if (!(is.na(remove_types_with_string))){
         for (string in remove_types_with_string){
-            model_types_neat = model_types_neat[!grepl(string, model_types_neat)]
+            if (string == 'terminal_melting'){
+                model_types_neat = model_types_neat[!grepl(string, model_types_neat) | grepl('two_side_terminal_melting', model_types_neat)]
+            } else {
+                model_types_neat = model_types_neat[!grepl(string, model_types_neat)]
+            }
         }
     }
     model_types_neat = model_types_neat[order(model_types_neat)]
@@ -29,7 +33,9 @@ get_term_count <- function(processed_eval_data, right_motif_count, left_motif_co
     processed_eval_data[model_type %like% 'motif', terms := terms + total_motif_size*4]
     processed_eval_data[model_type %like% 'distance', terms := terms + number_of_distance_terms]
     processed_eval_data[model_type %like% 'terminal_melting', terms := terms + 1]
+    processed_eval_data[model_type %like% 'terminal_gc', terms := terms + 1]
     processed_eval_data[model_type %like% 'two_side_terminal_melting', terms := terms + 1]
+    processed_eval_data[model_type %like% 'two_side_base_count', terms := terms + 8]
     return(processed_eval_data)
 }
 
