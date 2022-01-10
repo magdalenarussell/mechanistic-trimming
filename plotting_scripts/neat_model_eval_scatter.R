@@ -54,8 +54,8 @@ source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
 # get model types
-# model_types_neat = filter_model_types(remove_types_with_string = c('gc_content'))
-model_types_neat = filter_model_types() 
+model_types_neat = filter_model_types(remove_types_with_string = c('gc_content', 'terminal_melting'))
+# model_types_neat = filter_model_types() 
 # load evaluation file
 file_path = get_model_evaluation_file_name(TYPE)
 eval_data = fread(file_path)
@@ -68,8 +68,10 @@ eval_data = eval_data[motif_type == MOTIF_TYPE]
 motifs = eval_data[model_type %like% 'motif' & motif_length_5_end == 4 & motif_length_3_end == 4 & terminal_melting_5_end_length %in% c(NA, 10)]
 terminal = eval_data[!(model_type %like% 'motif') & model_type %like% 'terminal' & motif_length_5_end %in% c(0, 4) & terminal_melting_5_end_length %in% c(NA, 10)]
 distance = eval_data[model_type == 'distance']
+base_count = eval_data[model_type %like% 'two_side_base_count' & is.na(terminal_melting_5_end_length)]
 
-together = rbind(motifs, terminal, distance)
+together = rbind(motifs, terminal, distance, base_count)
+together = unique(together)
 
 # get total model term count for each model
 together = get_term_count(together, 4, 4)
@@ -88,4 +90,19 @@ plot = ggplot(together) +
 
 path = get_model_eval_file_path(TYPE)
 file_name = paste0(path, '/neat_', TYPE, '_term_count_scatter_no_label.pdf')
+ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+
+plot = ggplot(together) +
+    geom_point(aes(y = get(TYPE), x = terms, color = model_type), size = 5)+
+    geom_text_repel(aes(y = get(TYPE), x = terms, color = model_type, label = model_type), size = 4) + 
+    theme_cowplot(font_family = 'Arial') + 
+    xlab('Total number of terms') +
+    ylab('Conditional log loss') +
+    theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) +
+    background_grid(major = 'xy') + 
+    panel_border(color = 'gray60', size = 1.5) 
+    scale_x_continuous(breaks = seq(0, 100, 2), limits = c(0, 100))
+
+path = get_model_eval_file_path(TYPE)
+file_name = paste0(path, '/neat_', TYPE, '_term_count_scatter.pdf')
 ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
