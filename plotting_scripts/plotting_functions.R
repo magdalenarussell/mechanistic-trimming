@@ -161,6 +161,48 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
     }
 }
 
+plot_background_base_composition_heatmap_single_group <- function(background_matrix, file_name, with_values = FALSE, write_plot = TRUE){
+    data = background_matrix %>%
+        pivot_longer(!c(base), names_to = 'position', values_to = 'coef')
+
+    position_values = map_positions_to_values(unique(data$position))
+    together = merge(data, position_values, by.x = 'position', by.y = 'positions')
+
+    # order variables
+    together$base = factor(together$base, levels = c('T', 'G', 'C', 'A'))
+    together$values = factor(together$values)
+
+    motif_length = RIGHT_NUC_MOTIF_COUNT + LEFT_NUC_MOTIF_COUNT
+    
+    together$log_fold_freq = log2(together$coef) - log2(0.25)
+
+    max = round(max(abs(together$log_fold_freq)), 1) + 0.1 
+    plot = ggplot(together, aes(x=values, y=base, fill=log_fold_freq)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Position') +
+        ylab ('Base') +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        geom_vline(xintercept = LEFT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
+        guides(fill = guide_colourbar(barheight = 14)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log2 fold change in\n background base frequency', limits = c(-1*max, max)) +
+        annotate("text", x = 0.35, y = 0.25, label = "5\'", size = 8) +  
+        annotate("text", x = motif_length + 0.65, y = 0.25, label = "3\'", size = 8) +  
+        coord_cartesian(ylim = c(1, 4), clip = "off")
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = together, aes(x = values, y = base, label = round(log_fold_freq, 2)))
+    }
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 9, height = 4.1, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
+
+
 get_model_coef_heatmap_compare_file_name <- function(model_type1, model_type2, left_side_terminal_melt_length1 = NA, left_side_terminal_melt_length2 = NA){
     if (grepl('_side_terminal_melting', model_type1, fixed = TRUE)){
         stopifnot(!(is.na(left_side_terminal_melt_length1)))
@@ -692,4 +734,16 @@ plot_pwm_profiles <- function(condensed_pwm_data, model_name){
         panel_border(color = 'gray60', size = 1.5) 
     
 
+}
+
+get_base_composition_counts <- function(motif_data){
+    positions = get_positions()
+    processed = data.table(base = c('A', 'T', 'C', 'G'))
+    for (pos in positions){
+        temp = motif_data[, .N, by = get(pos)]
+        temp[, prop := N/sum(N)]
+        colnames(temp) = c('base', 'count', pos)
+        processed = merge(processed, temp[, -c('count')], by = 'base')
+    }
+    return(processed)
 }
