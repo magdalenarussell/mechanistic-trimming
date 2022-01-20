@@ -55,7 +55,6 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
 
-
 RESIDUAL_COMPARE_FEATURE <<- NULL
 
 source('scripts/data_compilation_functions.R')
@@ -66,25 +65,13 @@ source('plotting_scripts/residual_comparison_functions.R')
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data()
 
-# Generate a held out sample and motif data subset
-sample_data = generate_hold_out_sample(motif_data, sample_size = length(unique(motif_data$gene)))
-motif_data_subset = sample_data$motif_data_subset
-sample = sample_data$sample
-
-# Fit model to the motif_data_subset
-model = fit_model(motif_data_subset)
-
-# Compute conditional logistic loss value for held out sample using model
-log_loss = calculate_cond_log_loss(model, sample)
-
 # Write model fit across all data
 fit_model_by_group(motif_data)
 
-predicted_trims = get_predicted_distribution_data()
-per_gene_per_trim_resid = evaluate_model_per_gene(predicted_trims, type = 'per_gene_per_trim')
-per_gene_resid = evaluate_model_per_gene(predicted_trims, type = 'per_gene')
+# Compute expected conditional logistic loss value for repeated held out samples 
+repetitions = 20
+held_out_fraction = 0.3
+expected_log_loss = evaluate_cond_log_loss(motif_data, held_out_fraction = held_out_fraction, repetitions = repetitions, write_intermediate_loss = TRUE)
 
 # Append results to the end of a file
-write_result_dt(log_loss, 'log_loss')
-write_result_dt(per_gene_per_trim_resid, 'per_gene_per_trim')
-write_result_dt(per_gene_resid, 'per_gene')
+write_result_dt(expected_log_loss, 'log_loss', held_out_fraction, repetitions)
