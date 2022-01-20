@@ -58,6 +58,7 @@ get_start_list <- function(){
 }
 
 fit_model <- function(group_motif_data){
+    stopifnot(unique(group_motif_data$gene_weight_type) == GENE_WEIGHT_TYPE)
     group_motif_data = process_data_for_model_fit(group_motif_data)
     formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
