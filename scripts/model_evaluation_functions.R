@@ -1,18 +1,27 @@
 generate_hold_out_sample <- function(motif_data, sample_size){
-    stopifnot(sample_size < length(unique(motif_data$subject))*length(unique(motif_data$gene)))
+    stopifnot(sample_size < length(unique(motif_data$gene)))
     # sample size is the number of gene, subject combos
-    set.seed(66)
-    sample_genes = sample(unique(motif_data$gene), sample_size, replace = TRUE)
+    sample_genes = sample(unique(motif_data$gene), sample_size, replace = FALSE)
     sample_data = data.table()
     motif_data_subset = motif_data
     for (sample in sample_genes){
-        sample_subject = sample(unique(motif_data$subject), 1)
-        temp = motif_data[subject == sample_subject & gene == sample]
+        temp = motif_data[gene == sample]
         sample_data = rbind(sample_data, temp)
         cols = colnames(sample_data)
         motif_data_subset = motif_data_subset[!sample_data, on = cols]
     }
+    # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
+    source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    motif_data_subset = calculate_subject_gene_weight(motif_data_subset)
+    source(paste0('scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
+    sample_data = calculate_subject_gene_weight(sample_data)
     return(list(sample = sample_data, motif_data_subset = motif_data_subset))
+}
+
+get_hold_out_sample_probability <- function(sample_size, motif_data){
+    total_genes = length(unique(motif_data$gene))
+    prob = (1/total_genes)^sample_size
+    return(prob)
 }
 
 #I found a typo in the mclogit predict function...here is a temporary function
@@ -65,25 +74,64 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     }
 }
 
-calculate_cond_log_loss <- function(model, sample_data){
+calculate_cond_expected_log_loss <- function(model, sample_data){
     #TODO switch this function to mclogit.predict (if typo is fixed..."contasts")
     sample_data = process_data_for_model_fit(sample_data)
     sample_data$prediction = temp_predict(model, newdata = sample_data)
-    sample_data$log_prediction = log(sample_data$prediction)
-    sample_data$weighted_log_prediction = sample_data$log_prediction * sample_data$count
+    sample_data[, log_prediction := log(prediction)]
+    sample_data[, weighted_log_prediction := log_prediction * weighted_observation] 
     log_loss = -sum(sample_data$weighted_log_prediction)
     return(log_loss)
 }
 
-get_model_evaluation_file_name <- function(type){
-    stopifnot(type %in% c('log_loss', 'per_gene', 'per_gene_per_trim'))
-    name = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0('model_evaluation_', type, '.tsv'))
+evaluate_cond_log_loss <- function(motif_data, held_out_fraction, repetitions, write_intermediate_loss = FALSE) {
+    set.seed(66)
+    gene_count = length(unique(motif_data$gene))
+    held_out_gene_count = round(held_out_fraction*gene_count)
+    log_loss_vector = c()
+    sample_prob_vector = c()
+    for (rep in 1:repetitions){
+        # Generate a held out sample and motif data subset
+        sample_data = generate_hold_out_sample(motif_data, sample_size = held_out_gene_count) 
+        motif_data_subset = sample_data$motif_data_subset
+        sample = sample_data$sample
+
+        # Fit model to the motif_data_subset
+        model = fit_model(motif_data_subset)
+
+        # Compute conditional logistic loss value for held out sample using model
+        log_loss = calculate_cond_expected_log_loss(model, sample)
+        log_loss_vector = c(log_loss_vector, log_loss)
+
+        # Compute probability of held out sample
+        prob = get_hold_out_sample_probability(held_out_gene_count, motif_data)
+        sample_prob_vector = c(sample_prob_vector, prob)
+        if (isTRUE(write_intermediate_loss)){
+            write_result_dt(log_loss, type = 'log_loss', held_out_gene_fraction = held_out_fraction, repetitions = paste0('rep_', rep), intermediate = TRUE) 
+        }
+    }
+
+    #TODO: should this be just multiplied by the sample_prob_vector or be the mean? 
+    # expected_log_loss = sum(sample_prob_vector * log_loss_vector)
+    expected_log_loss = sum((1/repetitions) * log_loss_vector)
+
+    return(expected_log_loss)
+}
+
+get_model_evaluation_file_name <- function(type, intermediate){
+    stopifnot(type %in% c('log_loss'))
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY) 
+    if (isTRUE(intermediate)){
+        name = file.path(path, paste0('intermediate_model_evaluation_expected_', type, '.tsv'))
+    } else {
+        name = file.path(path, paste0('model_evaluation_expected_', type, '.tsv'))
+    }
     return(name)
 }
 
-write_result_dt <- function(log_loss, type){
-    file_name = get_model_evaluation_file_name(type)
-    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND, model_type = MODEL_TYPE, terminal_melting_5_end_length = LEFT_SIDE_TERMINAL_MELT_LENGTH) 
+write_result_dt <- function(log_loss, type, held_out_gene_fraction, repetitions, intermediate = FALSE){
+    file_name = get_model_evaluation_file_name(type, intermediate)
+    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND, model_type = MODEL_TYPE, terminal_melting_5_end_length = LEFT_SIDE_TERMINAL_MELT_LENGTH, held_out_gene_fraction = held_out_gene_fraction, sample_repetitions = repetitions) 
     result[[type]] = log_loss
     
     if (file.exists(file_name)){
@@ -94,15 +142,4 @@ write_result_dt <- function(log_loss, type){
         fwrite(result, file_name, sep = '\t')
     }
     return(result)
-}
-
-evaluate_model_per_gene <- function(data, type){
-    if (type == 'per_gene'){
-        rmse = calculate_rmse_by_gene(data)
-    } else if (type == 'per_gene_per_trim'){
-        rmse = calculate_rmse(data)
-    }
-
-    mean_abs_resid = mean(rmse$rmse)
-    return(mean_abs_resid)
 }
