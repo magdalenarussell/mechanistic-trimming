@@ -66,7 +66,7 @@ source('plotting_scripts/residual_comparison_functions.R')
 motif_data = aggregate_all_subject_data()
 
 # Write model fit across all data
-fit_model_by_group(motif_data)
+# fit_model_by_group(motif_data)
 
 # Compute expected conditional logistic loss value for repeated held out samples 
 repetitions = 20

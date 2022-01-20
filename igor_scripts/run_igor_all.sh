@@ -15,7 +15,7 @@ NCPU=$5
 OUTPUT_LOCATION=$(Rscript igor_scripts/igor_preprocessing.R $RAW_FILE $TEMP_DIR)
 
 # submit job to run igor for specified individual
-bash run_igor.sh $OUTPUT_LOCATION $ANNOTATION_COUNT $NCPU
+bash igor_scripts/run_igor.sh $OUTPUT_LOCATION $ANNOTATION_COUNT $NCPU
 
 # sample from possible annotations
 Rscript igor_scripts/igor_sample_annotations.R $OUTPUT_LOCATION $NCPU
