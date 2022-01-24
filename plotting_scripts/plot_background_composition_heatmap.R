@@ -65,4 +65,3 @@ path = get_coef_heatmap_file_path()
 file_name = paste0(path, '/background_base_frequency_heatmap.pdf')
 
 plot_background_base_composition_heatmap_single_group(background, file_name, with_values = TRUE)
-        
