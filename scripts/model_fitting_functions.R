@@ -39,7 +39,7 @@ split_motif_column_by_motif_position <- function(aggregated_subject_data){
 aggregate_all_subject_data <- function(directory = get_subject_motif_output_location()){
     if (!dir.exists(directory)){
         print('compiling motif data, first')
-        compile_all_motifs(TCR_REPERTOIRE_DATA) 
+        compile_all_motifs(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))) 
     }
 
     files = fs::dir_ls(path = directory)
