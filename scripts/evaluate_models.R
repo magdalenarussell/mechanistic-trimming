@@ -55,12 +55,9 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
 
-RESIDUAL_COMPARE_FEATURE <<- NULL
-
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('scripts/model_evaluation_functions.R')
-source('plotting_scripts/residual_comparison_functions.R')
 
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data()

@@ -106,9 +106,10 @@ evaluate_cond_log_loss <- function(motif_data, held_out_fraction, repetitions, w
         # Compute probability of held out sample
         prob = get_hold_out_sample_probability(held_out_gene_count, motif_data)
         sample_prob_vector = c(sample_prob_vector, prob)
-        if (isTRUE(write_intermediate_loss)){
-            write_result_dt(log_loss, type = 'log_loss', held_out_gene_fraction = held_out_fraction, repetitions = paste0('rep_', rep), intermediate = TRUE) 
-        }
+    }
+
+    if (isTRUE(write_intermediate_loss)){
+        write_result_dt(log_loss_vector, type = 'log_loss', held_out_gene_fraction = held_out_fraction, repetitions = repetitions, intermediate = TRUE) 
     }
 
     #TODO: should this be just multiplied by the sample_prob_vector or be the mean? 
@@ -129,10 +130,16 @@ get_model_evaluation_file_name <- function(type, intermediate){
     return(name)
 }
 
+compile_result <- function(loss_list, type, held_out_gene_fraction, repetitions){
+    loss_length = length(loss_list)
+    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(held_out_gene_fraction, loss_length), sample_repetitions = rep(repetitions, loss_length)) 
+    result[[type]] = loss_list
+    return(result)
+}
+ 
 write_result_dt <- function(log_loss, type, held_out_gene_fraction, repetitions, intermediate = FALSE){
     file_name = get_model_evaluation_file_name(type, intermediate)
-    result = data.table(motif_length_5_end = LEFT_NUC_MOTIF_COUNT, motif_length_3_end = RIGHT_NUC_MOTIF_COUNT, motif_type = MOTIF_TYPE, gene_weight_type = GENE_WEIGHT_TYPE, upper_bound = UPPER_TRIM_BOUND, lower_bound = LOWER_TRIM_BOUND, model_type = MODEL_TYPE, terminal_melting_5_end_length = LEFT_SIDE_TERMINAL_MELT_LENGTH, held_out_gene_fraction = held_out_gene_fraction, sample_repetitions = repetitions) 
-    result[[type]] = log_loss
+    result = compile_result(log_loss, type, held_out_gene_fraction, repetitions)
     
     if (file.exists(file_name)){
         results = fread(file_name)
