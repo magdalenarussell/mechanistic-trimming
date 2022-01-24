@@ -53,18 +53,11 @@ source('plotting_scripts/model_evaluation_functions.R')
 model_types_neat = filter_model_types(remove_types_with_string = c('gc_content', 'NN', 'combo'))
 
 # load evaluation file
-file_path = get_model_evaluation_file_name(TYPE)
+file_path = get_model_evaluation_file_name(TYPE, intermediate = FALSE)
 eval_data = fread(file_path)
 
 # process evaluation file
-eval_data = process_model_evaluation_file(eval_data, model_types_neat)
-
-# filter models (for now, comparing only 4x4 motifs and terminal melting 5' length of 10 (or NA))
-motifs = eval_data[model_type %like% 'motif' & motif_length_5_end == 4 & motif_length_3_end == 4 & terminal_melting_5_end_length %in% c(NA, 10)]
-terminal = eval_data[!(model_type %like% 'motif') & model_type %like% 'terminal' & motif_length_5_end %in% c(0, 4) & terminal_melting_5_end_length %in% c(NA, 10)]
-distance = eval_data[model_type == 'distance']
-
-together = rbind(motifs, terminal, distance)
+together = process_model_evaluation_file(eval_data, model_types_neat, left_motif_size_filter = 4, right_motif_size_filter = 4, terminal_melting_5_end_length_filter = c(NA, 10))
 
 # get total model term count for each model
 together = get_term_count(together, 4, 4)

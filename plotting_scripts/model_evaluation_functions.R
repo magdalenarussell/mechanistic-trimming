@@ -15,10 +15,28 @@ filter_model_types <- function(remove_types_with_string = NA){
     return(model_types_neat)
 }
 
-process_model_evaluation_file <- function(eval_data, model_types_neat){
-    if (!is.na(model_types_neat)){
+process_model_evaluation_file <- function(eval_data, model_types_neat, left_motif_size_filter = NA, right_motif_size_filter = NA, terminal_melting_5_end_length_filter = NA){
+    if (length(model_types_neat) == 1){ 
+        if (model_types_neat %like% 'motif'){
+            sub_model = str_split(model_types_neat, 'motif_')[[1]][2]
+            eval_data = eval_data[(model_type %in% model_types_neat) | (model_type == sub_model & motif_length_3_end == 0)]
+        } else {
+            eval_data = eval_data[model_type %in% model_types_neat]
+        }
+    } else {
         eval_data = eval_data[model_type %in% model_types_neat]
     }
+
+    if (!is.na(left_motif_size_filter)){
+        eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (model_type %in% c('distance', 'two_side_terminal_melting', 'distance_two_side_terminal_melting') & motif_length_5_end == 0)]
+    }
+
+    if (!is.na(right_motif_size_filter)){
+        eval_data = eval_data[(motif_length_3_end == right_motif_size_filter) | (model_type %in% model_types_neat[!(model_types_neat %like% 'motif')] & motif_length_3_end ==  0)]
+    }
+
+    eval_data = eval_data[terminal_melting_5_end_length %in% terminal_melting_5_end_length_filter]
+
     eval_data = unique(eval_data)
     eval_data = eval_data[gene_weight_type == GENE_WEIGHT_TYPE]
     eval_data = eval_data[lower_bound == LOWER_TRIM_BOUND]
