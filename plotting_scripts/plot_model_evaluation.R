@@ -44,13 +44,18 @@ UPPER_TRIM_BOUND <<- args[7]
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- args[8]
 
+TYPE <<- args[9]
+stopifnot(TYPE %in% c('log_loss', 'expected_log_loss', 'aic', 'raw_loss', 'old_loss_cv'))
+
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
+eval_results = compile_evaluation_results(TYPE)
+
 model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count'))
 model_types = model_types[model_types %like% 'motif']
-type = 'log_loss'
+
 for (model_type in model_types){
     if (model_type %like% 'two_side_terminal_melting'){
         left_melt = LEFT_SIDE_TERMINAL_MELT_LENGTH
@@ -58,6 +63,6 @@ for (model_type in model_types){
         left_melt = NA
     }
 
-    plot_model_evaluation_heatmap(type, model_type = model_type, terminal_melting_5_end_length_filter= left_melt)
+    plot_model_evaluation_heatmap(eval_results, TYPE, model_type = model_type, terminal_melting_5_end_length_filter= left_melt)
 }
 
