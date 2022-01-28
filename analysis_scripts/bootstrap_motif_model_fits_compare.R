@@ -60,7 +60,6 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
-source('scripts/model_evaluation_functions.R')
 source('analysis_scripts/bootstrap_analysis_functions.R')
 source('plotting_scripts/plotting_functions.R')
 
