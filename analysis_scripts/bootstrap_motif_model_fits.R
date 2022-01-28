@@ -57,7 +57,6 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
-source('scripts/model_evaluation_functions.R')
 source('analysis_scripts/bootstrap_analysis_functions.R')
 
 # Compile data for all subjects
@@ -70,14 +69,14 @@ coef_count = length(positions)*3 + (UPPER_TRIM_BOUND - LOWER_TRIM_BOUND) + 2
 bootstrap = 1
 while (bootstrap < 100) {
     boot_data = generate_bootstrap_sample(motif_data, sample_size = length(unique(motif_data$gene))) 
-    print(paste0('generated bootstrap sample ', bootstrap, ' of 20'))
+    print(paste0('generated bootstrap sample ', bootstrap, ' of 100'))
     unique = length(unique(boot_data$gene))
     # if (unique < 41){
     #     print(paste0('only ', unique, ' unique genes. Re-generating bootstrap sample.'))
     #     next
     # }
-    print(paste0('starting bootstrap fit ', bootstrap, ' of 20'))
+    print(paste0('starting bootstrap fit ', bootstrap, ' of 100'))
     fit_model_bootstrap_genes(boot_data, bootstrap)
-    print(paste0('FINISHED bootstrap fit ', bootstrap, ' of 20'))
+    print(paste0('FINISHED bootstrap fit ', bootstrap, ' of 100'))
     bootstrap = bootstrap + 1
 }
