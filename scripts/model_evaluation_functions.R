@@ -1,29 +1,3 @@
-generate_hold_out_sample <- function(motif_data, sample_size){
-    stopifnot(sample_size < length(unique(motif_data$gene)))
-    # sample size is the number of gene, subject combos
-    sample_genes = sample(unique(motif_data$gene), sample_size, replace = FALSE)
-    sample_data = data.table()
-    motif_data_subset = motif_data
-    for (sample in sample_genes){
-        temp = motif_data[gene == sample]
-        sample_data = rbind(sample_data, temp)
-        cols = colnames(sample_data)
-        motif_data_subset = motif_data_subset[!sample_data, on = cols]
-    }
-    # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
-    source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
-    motif_data_subset = calculate_subject_gene_weight(motif_data_subset)
-    source(paste0('scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
-    sample_data = calculate_subject_gene_weight(sample_data)
-    return(list(sample = sample_data, motif_data_subset = motif_data_subset))
-}
-
-get_hold_out_sample_probability <- function(sample_size, motif_data){
-    total_genes = length(unique(motif_data$gene))
-    prob = (1/total_genes)^sample_size
-    return(prob)
-}
-
 #I found a typo in the mclogit predict function...here is a temporary function
 #to replace until it is fixed in the package
 temp_predict <- function(model, newdata, se.fit = FALSE){
@@ -84,69 +58,43 @@ calculate_cond_expected_log_loss <- function(model, sample_data){
     return(log_loss)
 }
 
-evaluate_cond_log_loss <- function(motif_data, held_out_fraction, repetitions, write_intermediate_loss = FALSE) {
-    set.seed(66)
-    gene_count = length(unique(motif_data$gene))
-    held_out_gene_count = round(held_out_fraction*gene_count)
-    log_loss_vector = c()
-    sample_prob_vector = c()
-    for (rep in 1:repetitions){
-        # Generate a held out sample and motif data subset
-        sample_data = generate_hold_out_sample(motif_data, sample_size = held_out_gene_count) 
-        motif_data_subset = sample_data$motif_data_subset
-        sample = sample_data$sample
-
-        # Fit model to the motif_data_subset
-        model = fit_model(motif_data_subset)
-
-        # Compute conditional logistic loss value for held out sample using model
-        log_loss = calculate_cond_expected_log_loss(model, sample)
-        log_loss_vector = c(log_loss_vector, log_loss)
-
-        # Compute probability of held out sample
-        prob = get_hold_out_sample_probability(held_out_gene_count, motif_data)
-        sample_prob_vector = c(sample_prob_vector, prob)
+get_per_run_model_evaluation_path <- function(type){
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'temp_evaluation', type) 
+    if (!dir.exists(path)){
+        dir.create(path, recursive = TRUE)
     }
-
-    if (isTRUE(write_intermediate_loss)){
-        write_result_dt(log_loss_vector, type = 'log_loss', held_out_gene_fraction = held_out_fraction, repetitions = repetitions, intermediate = TRUE) 
-    }
-
-    #TODO: should this be just multiplied by the sample_prob_vector or be the mean? 
-    # expected_log_loss = sum(sample_prob_vector * log_loss_vector)
-    expected_log_loss = sum((1/repetitions) * log_loss_vector)
-
-    return(expected_log_loss)
+    return(path)
 }
 
-get_model_evaluation_file_name <- function(type, intermediate){
-    stopifnot(type %in% c('log_loss'))
-    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY) 
-    if (isTRUE(intermediate)){
-        name = file.path(path, paste0('intermediate_model_evaluation_expected_', type, '.tsv'))
-    } else {
-        name = file.path(path, paste0('model_evaluation_expected_', type, '.tsv'))
-    }
+get_per_run_model_evaluation_file_name <- function(type){
+    path = get_per_run_model_evaluation_path(type)
+    name = file.path(path, paste0('model_evaluation_', MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.tsv'))
     return(name)
 }
 
-compile_result <- function(loss_list, type, held_out_gene_fraction, repetitions){
+compile_result <- function(loss_list, type, parameter_count){
     loss_length = length(loss_list)
-    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(held_out_gene_fraction, loss_length), sample_repetitions = rep(repetitions, loss_length)) 
+    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(HELD_OUT_FRACTION, loss_length), sample_repetitions = rep(REPETITIONS, loss_length), model_parameter_count = parameter_count) 
     result[[type]] = loss_list
     return(result)
 }
  
-write_result_dt <- function(log_loss, type, held_out_gene_fraction, repetitions, intermediate = FALSE){
-    file_name = get_model_evaluation_file_name(type, intermediate)
-    result = compile_result(log_loss, type, held_out_gene_fraction, repetitions)
-    
-    if (file.exists(file_name)){
-        results = fread(file_name)
-        together = rbind(results, result)
-        fwrite(together, file_name, sep = '\t')
-    } else {
-        fwrite(result, file_name, sep = '\t')
-    }
+write_result_dt <- function(log_loss, type, parameter_count){
+    file_name = get_per_run_model_evaluation_file_name(type)
+    result = compile_result(log_loss, type, parameter_count)
+    fwrite(result, file_name, sep = '\t')
     return(result)
 }
+
+compile_evaluation_results <- function(type){
+    files = fs::dir_ls(path = get_per_run_model_evaluation_path(type))
+    require(parallel)
+    cluster = makeCluster(NCPU)
+    files_dt = parLapply(cluster, files, function(x){
+                        data.table::fread(x)})
+    stopCluster(cluster)
+    rbound = rbindlist(files_dt)
+    return(rbound)
+}
+
+source(paste0(PROJECT_PATH, '/scripts/model_evaluation_type_functions/', TYPE, '.R'))

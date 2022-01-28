@@ -49,8 +49,10 @@ UPPER_TRIM_BOUND <<- as.numeric(args[9])
 
 MODEL_TYPE <<- args[10]
 
+TYPE <<- args[11]
+
 if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
@@ -65,10 +67,8 @@ motif_data = aggregate_all_subject_data()
 # Write model fit across all data
 # fit_model_by_group(motif_data)
 
-# Compute expected conditional logistic loss value for repeated held out samples 
-repetitions = 20
-held_out_fraction = 0.3
-expected_log_loss = evaluate_cond_log_loss(motif_data, held_out_fraction = held_out_fraction, repetitions = repetitions, write_intermediate_loss = TRUE)
+# compute loss
+loss = evaluate_loss(motif_data)
 
 # Append results to the end of a file
-write_result_dt(expected_log_loss, 'log_loss', held_out_fraction, repetitions)
+write_result_dt(loss$loss, TYPE, loss$model_parameter_count)
