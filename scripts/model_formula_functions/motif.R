@@ -1,5 +1,11 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
 
+get_start_list <- function(){
+    positions = length(get_positions())
+    start_list = rep(0, positions*3)
+    return(start_list)
+}
+
 get_model_formula <- function(){
     motif_positions = get_positions() 
     motif_positions_together = paste(motif_positions, collapse = ' + ')
