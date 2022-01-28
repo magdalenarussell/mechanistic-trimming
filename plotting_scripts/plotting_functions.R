@@ -270,10 +270,8 @@ plot_all_model_residuals_plot <- function(data, file_name, color_gene_list = NUL
     return(plot) 
 }
 
-plot_model_evaluation_heatmap <- function(type, with_values = FALSE, model_type, terminal_melting_5_end_length_filter, limits = NULL){
+plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, model_type, terminal_melting_5_end_length_filter, limits = NULL){
     stopifnot(length(model_type) == 1)
-    stopifnot(model_type %like% 'motif')
-    eval_data_file_path = get_model_evaluation_file_name(type, intermediate = FALSE) 
     path = get_model_eval_file_path(type)
     if (model_type %like% 'two_side_terminal_melting') {
         model_type_name = paste0(model_type, '_', terminal_melting_5_end_length_filter)
@@ -281,16 +279,19 @@ plot_model_evaluation_heatmap <- function(type, with_values = FALSE, model_type,
         model_type_name = model_type
     }
     file_name = paste0(path, '/model_evaluation_heatmap_model_type_filter_', model_type_name, '.pdf')
-    eval_data = fread(eval_data_file_path)
     eval_data = process_model_evaluation_file(eval_data, model_types_neat = model_type, terminal_melting_5_end_length_filter = terminal_melting_5_end_length_filter)
     eval_data = eval_data[motif_type == MOTIF_TYPE]
 
-    if (type == 'log_loss'){
+    if (type == 'expected_log_loss'){
         fill_lab = 'Expected conditional log loss'
-    } else if (type == 'per_gene'){
-        fill_lab = 'Average root mean\nsquared error\nacross genes'
-    } else if (type == 'per_gene_per_trim'){
-        fill_lab = 'Average root mean\nsquared error\nacross genes, trims'
+    } else if (type == 'log_loss'){
+        fill_lab = 'Conditional log loss\n(training dataset)'
+    } else if (type == 'aic'){
+        fill_lab = 'AIC' 
+    } else if (type == 'raw_loss'){
+        fill_lab = 'Raw count log loss\n(training dataset)' 
+    } else if (type == 'old_loss_cv'){
+        fill_lab = 'Raw count conditional log loss\n(held-out dataset)' 
     }
 
     setnames(eval_data, type, 'loss')
@@ -320,32 +321,150 @@ plot_model_evaluation_heatmap <- function(type, with_values = FALSE, model_type,
     ggsave(file_name, plot = plot, width = 11, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_model_evaluation_scatter_coef_count <- function(type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
-    # load evaluation file
-    data_file_path = get_model_evaluation_file_name(TYPE, intermediate = FALSE)
-    eval_data = fread(data_file_path)
-    
+plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
     # process evaluation file
     eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
     eval_data = eval_data[motif_type == MOTIF_TYPE]
 
-    # get total model term count for each model
-    together = get_term_count(eval_data, left_motif_size_filter, right_motif_size_filter)
+    if (type == 'expected_log_loss'){
+        ylab = 'Expected conditional log loss'
+    } else if (type == 'log_loss'){
+        ylab = 'Conditional log loss (training dataset)'
+    } else if (type == 'aic'){
+        ylab = 'AIC' 
+    } else if (type == 'raw_loss'){
+        ylab = 'Raw count log loss (training dataset)' 
+    } else if (type == 'old_loss_cv'){
+        ylab = 'Raw count conditional log loss\n(held-out dataset)' 
+    }
 
-    plot = ggplot(together) +
-        geom_point(aes(y = get(type), x = terms, color = model_type), size = 5)+
+    plot = ggplot(eval_data) +
+        geom_point(aes(y = get(type), x = model_parameter_count, color = model_type), size = 5)+
         theme_cowplot(font_family = 'Arial') + 
         xlab('Total number of terms') +
-        ylab('Expected conditional log loss') +
+        ylab(ylab) +
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) 
 
     path = get_model_eval_file_path(type)
-    file_name = paste0(path, '/neat_', type, '_term_count_scatter_', left_motif_size_filter, '_', right_motif_size_filter, 'motif')
+    file_name = paste0(path, '/neat_', type, '_term_count_scatter_', left_motif_size_filter, '_', right_motif_size_filter, '_motif')
 
     if (isTRUE(label)){
         plot = plot +
-            geom_text_repel(aes(y = get(type), x = terms, color = model_type, label = model_type), size = 4) + 
+            geom_text_repel(aes(y = get(type), x = model_parameter_count, color = model_type, label = model_type), size = 4) + 
+            scale_x_continuous(breaks = seq(0, 60, 2), limits = c(0, 60)) +
+            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+        file_name = paste0(file_name, '.pdf')
+    } else {
+        plot = plot +
+            theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+        file_name = paste0(file_name, '_no_label.pdf')
+    }
+    ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
+    # merge two types
+    cols = colnames(eval_data1)
+    cols = cols[!(cols %in% c('held_out_gene_fraction', 'sample_repetitions'))]
+    eval_data = merge(eval_data1, eval_data2, by = cols[!(cols == type1)])
+
+    # process evaluation file
+    eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
+    eval_data = eval_data[motif_type == MOTIF_TYPE]
+
+    if (type1 == 'expected_log_loss'){
+        xlab = 'Expected conditional log loss'
+    } else if (type1 == 'log_loss'){
+        xlab = 'Conditional log loss (training dataset)'
+    } else if (type1 == 'aic'){
+        xlab = 'AIC' 
+    } else if (type1 == 'raw_loss'){
+        xlab = 'Raw count log loss (training dataset)' 
+    } else if (type1 == 'old_loss_cv'){
+        xlab = 'Raw count conditional log loss\n(held-out dataset)' 
+    }
+
+    if (type2 == 'expected_log_loss'){
+        ylab = 'Expected conditional log loss'
+    } else if (type2 == 'log_loss'){
+        ylab = 'Conditional log loss (training dataset)'
+    } else if (type2 == 'aic'){
+        ylab = 'AIC' 
+    } else if (type2 == 'raw_loss'){
+        ylab = 'Raw count log loss (training dataset)' 
+    } else if (type2 == 'old_loss_cv'){
+        ylab = 'Raw count conditional log loss\n(held-out dataset)' 
+    }
+    
+    plot = ggplot(eval_data) +
+        geom_abline(intercept = 0, slope = 1, size = 3, color = 'gray60', linetype = 'dashed') +
+        geom_point(aes(y = get(type2), x = get(type1), color = model_type), size = 5)+
+        theme_cowplot(font_family = 'Arial') + 
+        xlab(xlab) +
+        ylab(ylab) +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+
+    path = get_model_eval_file_path('compare')
+    file_name = paste0(path, '/neat_', type1, '_', type2, '_eval_compare_', left_motif_size_filter, '_', right_motif_size_filter, '_motif')
+
+    if (isTRUE(label)){
+        plot = plot +
+            geom_text_repel(aes(y = get(type2), x = get(type1), color = model_type, label = model_type), size = 4) + 
+            scale_x_continuous(breaks = seq(0, 60, 2), limits = c(0, 60)) +
+            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+        file_name = paste0(file_name, '.pdf')
+    } else {
+        plot = plot +
+            theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+        file_name = paste0(file_name, '_no_label.pdf')
+    }
+    ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+plot_model_evaluation_compare_bounds <- function(eval_data, upper_bound1, upper_bound2, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE, limits = NULL) {
+    # process evaluation file
+    eval_data1 = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, upper_trim_bound = upper_bound1)
+    eval_data2 = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, upper_trim_bound = upper_bound2)
+
+    cols = colnames(eval_data1)
+    together = merge(eval_data1, eval_data2, by = cols[!(cols %in% c('upper_bound', 'model_parameter_count', type))])
+    together = together[motif_type == MOTIF_TYPE]
+
+    if (type == 'expected_log_loss'){
+        lab = 'Expected conditional log loss'
+    } else if (type == 'log_loss'){
+        lab = 'Conditional log loss (training dataset)'
+    } else if (type == 'aic'){
+        lab = 'AIC' 
+    } else if (type == 'raw_loss'){
+        lab = 'Raw count log loss (training dataset)' 
+    } else if (type == 'old_loss_cv'){
+        lab = 'Raw count conditional log loss\n(held-out dataset)' 
+    }
+
+    plot = ggplot(together) +
+        geom_abline(intercept = 0, slope = 1, size = 3, color = 'gray60', linetype = 'dashed') +
+        geom_point(aes(y = get(paste0(type, '.y')), x = get(paste0(type, '.x')), color = model_type), size = 5)+
+        theme_cowplot(font_family = 'Arial') + 
+        xlab(paste0(lab, '\n trims bounded at ', upper_bound1)) +
+        ylab(paste0(lab, '\n trims bounded at ', upper_bound2)) +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) 
+    
+    if (!is.null(limits)){
+        plot = plot +
+            scale_x_continuous(limits = limits) +
+            scale_y_continuous(limits = limits)
+    }
+
+    path = get_model_eval_file_path('compare_bounds')
+    file_name = paste0(path, '/neat_', type, '_eval_compare_bounds_', upper_bound1, '_and_', upper_bound2, '_motifs_', left_motif_size_filter, '_', right_motif_size_filter)
+
+    if (isTRUE(label)){
+        plot = plot +
+            geom_text_repel(aes(y = get(paste0(type, '.y')), x = get(paste0(type, '.x')), color = model_type, label = model_type), size = 4) + 
             scale_x_continuous(breaks = seq(0, 60, 2), limits = c(0, 60)) +
             theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
         file_name = paste0(file_name, '.pdf')
@@ -367,27 +486,4 @@ get_base_composition_counts <- function(motif_data){
         processed = merge(processed, temp[, -c('count')], by = 'base')
     }
     return(processed)
-}
-
-plot_intermediate_repetition_loss_variance <- function(model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter){
-    data_file_path = get_model_evaluation_file_name(TYPE, intermediate = TRUE)
-    eval_data = fread(data_file_path)
-    
-    # process evaluation file
-    eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
-    eval_data = eval_data[motif_type == MOTIF_TYPE]
-
-    plot = ggplot(eval_data) +
-        geom_histogram(aes(x = get(TYPE), fill = interaction(motif_length_5_end, motif_length_3_end, model_type)), alpha = 0.8, binwidth = 0.02) +
-        facet_wrap(~interaction(motif_length_5_end, motif_length_3_end, model_type), ncol = 1) +
-        theme_cowplot(font_family = 'Arial') + 
-        theme(text = element_text(size = 25), legend.position = 'none', axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20)) +
-        xlab('Expected conditional log loss') +
-        background_grid(major = 'xy') + 
-        panel_border(color = 'gray60', size = 1.5) 
-
-    path = get_model_eval_file_path(TYPE)
-    file_name = paste0(path, '/loss_variance_across_repetitions_', left_motif_size_filter, '_', right_motif_size_filter, '.pdf')
-
-    ggsave(file_name, plot = plot, width = 15, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 }

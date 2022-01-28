@@ -59,10 +59,10 @@ eval_data = fread(file_path)
 # process evaluation file
 together = process_model_evaluation_file(eval_data, model_types_neat, left_motif_size_filter = 4, right_motif_size_filter = 4, terminal_melting_5_end_length_filter = c(NA, 10))
 
-# get total model term count for each model
-together = get_term_count(together, 4, 4)
+if (TYPE == 'log_loss'){
+    eval_data = convert_aic_to_log_loss(eval_data)
+}
 
-# get nick positions 
 together = get_pnuc_count(together)
 together = together[order(pnuc_count)]
 together$nick_position = factor(together$nick_position, levels = list(unique(together$nick_position), unique(together$pnuc_count))[[1]])
