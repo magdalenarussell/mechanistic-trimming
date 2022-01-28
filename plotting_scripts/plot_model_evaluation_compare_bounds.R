@@ -50,11 +50,12 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
+UPPER_TRIM_BOUND2 <<- as.numeric(args[10]) 
 LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
 
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
+LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
 
-TYPE <<- args[11]
+TYPE <<- args[12]
 stopifnot(TYPE %in% c('log_loss', 'expected_log_loss', 'aic', 'raw_loss', 'old_loss_cv'))
 
 source('scripts/model_evaluation_functions.R')
@@ -66,6 +67,4 @@ eval_results = compile_evaluation_results(TYPE)
 # get model types
 model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count'))
 
-plot_model_evaluation_scatter_coef_count(eval_results, type = TYPE, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), label = FALSE)
-
-plot_model_evaluation_scatter_coef_count(eval_results, type = TYPE, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), label = TRUE)
+plot_model_evaluation_compare_bounds(eval_results, upper_bound1 = UPPER_TRIM_BOUND, upper_bound2 = UPPER_TRIM_BOUND2, type = TYPE, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), label = FALSE, limits = c(1.87, 2.63))
