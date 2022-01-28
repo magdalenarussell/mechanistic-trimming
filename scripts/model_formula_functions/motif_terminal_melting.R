@@ -1,5 +1,11 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
 
+get_start_list <- function(){
+    positions = length(get_positions())
+    start_list = rep(0, positions*3 + 1)
+    return(start_list)
+}
+
 source(paste0(PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/terminal_melting.R'))
 
 get_model_formula <- function(){

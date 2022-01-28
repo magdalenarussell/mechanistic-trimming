@@ -1,5 +1,11 @@
 stopifnot(RIGHT_NUC_MOTIF_COUNT == 0)
 
+get_start_list <- function(){
+    dists = (UPPER_TRIM_BOUND - LOWER_TRIM_BOUND)
+    start_list = rep(0, dists + 1)
+    return(start_list)
+}
+
 source(paste0(PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/terminal_melting.R'))
 
 get_model_formula <- function(){
