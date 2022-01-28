@@ -1,6 +1,5 @@
 source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
 source(paste0('scripts/model_group_functions/', MODEL_GROUP, '.R'))
-source(paste0('scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 
 get_positions <- function(){
     if (LEFT_NUC_MOTIF_COUNT > 0){
@@ -16,6 +15,8 @@ get_positions <- function(){
     positions = c(left, right)
     return(positions)
 }
+
+source(paste0('scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 
 # Aggregate all subject data
 aggregate_subject_data_by_trim_gene <- function(subject_data){
@@ -37,10 +38,11 @@ split_motif_column_by_motif_position <- function(aggregated_subject_data){
 }
 
 aggregate_all_subject_data <- function(directory = get_subject_motif_output_location()){
-    if (!dir.exists(directory)){
+    desired_file_count = length(list.files(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))))
+    if (!dir.exists(directory) | !(length(list.files(directory)) == desired_file_count)) {
         print('compiling motif data, first')
         compile_all_motifs(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))) 
-    }
+    }  
 
     files = fs::dir_ls(path = directory)
     registerDoParallel(cores=NCPU)
@@ -55,23 +57,16 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
     return(together)
 }
 
-get_start_list <- function(){
-    positions = get_positions()
-    position_count = length(positions)
-    start_list = rep(0, position_count * 3)
-    return(start_list)
-}
-
 fit_model <- function(group_motif_data){
     stopifnot(unique(group_motif_data$gene_weight_type) == GENE_WEIGHT_TYPE)
     group_motif_data = process_data_for_model_fit(group_motif_data)
     formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
-    # start_list = get_start_list()
+    start_list = get_start_list()
 
     model = mclogit(formula, 
-                    data = group_motif_data) 
-                    # start = start_list) 
+                    data = group_motif_data,
+                    start = start_list) 
 
     return(model)
 }
