@@ -72,9 +72,14 @@ MODEL_TYPE1 = MODEL_TYPE
 LEFT_SIDE1 = LEFT_SIDE_TERMINAL_MELT_LENGTH
 MODEL_TYPE <<- args[12]
 stopifnot(MODEL_TYPE %like% 'motif')
+# 5' motif nucleotide count
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[13])
+# 3' motif nucleotide count
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[14])
+
 
 if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[13])
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[15])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
