@@ -66,7 +66,7 @@ source('plotting_scripts/plotting_functions.R')
 motif_data = aggregate_all_subject_data()
 
 together = data.table()
-for (bootstrap in seq(1, 100)){
+for (bootstrap in seq(1, 99)){
     pwm_file_path = get_pwm_matrix_file_path_bootstrap(bootstrap)
     pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
     location = file.path(pwm_file_path, pwm_file_name)
@@ -111,7 +111,7 @@ ggsave(file_name, plot = plot, width = 15, height = 10, units = 'in', dpi = 750,
 
 motif_length = RIGHT_NUC_MOTIF_COUNT + LEFT_NUC_MOTIF_COUNT
 
-groups = list(seq(1, 20), seq(21, 40), seq(41, 60), seq(61, 80), seq(81, 100)) 
+groups = list(seq(1, 20), seq(21, 40), seq(41, 60), seq(61, 80), seq(81, 99)) 
 for (group in groups){
     temp_data = together[!is.na(bootstrap_dataset) & bootstrap_dataset %in% group]
     temp_data$base = factor(temp_data$base, levels = c('T', 'G', 'C', 'A'))
@@ -155,7 +155,7 @@ ggsave(file_name, plot = plot, width = 9, height = 4.1, units = 'in', dpi = 750,
 
 # plot small multiples heatmaps of background
 backgrounds = data.table()
-for (bootstrap in seq(1, 100)){
+for (bootstrap in seq(1, 99)){
     gene_path = get_data_genes_path_bootstrap(bootstrap)
     genes = fread(paste0(gene_path, '/sampled_genes.tsv')) 
     boot_data = get_bootstrap_sample_from_gene_list(motif_data, genes) 
@@ -178,7 +178,7 @@ motif_length = RIGHT_NUC_MOTIF_COUNT + LEFT_NUC_MOTIF_COUNT
 
 max = round(max(abs(backgrounds_together$log_fold_freq)), 1) + 0.1
 
-groups = list(seq(1, 20), seq(21, 40), seq(41, 60), seq(61, 80), seq(81, 100)) 
+groups = list(seq(1, 20), seq(21, 40), seq(41, 60), seq(61, 80), seq(81, 99)) 
 for (group in groups){
     plot = ggplot(backgrounds_together[bootstrap_dataset %in% group], aes(x=values, y=base, fill=log_fold_freq)) +
         facet_wrap(~bootstrap_dataset, ncol = 5, nrow = 4)+
