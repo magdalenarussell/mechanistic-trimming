@@ -1,7 +1,9 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT == 0 & RIGHT_NUC_MOTIF_COUNT == 0)
 
-get_start_list <- function(){
-    dists = (UPPER_TRIM_BOUND - LOWER_TRIM_BOUND)
+DATA_GROUP <<- 'ungrouped'
+
+get_start_list <- function(motif_data){
+    dists = length(unique(motif_data$trim_length)) - 1
     start_list = rep(0, dists + 2)
     return(start_list)
 }

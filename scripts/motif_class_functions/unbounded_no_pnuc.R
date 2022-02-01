@@ -2,8 +2,8 @@
 LOWER_TRIM_BOUND <<- 2 
 PNUC_COUNT <<- 0
 
-get_motifs <- function(tcr_dataframe, subject_id){
-    motif_data = general_get_motifs(tcr_dataframe, subject_id)
+get_all_nuc_contexts <- function(tcr_dataframe, subject_id){
+    motif_data = general_get_all_nuc_contexts(tcr_dataframe, subject_id)
     return(motif_data)
 }
  
