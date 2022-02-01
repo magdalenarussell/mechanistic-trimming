@@ -1,6 +1,8 @@
 stopifnot(RIGHT_NUC_MOTIF_COUNT == 0 & LEFT_NUC_MOTIF_COUNT == 0)
 
-get_start_list <- function(){
+DATA_GROUP <<- 'ungrouped'
+
+get_start_list <- function(motif_data){
     start_list = rep(0, 2)
     return(start_list)
 }

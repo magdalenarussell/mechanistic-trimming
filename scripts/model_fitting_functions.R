@@ -16,15 +16,6 @@ get_positions <- function(){
     return(positions)
 }
 
-source(paste0('scripts/model_formula_functions/', MODEL_TYPE, '.R'))
-
-# Aggregate all subject data
-aggregate_subject_data_by_trim_gene <- function(subject_data){
-    aggregated_subject = subject_data[, sum(count), by = .(trim_length, gene, motif, gene_type, subject, observed)]
-    setnames(aggregated_subject, 'V1', 'count')
-    return(aggregated_subject)
-}
-
 split_motif_column_by_motif_position <- function(aggregated_subject_data){
     positions = get_positions()
 
@@ -38,19 +29,21 @@ split_motif_column_by_motif_position <- function(aggregated_subject_data){
 }
 
 aggregate_all_subject_data <- function(directory = get_subject_motif_output_location()){
+    stopifnot(LEFT_NUC_MOTIF_COUNT <= 10)
+    stopifnot(LEFT_SIDE_TERMINAL_MELT_LENGTH <= 10 | is.na(LEFT_SIDE_TERMINAL_MELT_LENGTH))
     desired_file_count = length(list.files(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))))
     if (!dir.exists(directory) | !(length(list.files(directory)) == desired_file_count)) {
         print('compiling motif data, first')
-        compile_all_motifs(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))) 
+        compile_all_data(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))) 
     }  
-
+    
     files = fs::dir_ls(path = directory)
     registerDoParallel(cores=NCPU)
     together = foreach(file = files, .combine=rbind) %dopar% {
         file_data = fread(file)
         print(paste(file))
-        aggregated_subject = aggregate_subject_data_by_trim_gene(file_data)
-        split_motif_column_by_motif_position(aggregated_subject) 
+        motif_data = convert_data_to_motifs(file_data)
+        split_motif_column_by_motif_position(motif_data) 
     }
     together = calculate_subject_gene_weight(together)
     stopImplicitCluster()
@@ -62,7 +55,7 @@ fit_model <- function(group_motif_data){
     group_motif_data = process_data_for_model_fit(group_motif_data)
     formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
-    start_list = get_start_list()
+    start_list = get_start_list(group_motif_data)
 
     model = mclogit(formula, 
                     data = group_motif_data,
@@ -77,8 +70,7 @@ get_predicted_dist_file_path <- function(){
     } else {
         model = MODEL_TYPE
     }
-    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_trimming_distributions'), GENE_WEIGHT_TYPE, model)
-
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_trimming_distributions'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -125,7 +117,7 @@ get_pwm_matrix_file_path <- function(){
     } else {
         model = MODEL_TYPE
     }
-    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficient_matrix'), GENE_WEIGHT_TYPE, model)
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficient_matrix'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
     dir.create(path, recursive = TRUE)
     
     return(path)
