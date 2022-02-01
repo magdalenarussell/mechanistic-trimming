@@ -4,9 +4,9 @@ PNUC_COUNT <<- 2
 # TODO change this back once we are done comparing models
 # LOWER_TRIM_BOUND <<- max(RIGHT_NUC_MOTIF_COUNT - 2, 1)
 
-get_motifs <- function(tcr_dataframe, subject_id){
+get_all_nuc_contexts <- function(tcr_dataframe, subject_id){
     stopifnot(RIGHT_NUC_MOTIF_COUNT - 2 <= LOWER_TRIM_BOUND)
-    motif_data = general_get_motifs(tcr_dataframe, subject_id)
+    motif_data = general_get_all_nuc_contexts(tcr_dataframe, subject_id)
     return(motif_data)
 }
 

@@ -1,6 +1,8 @@
-stopifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
+topifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
 
-get_start_list <- function(){
+DATA_GROUP <<- 'ungrouped'
+
+get_start_list <- function(motif_data){
     positions = length(get_positions())
     start_list = rep(0, positions*3)
     return(start_list)

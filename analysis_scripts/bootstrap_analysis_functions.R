@@ -56,7 +56,7 @@ fit_model_bootstrap <- function(group_motif_data){
     formula =  edit_formula(formula)
     group_motif_data = set_contrasts(group_motif_data)
     stopifnot(MODEL_TYPE == 'motif_distance_two_side_terminal_melting')
-    start_list = get_start_list()
+    start_list = get_start_list(group_motif_data)
     model = mclogit(formula, 
                     data = group_motif_data,
                     start = start_list) 
