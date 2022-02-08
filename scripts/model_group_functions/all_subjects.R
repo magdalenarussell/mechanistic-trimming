@@ -6,6 +6,10 @@ get_pwm_matrix_file_name <- function(subgroup){
     return(paste0(MODEL_GROUP, '_weighting_with_', GENE_WEIGHT_TYPE, '.tsv'))
 }
 
+get_coefficient_output_file_name <- function(subgroup){
+    return(paste0(MODEL_GROUP, '_weighting_with_', GENE_WEIGHT_TYPE, '.tsv'))
+}
+
 fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
     motif_data = process_data_for_model_fit(motif_data)
     model = fit_model(motif_data)
@@ -21,6 +25,11 @@ fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
     location = file.path(file_path, file_name)
     
     fwrite(motif_data, location, sep = '\t')
+    
+    # get coef path
+    coef_path = get_coefficient_output_file_path()
+    coef_file_name =  get_coefficient_output_file_name(subgroup = NULL)
+    location_coefs = file.path(coef_path, coef_file_name)
 
     if (grepl('motif', MODEL_TYPE, fixed = TRUE)){
         # calculate coeffiecients
@@ -33,13 +42,20 @@ fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
         pwm_file_path = get_pwm_matrix_file_path()
         pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
         location = file.path(pwm_file_path, pwm_file_name)
-
+        
         if (isTRUE(write_coeffs)){
             fwrite(pwm_dt, location, sep = '\t')
         } else {
             return(pwm_dt)
         }
+
+        # get all coefficients
+        coefs = format_model_coefficient_output(model, pwm_dt)
+    } else {
+        coefs = format_model_coefficient_output(model)
     }
+    coefs$model_group = MODEL_GROUP
+    fwrite(coefs, location_coefs, sep = '\t')
 }
 
 get_predicted_distribution_data <- function(){
@@ -52,7 +68,7 @@ get_predicted_distribution_data <- function(){
 }
 
 get_model_coefficient_data <- function(){
-    pwm_file_path = get_pwm_matrix_file_path()
+    pwm_file_path = get_coefficient_output_file_path()
     pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
     location = file.path(pwm_file_path, pwm_file_name)
     

@@ -111,6 +111,40 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base){
     return(together)
 }
 
+get_complete_distance_coefficients <- function(model_coefficients_dt){
+    parameter_names = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)) 
+    contr_sum_var = parameter_names[length(parameter_names)] 
+    parameter_names_subset = parameter_names[!(parameter_names == contr_sum_var)]
+    distance_coefs = model_coefficients_dt[parameter %like% 'trim_length']
+    distance_coefs$parameter = parameter_names_subset
+    missing = data.table(parameter = contr_sum_var, coefficient = -1 * sum(distance_coefs$coefficient), base = NA)
+    together = rbind(distance_coefs, missing)
+    return(together)
+}
+
+format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
+    coef_dt = as.data.frame(model$coefficients)
+    colnames(coef_dt) = c('coefficient')
+    coef_dt$parameter = rownames(coef_dt)
+    coef_dt = as.data.table(coef_dt)
+    if (!is.null(formatted_pwm_matrix)){
+        stopifnot(MODEL_TYPE %like% 'motif')
+        coef_dt = coef_dt[!(parameter %like% 'motif')]
+        formatted_pwm = formatted_pwm_matrix[, -c('model_group')] %>% 
+            pivot_longer(!base, values_to = 'coefficient', names_to = 'parameter') %>%
+            as.data.table()
+        coef_dt = rbind(coef_dt, formatted_pwm, fill = TRUE)
+    } else {
+        coef_dt$base = NA
+    }
+    if (MODEL_TYPE %like% 'distance') {
+        dist_coefs = get_complete_distance_coefficients(coef_dt)
+        coef_dt = coef_dt[!(parameter %like% 'trim_length')]
+        coef_dt = rbind(coef_dt, dist_coefs)
+    }
+    return(coef_dt)
+}
+
 get_pwm_matrix_file_path <- function(){
     if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
@@ -118,6 +152,18 @@ get_pwm_matrix_file_path <- function(){
         model = MODEL_TYPE
     }
     path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficient_matrix'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
+    dir.create(path, recursive = TRUE)
+    
+    return(path)
+}
+
+get_coefficient_output_file_path <- function(){
+    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    } else {
+        model = MODEL_TYPE
+    }
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficients'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
     dir.create(path, recursive = TRUE)
     
     return(path)

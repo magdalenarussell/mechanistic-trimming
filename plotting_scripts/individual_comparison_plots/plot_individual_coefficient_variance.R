@@ -56,9 +56,10 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
+source('plotting_scripts/individual_comparison_functions.R')
 
 # Read in model coefficient data 
-pwm = get_model_coefficient_data() 
+data_dir = get_coefficient_output_file_path()
+indiv_coefs = combine_all_individual_coefficients(data_dir)
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
-plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = NULL)
+plot_coefficient_variation_across_individuals(indiv_coefs)

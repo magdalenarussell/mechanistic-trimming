@@ -8,3 +8,10 @@ WHOLE_NUCSEQS_parsimony = '_ignore/tcrb_processed_geneseq.tsv'
 WHOLE_NUCSEQS_igor = '_ignore/igor_imgt_genes.tsv' 
 CONFUSIBILITY_DATA = '_ignore/emerson_stats_ties/'
 
+# SNP genotype file (download https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs001918.v1.p1)
+SNP_GDS_FILE <<- paste0(PROJECT_PATH, "/_ignore/HSCT_comb_geno_combined_v03_tcr.gds")
+
+# File to map scanIDs to localID (data located within the `gwas_id_mapping.tsv` file available at https://doi.org/10.5281/zenodo.5719520)
+#TODO change back to file without HIP ids...
+# ID_MAPPING_FILE <<- paste0(PROJECT_PATH, '/_ignore/gwas_id_mapping.tsv')
+ID_MAPPING_FILE <<- paste0(PROJECT_PATH, '/_ignore/temp_gwas_id_mapping.tsv')

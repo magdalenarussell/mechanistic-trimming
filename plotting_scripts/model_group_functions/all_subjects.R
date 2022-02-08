@@ -4,8 +4,8 @@ get_predicted_dist_figure_file_name <- function(gene_name, subgroup = NULL){
     return(filename)
 }
 
-get_coef_heatmap_file_name <- function(subgroup = NULL){
-    filename = paste0('heatmap.pdf')
+get_coef_heatmap_file_name <- function(type, subgroup = NULL){
+    filename = paste0(type, '_heatmap.pdf')
     return(filename)
 }
 
@@ -29,9 +29,15 @@ plot_predicted_trimming_dists <- function(data, gene_name){
 
 plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALSE, write_plot = TRUE, limits = NULL){
     file_path = get_coef_heatmap_file_path()
-    file_name = get_coef_heatmap_file_name()
-    complete_path = file.path(file_path, file_name)
-    plot_model_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = complete_path, with_values = with_values, write_plot = write_plot, limits = limits)
+    if (MODEL_TYPE %like% 'two_side_terminal_melting'){
+        plot_melting_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('melting')), with_values = with_values, write_plot = write_plot, limits = limits)
+    } 
+    if (MODEL_TYPE %like% 'distance'){
+        plot_distance_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('distance')), with_values = with_values, write_plot = write_plot, limits = limits)
+    }
+    if (MODEL_TYPE %like% 'motif'){
+        plot_model_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('motif')), with_values = with_values, write_plot = write_plot, limits = limits)
+    }
 }
 
 plot_model_residual_boxplot <- function(data, gene_name){

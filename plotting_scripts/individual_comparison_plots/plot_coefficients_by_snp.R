@@ -56,9 +56,34 @@ if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
+source('plotting_scripts/individual_comparison_functions.R')
 
 # Read in model coefficient data 
-pwm = get_model_coefficient_data() 
+data_dir = get_coefficient_output_file_path()
+indiv_coefs = combine_all_individual_coefficients(data_dir)
+# get snp genotypes for missense Artemis snp (20717849) and most significant artemis SNP for V- and J- gene trimming (20717772)
+snps = c(20717849, 20717772)
+snp_genotypes = compile_all_genotypes_snp_list(snps)  
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
-plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = NULL)
+#TODO remove this HIP conversion
+gwas_id = fread(ID_MAPPING_FILE)
+snp_genotypes = merge(snp_genotypes, gwas_id)[, -c('scanID', 'localID')]
+
+coef_snps = merge(indiv_coefs, snp_genotypes, by.x = 'model_group', by.y = 'subject', all = TRUE)
+
+formatted_coef_snps = coef_snps %>% 
+    pivot_longer(starts_with("2"), names_to = 'snp', values_to = 'genotype') %>%
+    as.data.table()
+formatted_coef_snps[!(base ==  ''), parameter := paste0(parameter, ', base ', base)]
+
+for (snp in snps) {
+    for (parameter_group in c('motif', 'trim_length', 'terminal_melting')) {
+        if (!(MODEL_TYPE %like% parameter_group)){
+            if (parameter_group != 'trim_length' | !(MODEL_TYPE %like% 'distance')){
+                next
+            }
+        }
+        plot_coefficient_by_snp(formatted_coef_snps, snp, parameter_group)
+    }
+}
+
