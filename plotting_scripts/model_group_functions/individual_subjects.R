@@ -4,8 +4,8 @@ get_predicted_dist_figure_file_name <- function(gene_name, subgroup){
     return(filename)
 }
 
-get_coef_heatmap_file_name <- function(subgroup){
-    filename = paste0(subgroup, '_heatmap.pdf')
+get_coef_heatmap_file_name <- function(type, subgroup){
+    filename = paste0(subgroup, '_', type, '_heatmap.pdf')
     return(filename)
 }
 
@@ -31,9 +31,15 @@ plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALS
     limits = range(sapply(model_coef_matrix[,-c('base', 'model_group')], range, na.rm = TRUE))/log(10)
     for (indiv in unique(model_coef_matrix$model_group)){
         subset_data = model_coef_matrix[model_group == indiv]
-        file_name = get_coef_heatmap_file_name(indiv)
-        complete_path = file.path(file_path, file_name)
-        plot_model_coefficient_heatmap_single_group(subset_data, complete_path, with_values, limits)
+        if (MODEL_TYPE %like% 'two_side_terminal_melting'){
+            plot_melting_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('melting', indiv)), with_values = with_values, write_plot = write_plot, limits = limits)
+        } 
+        if (MODEL_TYPE %like% 'distance'){
+            plot_distance_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('distance', indiv)), with_values = with_values, write_plot = write_plot, limits = limits)
+        }
+        if (MODEL_TYPE %like% 'motif'){
+            plot_model_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('motif', indiv)), with_values = with_values, write_plot = write_plot, limits = limits)
+        }
         print(paste0('finished plotting for ', indiv))
     }
 }
