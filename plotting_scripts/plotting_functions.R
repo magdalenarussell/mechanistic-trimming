@@ -73,15 +73,85 @@ map_positions_to_values <- function(positions){
     return(together)
 }
 
-plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
-    data = model_coef_matrix %>%
-        pivot_longer(!c(base, model_group), names_to = 'position', values_to = 'coef')
+plot_melting_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    model_coef_matrix = model_coef_matrix[parameter %like% 'terminal_melting']
+    # convert to log_10
+    model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
+    # order variables
+    model_coef_matrix$parameter = factor(model_coef_matrix$parameter, levels = c('left_terminal_melting', 'right_terminal_melting'))
 
-    position_values = map_positions_to_values(unique(data$position))
-    together = merge(data, position_values, by.x = 'position', by.y = 'positions')
+    if (is.null(limits)){
+        max_val = max(abs(model_coef_matrix$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+    
+    plot = ggplot(model_coef_matrix, aes(x=parameter, y=base, fill=log_10_pdel)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Melting temperature') +
+        ylab('') +
+        geom_vline(xintercept = 1 + 0.5, size = 3, color = 'black') +
+        theme(text = element_text(size = 15), axis.text.y = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight = 8)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.55, y = 0.45, label = "5\'", size = 6) +  
+        annotate("text", x = 2.55 , y = 0.45, label = "3\'", size = 6) 
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = model_coef_matrix, aes(x = parameter, y = base, label = round(log_10_pdel, 2)))
+    }
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 7.5, height = 3, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
+
+
+plot_distance_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    model_coef_matrix = model_coef_matrix[parameter %like% 'trim_length']
+    # convert to log_10
+    model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
+    # order variables
+    model_coef_matrix$parameter = factor(model_coef_matrix$parameter, levels = paste0('trim_length_', seq(UPPER_TRIM_BOUND, LOWER_TRIM_BOUND)))
+    total_dist = UPPER_TRIM_BOUND - LOWER_TRIM_BOUND
+
+    if (is.null(limits)){
+        max_val = max(abs(model_coef_matrix$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+    
+    plot = ggplot(model_coef_matrix, aes(x=parameter, y=base, fill=log_10_pdel)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Distance') +
+        ylab('') +
+        theme(text = element_text(size = 35), axis.text.x = element_text(size = 22), axis.text.y = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight =12)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) 
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = model_coef_matrix, aes(x = parameter, y = base, label = round(log_10_pdel, 2)), size = 10)
+    }
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 3*total_dist, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
+
+plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    model_coef_matrix = model_coef_matrix[parameter %like% 'motif']
+
+    position_values = map_positions_to_values(unique(model_coef_matrix$parameter))
+    together = merge(model_coef_matrix, position_values, by.x = 'parameter', by.y = 'positions')
 
     # convert to log_10
-    together$log_10_pdel = together$coef/log(10)
+    together$log_10_pdel = together$coefficient/log(10)
     # order variables
     together$base = factor(together$base, levels = c('T', 'G', 'C', 'A'))
     together$values = factor(together$values)
@@ -105,7 +175,6 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
         annotate("text", x = 0.35, y = 0.25, label = "5\'", size = 8) +  
         annotate("text", x = motif_length + 0.65, y = 0.25, label = "3\'", size = 8) +  
         coord_cartesian(ylim = c(1, 4), clip = "off")
-        # scale_fill_viridis_c(name = 'log10(probability of deletion)', limits = limits)
     
     if (with_values == TRUE){
         plot = plot +
@@ -113,7 +182,7 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
     }
 
     if (isTRUE(write_plot)){
-        ggsave(file_name, plot = plot, width = 9, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
+        ggsave(file_name, plot = plot, width = motif_length + 4, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         return(plot)
     }
@@ -486,4 +555,59 @@ get_base_composition_counts <- function(motif_data){
         processed = merge(processed, temp[, -c('count')], by = 'base')
     }
     return(processed)
+}
+
+plot_coefficient_variation_across_individuals <- function(all_individual_coefficients){
+    if (!('base' %in% colnames(all_individual_coefficients))){
+            all_individual_coefficients$base = '' 
+    }
+    all_individual_coefficients[!(base ==  ''), parameter := paste0(parameter, ', base ', base)]
+
+    var_data = all_individual_coefficients[, var(coefficient), by = parameter]
+    setnames(var_data, 'V1', 'coef_var')
+    var_data$parameter = factor(var_data$parameter, levels = var_data[order(coef_var)]$parameter)
+
+    plot = ggplot(var_data) +
+        geom_point(aes(x = coef_var, y = parameter), size = 5) +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Coefficient variance') +
+        ylab('Parameter') +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) +
+        theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+    
+    file_path = get_individual_comparison_file_path()
+    file_name = paste0(file_path, '/coefficient_variance.pdf')
+    ggsave(file_name, plot = plot, width = 14, height = 16, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL){
+    require(ggpubr)
+    file_path = get_individual_comparison_file_path()
+    if (!is.null(parameter_group)){
+        coef_snp_data = coef_snp_data[parameter %like% parameter_group]
+        file_name = paste0(file_path, '/', parameter_group, '_parameters_by_snp', snpID, '.pdf')
+    } else {
+        file_name = paste0(file_path, '/parameters_by_snp', snpID, '.pdf')
+    }
+    subset = coef_snp_data[snp == snpID & !is.na(genotype)]
+    subset$genotype = as.character(subset$genotype)
+    subset$log_10_coef = subset$coefficient/log(10)
+    comparisons = list(c("0", "1"), c("1", "2"), c("0", "2")) 
+    row_count = ceiling(length(unique(subset$parameter))/6)
+    col_count = min(6, length(unique(subset$parameter)))
+    plot = ggplot(subset, aes(x = genotype, y = log_10_coef)) +
+        facet_wrap(~parameter, ncol = col_count, nrow = row_count) +
+        geom_boxplot(size = 2) +
+        geom_jitter(size = 3, width = 0.05) +
+        # stat_compare_means(comparisons = comparisons, method = 't.test', size = 8, aes(label=..p.adj..), p.adjust.method = "bonferroni") +
+        stat_compare_means(comparisons = comparisons, method = 't.test', size = 8) +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab(paste0('SNP ', snpID, ' genotype')) +
+        ylab(paste0('Parameter coefficient\nlog10(probability of deletion)')) +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) +
+        theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
+    
+    ggsave(file_name, plot = plot, width = 6*col_count, height = 9*row_count, units = 'in', dpi = 750, device = cairo_pdf)
 }
