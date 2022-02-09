@@ -53,7 +53,8 @@ source('plotting_scripts/model_evaluation_functions.R')
 
 eval_results = compile_evaluation_results(TYPE)
 
-model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count'))
+model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content'))
+
 model_types = model_types[model_types %like% 'motif']
 
 for (model_type in model_types){
@@ -62,7 +63,7 @@ for (model_type in model_types){
     } else {
         left_melt = NA
     }
-
+    
     plot_model_evaluation_heatmap(eval_results, TYPE, model_type = model_type, terminal_melting_5_end_length_filter= left_melt)
 }
 
