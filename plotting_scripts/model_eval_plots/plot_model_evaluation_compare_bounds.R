@@ -51,7 +51,7 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
 UPPER_TRIM_BOUND2 <<- as.numeric(args[10]) 
-LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
+LOWER_TRIM_BOUND <<- 2 
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
 

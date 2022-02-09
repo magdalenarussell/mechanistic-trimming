@@ -42,7 +42,6 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
-LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
 
 MODEL_TYPE <<- args[11]
 

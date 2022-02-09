@@ -50,7 +50,7 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
-LOWER_TRIM_BOUND <<- RIGHT_NUC_MOTIF_COUNT - 2 
+LOWER_TRIM_BOUND <<- 2 
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
 
@@ -68,6 +68,6 @@ eval_results1 = compile_evaluation_results(TYPE)
 eval_results2 = compile_evaluation_results(TYPE2)
 
 # get model types
-model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count'))
+model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content'))
 
 plot_model_evaluation_compare(eval_results1, eval_results2, type1 = TYPE, type2 = TYPE2, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), label = FALSE)

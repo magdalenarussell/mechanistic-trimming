@@ -1,5 +1,4 @@
 source(paste0('plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
-source(paste0(PROJECT_PATH, '/scripts/data_compilation_functions.R'))
 source(paste0(PROJECT_PATH, '/plotting_scripts/plot_paths.R'))
 
 get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
@@ -589,6 +588,9 @@ plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL
         file_name = paste0(file_path, '/', parameter_group, '_parameters_by_snp', snpID, '.pdf')
     } else {
         file_name = paste0(file_path, '/parameters_by_snp', snpID, '.pdf')
+    }
+    if (parameter_group == 'trim_length'){
+        coef_snp_data$parameter = factor(coef_snp_data$parameter, levels = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
     }
     subset = coef_snp_data[snp == snpID & !is.na(genotype)]
     subset$genotype = as.character(subset$genotype)
