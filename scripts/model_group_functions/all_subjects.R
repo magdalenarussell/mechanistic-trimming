@@ -23,8 +23,10 @@ fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
     file_path = get_predicted_dist_file_path()
     file_name = get_predicted_dist_file_name(subgroup = NULL)
     location = file.path(file_path, file_name)
-    
-    fwrite(motif_data, location, sep = '\t')
+   
+    if (isTRUE(write_coeffs)){
+        fwrite(motif_data, location, sep = '\t')
+    }
     
     # get coef path
     coef_path = get_coefficient_output_file_path()
@@ -45,8 +47,6 @@ fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
         
         if (isTRUE(write_coeffs)){
             fwrite(pwm_dt, location, sep = '\t')
-        } else {
-            return(pwm_dt)
         }
 
         # get all coefficients
@@ -55,7 +55,11 @@ fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
         coefs = format_model_coefficient_output(model)
     }
     coefs$model_group = MODEL_GROUP
-    fwrite(coefs, location_coefs, sep = '\t')
+    if (isTRUE(write_coeffs)){
+        fwrite(coefs, location_coefs, sep = '\t')
+    } else {
+        return(coefs)
+    }
 }
 
 get_predicted_distribution_data <- function(){

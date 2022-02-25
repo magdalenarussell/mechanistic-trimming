@@ -1,5 +1,5 @@
 combine_all_individual_coefficients <- function(directory){
-    files = fs::dir_ls(path = directory)
+    files = fs::dir_ls(path = directory, type = 'file')
     require(parallel)
     cluster = makeCluster(NCPU)
     files_dt = parLapply(cluster, files, function(x){data.table::fread(x)})

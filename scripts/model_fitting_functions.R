@@ -65,8 +65,8 @@ fit_model <- function(group_motif_data){
 }
 
 get_predicted_dist_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -146,8 +146,8 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
 }
 
 get_pwm_matrix_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -158,8 +158,8 @@ get_pwm_matrix_file_path <- function(){
 }
 
 get_coefficient_output_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
