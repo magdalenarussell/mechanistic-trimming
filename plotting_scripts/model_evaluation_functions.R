@@ -1,3 +1,12 @@
+make_model_names_neat <- function(model_names){
+    model_names = str_replace_all(model_names, 'two_side', 'two-side')
+    two_side_original = sapply(strsplit(model_names, 'two-side'), `[`, 2)
+    two_side_nice = str_replace_all(two_side_original, '_', ' ') 
+    model_names = str_replace_all(model_names, two_side_original[!is.na(two_side_original)], two_side_nice[!is.na(two_side_nice)])
+    nice_model_names = str_replace_all(model_names, '_', ' + ')
+    return(nice_model_names)
+}
+
 filter_model_types <- function(remove_types_with_string = NA){
     model_type_files = list.files(path = 'scripts/model_formula_functions/')
     model_types = str_sub(model_type_files[model_type_files != '_ignore' & model_type_files != "model_formula_specific_functions"], end = -3)
@@ -28,7 +37,8 @@ process_model_evaluation_file <- function(eval_data, model_types_neat, left_moti
     }
 
     if (!is.na(left_motif_size_filter)){
-        eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (model_type %in% c('distance', 'two_side_terminal_melting', 'distance_two_side_terminal_melting') & motif_length_5_end == 0)]
+        # eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (model_type %in% c('distance', 'two_side_terminal_melting', 'distance_two_side_terminal_melting') & motif_length_5_end == 0)]
+        eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (!(model_type %like% 'motif') & motif_length_5_end == 0)]
     }
 
     if (!is.na(right_motif_size_filter)){

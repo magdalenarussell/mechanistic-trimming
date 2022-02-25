@@ -77,7 +77,8 @@ plot_melting_coefficient_heatmap_single_group <- function(model_coef_matrix, fil
     # convert to log_10
     model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
     # order variables
-    model_coef_matrix$parameter = factor(model_coef_matrix$parameter, levels = c('left_terminal_melting', 'right_terminal_melting'))
+    vars = c(unique(model_coef_matrix[parameter %like% 'left_terminal_melting']$parameter), unique(model_coef_matrix[parameter %like% 'right_terminal_melting']$parameter))
+    model_coef_matrix$parameter = factor(model_coef_matrix$parameter, levels = vars)
 
     if (is.null(limits)){
         max_val = max(abs(model_coef_matrix$log_10_pdel))
@@ -102,7 +103,7 @@ plot_melting_coefficient_heatmap_single_group <- function(model_coef_matrix, fil
     }
 
     if (isTRUE(write_plot)){
-        ggsave(file_name, plot = plot, width = 7.5, height = 3, units = 'in', dpi = 750, device = cairo_pdf)
+        ggsave(file_name, plot = plot, width = 8, height = 3, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         return(plot)
     }
@@ -341,7 +342,7 @@ plot_all_model_residuals_plot <- function(data, file_name, color_gene_list = NUL
 plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, model_type, terminal_melting_5_end_length_filter, limits = NULL){
     stopifnot(length(model_type) == 1)
     path = get_model_eval_file_path(type)
-    if (model_type %like% 'two_side_terminal_melting') {
+    if (model_type %like% 'two_side_terminal') {
         model_type_name = paste0(model_type, '_', terminal_melting_5_end_length_filter)
     } else {
         model_type_name = model_type
@@ -580,9 +581,9 @@ plot_coefficient_variation_across_individuals <- function(all_individual_coeffic
     ggsave(file_name, plot = plot, width = 14, height = 16, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL){
+plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL, negative_control = FALSE, negative_control_type = NULL){
     require(ggpubr)
-    file_path = get_individual_comparison_file_path()
+    file_path = get_individual_comparison_file_path(negative_control, negative_control_type)
     if (!is.null(parameter_group)){
         coef_snp_data = coef_snp_data[parameter %like% parameter_group]
         file_name = paste0(file_path, '/', parameter_group, '_parameters_by_snp', snpID, '.pdf')

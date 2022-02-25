@@ -1,6 +1,6 @@
 get_predicted_dist_figure_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -10,8 +10,8 @@ get_predicted_dist_figure_file_path <- function(){
 }
 
 get_coef_heatmap_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -22,8 +22,8 @@ get_coef_heatmap_file_path <- function(){
 }
 
 get_residual_figure_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -35,8 +35,8 @@ get_residual_figure_file_path <- function(){
 }
 
 get_coef_variations_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -48,8 +48,8 @@ get_coef_variations_file_path <- function(){
 }
 
 get_all_residual_figure_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -60,8 +60,8 @@ get_all_residual_figure_file_path <- function(){
 }
 
 get_base_composition_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -77,14 +77,18 @@ get_model_eval_file_path <- function(type){
     return(path)
 }
 
-get_individual_comparison_file_path <- function(){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+get_individual_comparison_file_path <- function(negative_control = FALSE, negative_control_type = NULL){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
 
     path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, MODEL_GROUP, GENE_WEIGHT_TYPE, model, paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'individual_comparison')
+    if (isTRUE(negative_control)){
+        stopifnot(!is.null(negative_control_type))
+        path = file.path(path, paste0('negative_control', negative_control_type))
+    }
     dir.create(path, recursive = TRUE)
     return(path)
 }

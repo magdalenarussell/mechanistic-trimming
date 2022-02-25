@@ -46,7 +46,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[10])
 
 MODEL_TYPE <<- args[11]
 
-if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -60,4 +60,4 @@ source('plotting_scripts/plotting_functions.R')
 pwm = get_model_coefficient_data() 
 
 # plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
-plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = NULL)
+plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-3.6, 3.6))
