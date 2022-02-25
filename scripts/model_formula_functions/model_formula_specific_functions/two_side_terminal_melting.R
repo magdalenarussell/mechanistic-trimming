@@ -96,3 +96,37 @@ process_for_two_side_terminal_melting <- function(group_motif_data, calculation_
     stopifnot(nrow(together) == row_count)
     return(together)
 }
+
+get_average_melting_temperature_by_length <- function(seq_length) {
+    require(gtools)
+    if (seq_length == 0){
+        mean_melt = NA
+    } else {
+        # since A and T, and G and C, have the same treatment in the melting temperature calculations,  I will only use A and G for assessing possible sequence permutations
+        possible_combos = permutations(2, seq_length, c('A', 'G'), repeats.allowed = TRUE)
+        possible_combos_str = apply(possible_combos, 1, function(x) paste(x, collapse = ''))
+        melting_temps = simple_terminal_melting_calculation(possible_combos_str)
+        mean_melt = mean(melting_temps$terminal_melting)
+    }
+    return(mean_melt)
+}
+
+transform_terminal_melting_to_score <- function(group_motif_data){
+    if (!all(c('left_terminal_melting_score', 'right_terminal_melting_score') %in% colnames(group_motif_data))){
+        # calculate the average melting temperature of a sequence by length
+        avg_melting = data.table(trim_length = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND))
+        avg_melting[, mean_right_melt := sapply(trim_length - abs(PNUC_COUNT), function(x) get_average_melting_temperature_by_length(x))]
+        avg_melting[, mean_left_melt := get_average_melting_temperature_by_length(LEFT_SIDE_TERMINAL_MELT_LENGTH)]
+        if (is.factor(group_motif_data$trim_length)){
+            avg_melting$trim_length = as.factor(avg_melting$trim_length)
+        }
+        group_motif_data = merge(group_motif_data, avg_melting, by = 'trim_length')
+
+        # assign a melting temperature score
+        group_motif_data[!((trim_length - abs(PNUC_COUNT)) == 0), right_terminal_melting_score := right_terminal_melting/mean_right_melt]
+        group_motif_data[(trim_length - abs(PNUC_COUNT)) == 0, right_terminal_melting_score := 1]
+
+        group_motif_data[,left_terminal_melting_score := left_terminal_melting/mean_left_melt]
+    }
+    return(group_motif_data)
+}
