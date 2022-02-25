@@ -32,7 +32,7 @@ edit_formula <- function(formula){
 }
 
 get_pwm_matrix_file_path_bootstrap <- function(sample_number){
-    if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
     } else {
         model = MODEL_TYPE
@@ -55,7 +55,6 @@ fit_model_bootstrap <- function(group_motif_data){
     formula = get_model_formula()
     formula =  edit_formula(formula)
     group_motif_data = set_contrasts(group_motif_data)
-    stopifnot(MODEL_TYPE == 'motif_distance_two_side_terminal_melting')
     start_list = get_start_list(group_motif_data)
     model = mclogit(formula, 
                     data = group_motif_data,

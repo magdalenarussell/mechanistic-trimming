@@ -52,7 +52,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[9])
 
 MODEL_TYPE <<- 'motif_distance_two_side_terminal_melting' 
 
-if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -77,9 +77,10 @@ for (bootstrap in seq(1, 99)){
 }
 
 original = get_model_coefficient_data() 
-original_long = original %>% pivot_longer(cols = starts_with("motif"), names_to = 'position', values_to = 'coef') %>% as.data.table()
-original_long$bootstrap_dataset = NA 
-together = rbind(together, original_long)
+original = original[parameter %like% 'motif']
+setnames(original, 'parameter', 'position')
+setnames(original, 'coefficient', 'coef')
+together = rbind(together, original, fill = TRUE)
 
 position_values = map_positions_to_values(unique(together$position))
 together = merge(together, position_values, by.x = 'position', by.y = 'positions')
