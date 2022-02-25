@@ -58,7 +58,7 @@ model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'ba
 model_types = model_types[model_types %like% 'motif']
 
 for (model_type in model_types){
-    if (model_type %like% 'two_side_terminal_melting'){
+    if (model_type %like% 'two_side_terminal_'){
         left_melt = LEFT_SIDE_TERMINAL_MELT_LENGTH
     } else {
         left_melt = NA
