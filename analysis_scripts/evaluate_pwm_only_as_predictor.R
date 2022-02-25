@@ -50,7 +50,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[10])
 MODEL_TYPE <<- args[11]
 stopifnot(MODEL_TYPE %like% 'motif')
 
-if (grepl('_side_terminal_melting', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
