@@ -406,9 +406,12 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
     } else if (type == 'old_loss_cv'){
         ylab = 'Raw count conditional log loss\n(held-out dataset)' 
     }
+    
+    nice_names = make_model_names_neat(unique(eval_data$model_type)) 
+    eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
 
     plot = ggplot(eval_data) +
-        geom_point(aes(y = get(type), x = model_parameter_count, color = model_type), size = 5)+
+        geom_point(aes(y = get(type), x = model_parameter_count, color = nice_model_type), size = 5)+
         theme_cowplot(font_family = 'Arial') + 
         xlab('Total number of terms') +
         ylab(ylab) +
@@ -420,16 +423,18 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
 
     if (isTRUE(label)){
         plot = plot +
-            geom_text_repel(aes(y = get(type), x = model_parameter_count, color = model_type, label = model_type), size = 4) + 
-            scale_x_continuous(breaks = seq(0, 60, 2), limits = c(0, 60)) +
-            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+            coord_cartesian(clip = 'off') +
+            geom_text(aes(y = get(type), x = model_parameter_count, label = nice_model_type, color = nice_model_type), hjust = 0, nudge_x = 0.5, fontface = "bold", size = 6) +
+            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,15,0.5,0.5), "cm")) 
+
         file_name = paste0(file_name, '.pdf')
+        ggsave(file_name, plot = plot, width = 15, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         plot = plot +
             theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
         file_name = paste0(file_name, '_no_label.pdf')
+        ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     }
-    ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
 plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
@@ -466,9 +471,12 @@ plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, 
         ylab = 'Raw count conditional log loss\n(held-out dataset)' 
     }
     
+    nice_names = make_model_names_neat(unique(eval_data$model_type)) 
+    eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
+ 
     plot = ggplot(eval_data) +
         geom_abline(intercept = 0, slope = 1, size = 3, color = 'gray60', linetype = 'dashed') +
-        geom_point(aes(y = get(type2), x = get(type1), color = model_type), size = 5)+
+        geom_point(aes(y = get(type2), x = get(type1), color = nice_model_type), size = 5)+
         theme_cowplot(font_family = 'Arial') + 
         xlab(xlab) +
         ylab(ylab) +
@@ -480,16 +488,18 @@ plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, 
 
     if (isTRUE(label)){
         plot = plot +
-            geom_text_repel(aes(y = get(type2), x = get(type1), color = model_type, label = model_type), size = 4) + 
-            scale_x_continuous(breaks = seq(0, 60, 2), limits = c(0, 60)) +
-            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
+            coord_cartesian(clip = 'off') +
+            geom_text(aes(y = get(type2), x = get(type1), label = nice_model_type, color = nice_model_type), hjust = 0, nudge_x = 0.004, fontface = "bold", size = 6) +
+            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,15,0.5,0.5), "cm")) 
+
         file_name = paste0(file_name, '.pdf')
+        ggsave(file_name, plot = plot, width = 15, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         plot = plot +
             theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
         file_name = paste0(file_name, '_no_label.pdf')
+        ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     }
-    ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
 plot_model_evaluation_compare_bounds <- function(eval_data, upper_bound1, upper_bound2, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE, limits = NULL) {
