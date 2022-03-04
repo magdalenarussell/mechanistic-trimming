@@ -4,7 +4,7 @@ get_pwm_score <- function(pwm, motif, positions){
     score = 0
     for (index in 1:length(motif_elements)){
         element = motif_elements[index]
-        element_score = pwm[base == element][[names(element)]]
+        element_score = pwm[base == element & parameter == names(element)]$coefficient
         score = score + element_score 
     }
     return(score)
@@ -41,7 +41,7 @@ cluster_data <- function(data, cluster_count, cluster_variable){
 
 get_pwm_profile_plot_file_path <- function(cluster_count) {
     if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
@@ -59,7 +59,7 @@ predict_trimmming_given_pwm_scores <- function(data){
 
 get_pwm_prediction_residual_plot_file_path <- function() {
     if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
-        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
+        model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
     }
