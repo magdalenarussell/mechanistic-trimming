@@ -11,7 +11,6 @@ get_coefficient_output_file_name <- function(subgroup){
 }
 
 fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
-    motif_data = process_data_for_model_fit(motif_data)
     model = fit_model(motif_data)
 
     # get predicted probabilities and empirical probabilities

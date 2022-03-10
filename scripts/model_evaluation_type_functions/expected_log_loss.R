@@ -41,8 +41,13 @@ evaluate_loss <- function(motif_data) {
         sample = sample_data$sample
 
         # Fit model to the motif_data_subset
-        model = fit_model(motif_data_subset)
-        parameter_count_vector = c(parameter_count_vector, length(model$coefficients)) 
+        if (MODEL_TYPE != 'null'){
+            model = fit_model(motif_data_subset)
+            parameter_count_vector = c(parameter_count_vector, length(model$coefficients)) 
+        } else {
+            model = 'null'
+            parameter_count_vector = c(parameter_count_vector, 0)
+        }
 
         # Compute conditional logistic loss value for held out sample using model
         log_loss = calculate_cond_expected_log_loss(model, sample)

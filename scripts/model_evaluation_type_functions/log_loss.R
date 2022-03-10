@@ -4,8 +4,13 @@ WRITE_INTERMEDIATE_LOSS <<- NA
 
 evaluate_loss <- function(motif_data) {
     # fit model to the training data 
-    model = fit_model(motif_data)
-    parameter_count = length(model$coefficients) 
+    if (MODEL_TYPE != 'null') {
+        model = fit_model(motif_data)
+        parameter_count = length(model$coefficients) 
+    } else {
+        model = 'null'
+        parameter_count = 0
+    } 
     # adjust weighting to reflect actual p_gene_given_subject weight for log loss calculation
     source(paste0('scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
     motif_data = calculate_subject_gene_weight(motif_data)

@@ -162,11 +162,11 @@ compile_all_data <- function(directory){
     stopImplicitCluster()
 }
 
-convert_data_to_motifs <- function(compiled_data){
-    compiled_data[, left_motif := substring(left_nucs, REQUIRED_COMMON_NUCS_5-(LEFT_NUC_MOTIF_COUNT-1), REQUIRED_COMMON_NUCS_5)]
-    compiled_data[, right_motif := substring(right_nucs, 1, RIGHT_NUC_MOTIF_COUNT)]
+convert_data_to_motifs <- function(compiled_data, left_window_size = LEFT_NUC_MOTIF_COUNT, right_window_size = RIGHT_NUC_MOTIF_COUNT){
+    compiled_data[, left_motif := substring(left_nucs, REQUIRED_COMMON_NUCS_5-(left_window_size-1), REQUIRED_COMMON_NUCS_5)]
+    compiled_data[, right_motif := substring(right_nucs, 1, right_window_size)]
     compiled_data[, motif := paste0(left_motif, right_motif)] 
-    return(compiled_data[, -c('left_nucs', 'right_nucs', 'left_motif', 'right_motif')])
+    return(compiled_data)
 }
 
 get_background_freq_by_postion <- function(motif_data){

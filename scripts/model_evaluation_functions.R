@@ -50,8 +50,11 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
 
 calculate_cond_expected_log_loss <- function(model, sample_data){
     #TODO switch this function to mclogit.predict (if typo is fixed..."contasts")
-    sample_data = process_data_for_model_fit(sample_data)
-    sample_data$prediction = temp_predict(model, newdata = sample_data)
+    if (MODEL_TYPE != 'null') {
+        sample_data$prediction = temp_predict(model, newdata = sample_data)
+    } else {
+        sample_data$prediction = exp(1)/sum(rep(exp(1), UPPER_TRIM_BOUND -LOWER_TRIM_BOUND + 1))
+    }
     sample_data[, log_prediction := log(prediction)]
     sample_data[, weighted_log_prediction := log_prediction * weighted_observation] 
     log_loss = -sum(sample_data$weighted_log_prediction)
