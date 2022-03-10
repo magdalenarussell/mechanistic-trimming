@@ -21,7 +21,7 @@ split_motif_column_by_motif_position <- function(aggregated_subject_data){
 
     if (LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT > 0){
         split_data = aggregated_subject_data %>% separate('motif', positions, sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
-        together = merge(aggregated_subject_data, split_data)
+        together = merge(aggregated_subject_data, split_data, by = colnames(aggregated_subject_data)[!colnames(aggregated_subject_data) == 'motif'])
     } else {
         together = aggregated_subject_data
     }
@@ -42,17 +42,27 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
     together = foreach(file = files, .combine=rbind) %dopar% {
         file_data = fread(file)
         print(paste(file))
-        motif_data = convert_data_to_motifs(file_data)
-        split_motif_column_by_motif_position(motif_data) 
+        file_data
     }
-    together = calculate_subject_gene_weight(together)
+    
+    if (MODEL_TYPE %like% 'dna_shape') {
+        together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
+        processed_motif_data = process_data_for_model_fit(together)
+        motif_data = convert_data_to_motifs(processed_motif_data)
+    } else {
+        together = convert_data_to_motifs(together)
+        motif_data = process_data_for_model_fit(together)
+    }
+
+    motif_data = motif_data[, -c('left_nucs', 'right_nucs', 'left_motif', 'right_motif')]
+    together_pos = split_motif_column_by_motif_position(motif_data) 
+    weighted_together = calculate_subject_gene_weight(together_pos)
     stopImplicitCluster()
-    return(together)
+    return(weighted_together)
 }
 
 fit_model <- function(group_motif_data){
     stopifnot(unique(group_motif_data$gene_weight_type) == GENE_WEIGHT_TYPE)
-    group_motif_data = process_data_for_model_fit(group_motif_data)
     formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
     start_list = get_start_list(group_motif_data)
@@ -84,7 +94,6 @@ get_levels <- function(group_motif_data, ref_base, position){
 
 
 get_coeffiecient_matrix <- function(group_motif_data, ref_base){
-    # group_motif_data = process_data_for_model_fit(group_motif_data)
     group_motif_data = set_contrasts(group_motif_data, ref_base)
     model = fit_model(group_motif_data)
     positions = get_positions()
