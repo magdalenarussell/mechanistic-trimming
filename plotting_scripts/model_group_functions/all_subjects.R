@@ -27,16 +27,19 @@ plot_predicted_trimming_dists <- function(data, gene_name){
     plot_predicted_trimming_dists_single_group(data, gene_name, complete_path)
 }
 
-plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALSE, write_plot = TRUE, limits = NULL){
+plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALSE, write_plot = TRUE, melt_limits = NULL, motif_limits = NULL, dist_limits = NULL, shape_limits = NULL){
     file_path = get_coef_heatmap_file_path()
     if (MODEL_TYPE %like% 'two_side_terminal_melting'){
-        plot_melting_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('melting')), with_values = with_values, write_plot = write_plot, limits = limits)
+        plot_melting_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('melting')), with_values = with_values, write_plot = write_plot, limits = melt_limits)
     } 
     if (MODEL_TYPE %like% 'distance'){
-        plot_distance_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('distance')), with_values = with_values, write_plot = write_plot, limits = limits)
+        plot_distance_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('distance')), with_values = with_values, write_plot = write_plot, limits = dist_limits)
     }
     if (MODEL_TYPE %like% 'motif'){
-        plot_model_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('motif')), with_values = with_values, write_plot = write_plot, limits = limits)
+        plot_model_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('motif')), with_values = with_values, write_plot = write_plot, limits = motif_limits)
+    }
+    if (MODEL_TYPE %like% 'dna_shape'){
+        plot_shape_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('dna_shape')), with_values = with_values, write_plot = write_plot, limits = shape_limits)
     }
 }
 

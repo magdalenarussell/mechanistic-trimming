@@ -2,6 +2,7 @@ make_model_names_neat <- function(model_names){
     model_names = str_replace_all(model_names, 'two_side', 'two-side')
     two_side_original = sapply(strsplit(model_names, 'two-side'), `[`, 2)
     two_side_nice = str_replace_all(two_side_original, '_', ' ') 
+    model_names = str_replace_all(model_names, 'dna_shape', 'dna-shape') 
     model_names = str_replace_all(model_names, two_side_original[!is.na(two_side_original)], two_side_nice[!is.na(two_side_nice)])
     nice_model_names = str_replace_all(model_names, '_', ' + ')
     return(nice_model_names)
@@ -26,8 +27,16 @@ filter_model_types <- function(remove_types_with_string = NA){
 
 process_model_evaluation_file <- function(eval_data, model_types_neat, left_motif_size_filter = NA, right_motif_size_filter = NA, terminal_melting_5_end_length_filter = NA, lower_trim_bound = LOWER_TRIM_BOUND, upper_trim_bound = UPPER_TRIM_BOUND){
     if (length(model_types_neat) == 1){ 
-        if (model_types_neat %like% 'motif'){
-            sub_model = str_split(model_types_neat, 'motif_')[[1]][2]
+        if ((model_types_neat %like% 'motif') | (model_types_neat %like% 'shape')){
+            sub_model = str_remove(model_types_neat, 'motif_')
+            sub_model = str_remove(sub_model, 'dna_shape')
+            sub_model = str_replace(sub_model, '__', '_')
+            if (substring(sub_model, nchar(sub_model), nchar(sub_model)) == '_'){
+                sub_model = substring(sub_model, 1, nchar(sub_model)-1)
+            }
+            if (substring(sub_model, 1, 1) == '_'){
+                sub_model = substring(sub_model, 2, nchar(sub_model))
+            }
             eval_data = eval_data[(model_type %in% model_types_neat) | (model_type == sub_model & motif_length_3_end == 0)]
         } else {
             eval_data = eval_data[model_type %in% model_types_neat]
@@ -38,11 +47,11 @@ process_model_evaluation_file <- function(eval_data, model_types_neat, left_moti
 
     if (!is.na(left_motif_size_filter)){
         # eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (model_type %in% c('distance', 'two_side_terminal_melting', 'distance_two_side_terminal_melting') & motif_length_5_end == 0)]
-        eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (!(model_type %like% 'motif') & motif_length_5_end == 0)]
+        eval_data = eval_data[(motif_length_5_end == left_motif_size_filter) | (!((model_type %like% 'motif') | (model_type %like% 'shape')) & motif_length_5_end == 0)]
     }
 
     if (!is.na(right_motif_size_filter)){
-        eval_data = eval_data[(motif_length_3_end == right_motif_size_filter) | (model_type %in% model_types_neat[!(model_types_neat %like% 'motif')] & motif_length_3_end ==  0)]
+        eval_data = eval_data[(motif_length_3_end == right_motif_size_filter) | (model_type %in% model_types_neat[!((model_types_neat %like% 'motif') | (model_types_neat %like% 'shape'))] & motif_length_3_end ==  0)]
     }
 
     eval_data = eval_data[terminal_melting_5_end_length %in% terminal_melting_5_end_length_filter]
