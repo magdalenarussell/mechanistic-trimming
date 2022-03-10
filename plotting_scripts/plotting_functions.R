@@ -61,11 +61,14 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
 map_positions_to_values <- function(positions){
     values = c()
     for (position in positions){
-        if (substring(position, 1, 7) == "motif_5"){
+        if (position %like% '_5end_'){
             val = -1 * as.numeric(substring(position, nchar(position), nchar(position)))
-        } else if (substring(position, 1, 7) == "motif_3"){
+        } else if (position %like% '_3end_'){
             val = as.numeric(substring(position, nchar(position), nchar(position)))
+        } else if (position %like% '_trim_'){
+            val = 0
         }
+
         values = c(values, val)
     }
     together = data.table(positions = positions, values = values)
@@ -187,6 +190,75 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
         return(plot)
     }
 }
+
+plot_shape_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    model_coef_matrix = model_coef_matrix[(parameter %like% 'EP') | (parameter %like% 'MGW') | (parameter %like% 'HelT') | (parameter %like% 'Roll') | (parameter %like% 'ProT')]
+
+    position_values = map_positions_to_values(unique(model_coef_matrix$parameter))
+    together = merge(model_coef_matrix, position_values, by.x = 'parameter', by.y = 'positions')
+
+    # convert to log_10
+    together$log_10_pdel = together$coefficient/log(10)
+    together[, shape := sapply(together$parameter, function(x) str_split(x, '_')[[1]][1])]
+    # order variables
+    together$values = factor(together$values)
+
+    if (is.null(limits)){
+        max_val = max(abs(together$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+    
+    motif_length = RIGHT_NUC_MOTIF_COUNT + LEFT_NUC_MOTIF_COUNT
+
+    # base data
+    base_data = together[shape %in% c('EP', 'MGW', 'ProT')]
+    bond_data = together[shape %in% c('Roll', 'HelT')]
+
+    base_plot = ggplot(base_data, aes(x=values, y=base, fill=log_10_pdel)) +
+        facet_wrap(~ shape, ncol = 1, strip.position='left') +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Base position') +
+        ylab('') +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank()) +
+        geom_vline(xintercept = LEFT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
+        guides(fill = guide_colourbar(barheight = 14)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.45, y = 0.55, label = "5\'", size = 6) +  
+        annotate("text", x = motif_length + 0.55, y = 0.55, label = "3\'", size = 6) 
+ 
+   bond_plot = ggplot(bond_data, aes(x=values, y=base, fill=log_10_pdel)) +
+        facet_wrap(~ shape, ncol = 1, strip.position='left') +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Bond position') +
+        ylab('') +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank()) +
+        guides(fill = guide_colourbar(barheight = 14)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.45, y = 0.55, label = "5\'", size = 6) +  
+        annotate("text", x = motif_length-1 + 0.55, y = 0.55, label = "3\'", size = 6) 
+    
+    if (with_values == TRUE){
+        bond_plot = bond_plot +
+            geom_text(data = bond_data, aes(x = values, y = base, label = round(log_10_pdel, 2)))
+        base_plot = base_plot +
+            geom_text(data = base_data, aes(x = values, y = base, label = round(log_10_pdel, 2)))
+    }
+
+    # align plots
+    legend = get_legend(base_plot + theme(legend.box.margin = margin(0, 0, 0, 12)))
+    plots_tog = plot_grid(base_plot + theme(legend.position = 'none'), bond_plot + theme(legend.position = 'none'), ncol = 1, rel_heights = c(3, 2))
+    all_tog = plot_grid(plots_tog, legend, rel_widths = c(1, 0.9))
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = all_tog, width = motif_length + 7, height = 6, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
+
+
 
 plot_background_base_composition_heatmap_single_group <- function(background_matrix, file_name, with_values = FALSE, write_plot = TRUE){
     data = background_matrix %>%
@@ -410,13 +482,15 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
     nice_names = make_model_names_neat(unique(eval_data$model_type)) 
     eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
 
+    require(ggrepel)
     plot = ggplot(eval_data) +
         geom_point(aes(y = get(type), x = model_parameter_count, color = nice_model_type), size = 5)+
         theme_cowplot(font_family = 'Arial') + 
         xlab('Total number of terms') +
         ylab(ylab) +
         background_grid(major = 'xy') + 
-        panel_border(color = 'gray60', size = 1.5) 
+        panel_border(color = 'gray60', size = 1.5) +
+        ylim(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05)
 
     path = get_model_eval_file_path(type)
     file_name = paste0(path, '/neat_', type, '_term_count_scatter_', left_motif_size_filter, '_', right_motif_size_filter, '_motif')
@@ -424,16 +498,16 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
     if (isTRUE(label)){
         plot = plot +
             coord_cartesian(clip = 'off') +
-            geom_text(aes(y = get(type), x = model_parameter_count, label = nice_model_type, color = nice_model_type), hjust = 0, nudge_x = 0.5, fontface = "bold", size = 6) +
-            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,15,0.5,0.5), "cm")) 
+            geom_text_repel(aes(y = get(type), x = model_parameter_count, label = nice_model_type, color = nice_model_type), nudge_x = 0.75, hjust = 0, point.padding = 1, max.overlaps = Inf, fontface = "bold", size = 6, xlim = c(0, 90), ylim = c(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05), direction = 'y') +
+            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,17,0.5,0.5), "cm")) 
 
         file_name = paste0(file_name, '.pdf')
-        ggsave(file_name, plot = plot, width = 15, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+        ggsave(file_name, plot = plot, width = 16, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         plot = plot +
             theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
         file_name = paste0(file_name, '_no_label.pdf')
-        ggsave(file_name, plot = plot, width = 18, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+        ggsave(file_name, plot = plot, width = 19, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     }
 }
 
@@ -487,9 +561,10 @@ plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, 
     file_name = paste0(path, '/neat_', type1, '_', type2, '_eval_compare_', left_motif_size_filter, '_', right_motif_size_filter, '_motif')
 
     if (isTRUE(label)){
+        require(ggrepel)
         plot = plot +
             coord_cartesian(clip = 'off') +
-            geom_text(aes(y = get(type2), x = get(type1), label = nice_model_type, color = nice_model_type), hjust = 0, nudge_x = 0.004, fontface = "bold", size = 6) +
+            geom_text_repel(aes(y = get(type2), x = get(type1), label = nice_model_type, color = nice_model_type), nudge_x = 0.01, hjust = 0, point.padding = 1, max.overlaps = Inf, fontface = "bold", size = 6, xlim = c(0, 5), direction = 'y') +
             theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,15,0.5,0.5), "cm")) 
 
         file_name = paste0(file_name, '.pdf')
