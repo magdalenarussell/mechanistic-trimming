@@ -60,4 +60,4 @@ source('plotting_scripts/plotting_functions.R')
 pwm = get_model_coefficient_data() 
 
 # plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
-plot_model_coefficient_heatmap(pwm, with_values = TRUE, melt_limits = c(-3.1, 3.1), motif_limits = c(-0.6, 0.6), dist_limits =c(-1.9, 1.9), shape_limits = c(-0.3, 0.3))
+plot_model_coefficient_heatmap(pwm, with_values = TRUE, melt_limits = c(-3.1, 3.1), motif_limits = c(-0.6, 0.6), dist_limits =c(-1.9, 1.9), shape_limits = c(-0.24, 0.24))

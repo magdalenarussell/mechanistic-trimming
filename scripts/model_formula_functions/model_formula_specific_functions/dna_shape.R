@@ -94,7 +94,16 @@ get_dna_structure_windows <- function(window_size, left_window_size, right_windo
     file.remove(file.path(temp_dir, delfiles))
 }
 
-process_for_dna_structure <- function(group_motif_data){
+standardize_shapes <- function(window_shape_data) {
+    cols = colnames(window_shape_data)[colnames(window_shape_data) != 'window']
+    window_shape_data[, paste0(cols, "_std") := lapply(.SD, function(x) as.vector(scale(x))), .SDcols = cols]
+
+    std_cols = colnames(window_shape_data)[colnames(window_shape_data) == 'window' | colnames(window_shape_data) %like% '_std']
+
+    return(window_shape_data[, ..std_cols])
+}
+
+process_for_dna_structure <- function(group_motif_data, standardize = FALSE){
     left_window_size = LEFT_NUC_MOTIF_COUNT + 2
     right_window_size = RIGHT_NUC_MOTIF_COUNT + 2
     window_size = left_window_size + right_window_size
@@ -107,6 +116,9 @@ process_for_dna_structure <- function(group_motif_data){
     }  
 
     window_shape_data = fread(file_name)
+    if (isTRUE(standardize)){
+        window_shape_data = standardize_shapes(window_shape_data)
+    }
 
     # merge
     together = merge(group_motif_data, window_shape_data, by.x = 'motif', by.y = 'window')
