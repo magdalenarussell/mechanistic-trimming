@@ -30,6 +30,7 @@ process_model_evaluation_file <- function(eval_data, model_types_neat, left_moti
         if ((model_types_neat %like% 'motif') | (model_types_neat %like% 'shape')){
             sub_model = str_remove(model_types_neat, 'motif_')
             sub_model = str_remove(sub_model, 'dna_shape')
+            sub_model = str_remove(sub_model, '-std')
             sub_model = str_replace(sub_model, '__', '_')
             if (substring(sub_model, nchar(sub_model), nchar(sub_model)) == '_'){
                 sub_model = substring(sub_model, 1, nchar(sub_model)-1)

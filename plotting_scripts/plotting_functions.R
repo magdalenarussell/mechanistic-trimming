@@ -61,6 +61,7 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
 map_positions_to_values <- function(positions){
     values = c()
     for (position in positions){
+        position = str_remove(position, '_std')
         if (position %like% '_5end_'){
             val = -1 * as.numeric(substring(position, nchar(position), nchar(position)))
         } else if (position %like% '_3end_'){
@@ -68,7 +69,6 @@ map_positions_to_values <- function(positions){
         } else if (position %like% '_trim_'){
             val = 0
         }
-
         values = c(values, val)
     }
     together = data.table(positions = positions, values = values)
