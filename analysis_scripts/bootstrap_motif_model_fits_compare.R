@@ -52,7 +52,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[9])
 
 MODEL_TYPE <<- 'motif_distance_two_side_terminal_melting' 
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA

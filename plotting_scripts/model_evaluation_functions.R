@@ -1,9 +1,35 @@
+make_loss_type_names_neat <- function(type) {
+    if (type == 'expected_log_loss'){
+        nice = 'Expected log loss\n(held-out datasets)'
+    } else if (type == 'log_loss'){
+        nice = 'Log loss\n(training dataset)'
+    } else if (type == 'aic'){
+        nice = 'AIC' 
+    } else if (type == 'raw_loss'){
+        nice = 'Raw count log loss (training dataset)' 
+    } else if (type == 'old_loss_cv'){
+        nice = 'Raw count conditional log loss\n(held-out dataset)' 
+    } else if (type == 'log_loss_j_gene'){
+        nice = 'Log loss\n(J-gene dataset)' 
+    } else if (type %in% c('v_gene_family_loss', 'v_gene_family_loss2')){
+        nice = 'Log loss\n(\"most different\" V-gene families held-out)' 
+    } else if (type %like% 'v_gene_family_loss2,'){
+        nice = str_replace(type, 'v_gene_family_loss2,', 'Log loss\n(V-gene family\n')
+        nice = paste0(nice, '\nheld-out)')
+    }
+    return(nice)
+}
+ 
 make_model_names_neat <- function(model_names){
     model_names = str_replace_all(model_names, 'two_side', 'two-side')
     two_side_original = sapply(strsplit(model_names, 'two-side'), `[`, 2)
+    two_side_original_subset = unique(two_side_original[!is.na(two_side_original) & !(two_side_original %like% 'base-count')])
     two_side_nice = str_replace_all(two_side_original, '_', ' ') 
+    two_side_nice_subset = unique(two_side_nice[!is.na(two_side_nice) & !(two_side_nice %like% 'base-count')]) 
     model_names = str_replace_all(model_names, 'dna_shape', 'dna-shape') 
-    model_names = str_replace_all(model_names, two_side_original[!is.na(two_side_original)], two_side_nice[!is.na(two_side_nice)])
+    if (length(two_side_original_subset) > 0) {
+        model_names = str_replace_all(model_names, two_side_original_subset, two_side_nice_subset) 
+    }
     nice_model_names = str_replace_all(model_names, '_', ' + ')
     return(nice_model_names)
 }

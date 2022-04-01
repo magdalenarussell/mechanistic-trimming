@@ -1,5 +1,5 @@
 get_predicted_dist_figure_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -10,7 +10,7 @@ get_predicted_dist_figure_file_path <- function(){
 }
 
 get_coef_heatmap_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -22,7 +22,7 @@ get_coef_heatmap_file_path <- function(){
 }
 
 get_residual_figure_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -35,7 +35,7 @@ get_residual_figure_file_path <- function(){
 }
 
 get_coef_variations_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -48,7 +48,7 @@ get_coef_variations_file_path <- function(){
 }
 
 get_all_residual_figure_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -60,7 +60,7 @@ get_all_residual_figure_file_path <- function(){
 }
 
 get_base_composition_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -78,7 +78,7 @@ get_model_eval_file_path <- function(type){
 }
 
 get_individual_comparison_file_path <- function(negative_control = FALSE, negative_control_type = NULL){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE

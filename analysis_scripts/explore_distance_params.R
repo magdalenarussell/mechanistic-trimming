@@ -45,6 +45,7 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
 UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
 
 MODEL_TYPE <<- args[11]
+stopifnot(MODEL_TYPE %like% 'distance')
 
 if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
@@ -56,11 +57,29 @@ source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
 
-# Read in motif data 
-motif_data = aggregate_all_subject_data()
-background = get_base_composition_counts(motif_data)
+# Read in model coefficient data 
+pwm = get_model_coefficient_data() 
+
+distance_terms = pwm[parameter %like% 'trim_length']
+
+distance_terms$log10_coef = distance_terms$coefficient/log(10)
+distance_terms$clean_dist = sapply(distance_terms$parameter, function(x) str_split(x, '_')[[1]][3])
+distance_terms$clean_dist = factor(distance_terms$clean_dist, levels = paste0(seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
+
+plot = ggplot(distance_terms, aes(x = clean_dist, y = log10_coef)) +
+    geom_bar(stat="identity") +
+    xlab('Distance') +
+    ylab('log10(probability of deletion') +
+    theme_cowplot(font_family = 'Arial') + 
+    theme(legend.position = "none", text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    background_grid(major = 'xy') + 
+    panel_border(color = 'gray60', size = 1.5) +
+    ylim(-1.9, 1.9)
 
 path = get_coef_heatmap_file_path()
-file_name = paste0(path, '/background_base_frequency_heatmap.pdf')
+file_name = paste0(path, '/distance_barplot.pdf')
 
-plot_background_base_composition_heatmap_single_group(background, file_name, with_values = TRUE)
+ggsave(file_name, plot = plot, width = 14, height = 8, units = 'in', dpi = 750, device = cairo_pdf)
+
+
+

@@ -75,6 +75,56 @@ map_positions_to_values <- function(positions){
     return(together)
 }
 
+plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    model_coef_matrix = model_coef_matrix[parameter %like% 'base_count']
+    # convert to log_10
+    model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
+    # order variables
+    left_vars = unique(model_coef_matrix[parameter %like% 'left']$parameter)
+    right_vars = unique(model_coef_matrix[parameter %like% 'right']$parameter)
+    if (length(left_vars) == 0){
+        fake_row = data.table(coefficient = rep(0, 2), parameter = rep("left_base_count", 2), base = c('AT', 'GC'), model_group = rep(MODEL_GROUP,2), log_10_pdel = rep(0,2))
+        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } else if (length(right_vars) == 0){
+        fake_row = data.table(coefficient = rep(0, 2), parameter = rep("right_base_count", 2), base = c('AT', 'GC'), model_group = rep(MODEL_GROUP,2), log_10_pdel = rep(0,2))
+        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } else {
+        extended_data = model_coef_matrix
+    }
+ 
+    vars = c(unique(extended_data[parameter %like% 'left']$parameter), unique(extended_data[parameter %like% 'right']$parameter))
+    extended_data$parameter = factor(extended_data$parameter, levels = vars)
+
+    if (is.null(limits)){
+        max_val = max(abs(model_coef_matrix$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+    
+    plot = ggplot(extended_data, aes(x=parameter, y=base, fill=log_10_pdel)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('Base count') +
+        ylab('Base type') +
+        geom_vline(xintercept = 1 + 0.5, size = 3, color = 'black') +
+        theme(text = element_text(size = 15), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight = 8)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.55, y = 0.45, label = "5\'", size = 6) +  
+        annotate("text", x = 2.5 , y = 0.45, label = "3\'", size = 6) 
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = model_coef_matrix, aes(x = parameter, y = base, label = round(log_10_pdel, 2)))
+    }
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 8, height = 5, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
+
+
 plot_melting_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
     model_coef_matrix = model_coef_matrix[parameter %like% 'terminal_melting']
     # convert to log_10
@@ -423,17 +473,7 @@ plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, 
     eval_data = process_model_evaluation_file(eval_data, model_types_neat = model_type, terminal_melting_5_end_length_filter = terminal_melting_5_end_length_filter)
     eval_data = eval_data[motif_type == MOTIF_TYPE]
 
-    if (type == 'expected_log_loss'){
-        fill_lab = 'Expected conditional log loss'
-    } else if (type == 'log_loss'){
-        fill_lab = 'Conditional log loss\n(training dataset)'
-    } else if (type == 'aic'){
-        fill_lab = 'AIC' 
-    } else if (type == 'raw_loss'){
-        fill_lab = 'Raw count log loss\n(training dataset)' 
-    } else if (type == 'old_loss_cv'){
-        fill_lab = 'Raw count conditional log loss\n(held-out dataset)' 
-    }
+    fill_lab = make_loss_type_names_neat(type)
 
     setnames(eval_data, type, 'loss')
 
@@ -462,22 +502,72 @@ plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, 
     ggsave(file_name, plot = plot, width = 11, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
-    # process evaluation file
-    eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
+plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL) {
+    # process evaluation file and combine with Murugan 2x4 motif evaluation losses
+    eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
+    eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
+    eval_data = process_model_evaluation_file(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
+    eval_data = rbind(eval_data, eval_data_murugan)
     eval_data = eval_data[motif_type == MOTIF_TYPE]
 
-    if (type == 'expected_log_loss'){
-        ylab = 'Expected conditional log loss'
-    } else if (type == 'log_loss'){
-        ylab = 'Conditional log loss (training dataset)'
-    } else if (type == 'aic'){
-        ylab = 'AIC' 
-    } else if (type == 'raw_loss'){
-        ylab = 'Raw count log loss (training dataset)' 
-    } else if (type == 'old_loss_cv'){
-        ylab = 'Raw count conditional log loss\n(held-out dataset)' 
+    # reformat loss names to be nice
+    nice_loss_names = c()
+    for (type in unique(all_eval_data$loss_type)){
+        nice_name = make_loss_type_names_neat(type)
+        nice_loss_names = c(nice_loss_names,  nice_name)
     }
+    eval_data$nice_loss_type = mapvalues(eval_data$loss_type, from = unique(eval_data$loss_type), to = nice_loss_names)
+    
+    # reformat model names to be nice
+    nice_names = make_model_names_neat(unique(eval_data$model_type)) 
+    eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
+
+    # create label dataset
+    eval_data$nice_loss_type = factor(eval_data$nice_loss_type, levels = nice_loss_names)
+    last_loss = nice_loss_names[length(nice_loss_names)]
+    label_data = eval_data[nice_loss_type == last_loss] 
+
+    # create plot
+    require(ggrepel)
+    plot = ggplot(eval_data) +
+        geom_point(aes(y = loss, x = nice_loss_type, color = nice_model_type), size = 11)+
+        geom_line(aes(y = loss, x = nice_loss_type, group = nice_model_type, color = nice_model_type), size = 7, alpha = 0.8)+
+        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 11, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf) +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab(' ') +
+        ylab('Log loss\n') +
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.5) +
+        theme(legend.position = 'none', text = element_text(size = 32), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 28), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
+        scale_x_discrete(expand = expansion(add = c(0.2, 4)))
+
+    if (!is.null(loss_bound)){
+        plot = plot +
+            ylim(loss_bound)
+    }
+
+    path = get_model_eval_file_path('compare')
+    file_name = paste0(path, '/neat_loss_paracoord_', left_motif_size_filter, '_', right_motif_size_filter)
+    if (!is.null(custom_name)){
+        file_name = paste0(file_name, '_', custom_name, '_motif.pdf')
+    } else {
+        file_name = paste0(file_name, '_motif.pdf')
+    }
+
+    ggsave(file_name, plot = plot, width = 32, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+}
+
+
+plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
+    # process evaluation file
+    eval_data_murugan = process_model_evaluation_file(eval_data, 'motif', 2, 4, NA)
+    eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
+    eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
+
+    eval_data = rbind(eval_data, eval_data_murugan)
+    eval_data = eval_data[motif_type == MOTIF_TYPE]
+
+    ylab = make_loss_type_names_neat(type)
     
     nice_names = make_model_names_neat(unique(eval_data$model_type)) 
     eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
@@ -492,22 +582,34 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
         panel_border(color = 'gray60', size = 1.5) +
         ylim(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05)
 
+    if (type == 'v_gene_family_loss2') {
+        plot = plot + facet_grid(cols = vars(held_out_clusters))
+        width_dim = 12 * length(unique(eval_data$held_out_clusters)) 
+        label_cols = c(type, 'model_parameter_count', 'nice_model_type', 'held_out_clusters')
+        label_data = unique(eval_data[, ..label_cols])
+    } else {
+        width_dim = 16
+        label_cols = c(type, 'model_parameter_count', 'nice_model_type')
+        label_data = unique(eval_data[, ..label_cols])
+    }
+
     path = get_model_eval_file_path(type)
     file_name = paste0(path, '/neat_', type, '_term_count_scatter_', left_motif_size_filter, '_', right_motif_size_filter, '_motif')
 
     if (isTRUE(label)){
         plot = plot +
             coord_cartesian(clip = 'off') +
-            geom_text_repel(aes(y = get(type), x = model_parameter_count, label = nice_model_type, color = nice_model_type), nudge_x = 0.75, hjust = 0, point.padding = 1, max.overlaps = Inf, fontface = "bold", size = 6, xlim = c(0, 90), ylim = c(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05), direction = 'y') +
+            geom_text_repel(data = label_data, aes(y = get(type), x = model_parameter_count, label = nice_model_type, color = nice_model_type), nudge_x = 0.75, hjust = 0, point.padding = 1, max.overlaps = Inf, fontface = "bold", size = 6, xlim = c(0, 90), ylim = c(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05), direction = 'y') +
             theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,17,0.5,0.5), "cm")) 
 
         file_name = paste0(file_name, '.pdf')
-        ggsave(file_name, plot = plot, width = 16, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+        
+        ggsave(file_name, plot = plot, width = width_dim, height = 8.5, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         plot = plot +
             theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
         file_name = paste0(file_name, '_no_label.pdf')
-        ggsave(file_name, plot = plot, width = 19, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+        ggsave(file_name, plot = plot, width = width_dim + 3, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
     }
 }
 
@@ -521,29 +623,8 @@ plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, 
     eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
     eval_data = eval_data[motif_type == MOTIF_TYPE]
 
-    if (type1 == 'expected_log_loss'){
-        xlab = 'Expected conditional log loss'
-    } else if (type1 == 'log_loss'){
-        xlab = 'Conditional log loss (training dataset)'
-    } else if (type1 == 'aic'){
-        xlab = 'AIC' 
-    } else if (type1 == 'raw_loss'){
-        xlab = 'Raw count log loss (training dataset)' 
-    } else if (type1 == 'old_loss_cv'){
-        xlab = 'Raw count conditional log loss\n(held-out dataset)' 
-    }
-
-    if (type2 == 'expected_log_loss'){
-        ylab = 'Expected conditional log loss'
-    } else if (type2 == 'log_loss'){
-        ylab = 'Conditional log loss (training dataset)'
-    } else if (type2 == 'aic'){
-        ylab = 'AIC' 
-    } else if (type2 == 'raw_loss'){
-        ylab = 'Raw count log loss (training dataset)' 
-    } else if (type2 == 'old_loss_cv'){
-        ylab = 'Raw count conditional log loss\n(held-out dataset)' 
-    }
+    xlab = make_loss_type_names_neat(type1)
+    ylab = make_loss_type_names_neat(type2)
     
     nice_names = make_model_names_neat(unique(eval_data$model_type)) 
     eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
@@ -586,18 +667,8 @@ plot_model_evaluation_compare_bounds <- function(eval_data, upper_bound1, upper_
     together = merge(eval_data1, eval_data2, by = cols[!(cols %in% c('upper_bound', 'model_parameter_count', type))])
     together = together[motif_type == MOTIF_TYPE]
 
-    if (type == 'expected_log_loss'){
-        lab = 'Expected conditional log loss'
-    } else if (type == 'log_loss'){
-        lab = 'Conditional log loss (training dataset)'
-    } else if (type == 'aic'){
-        lab = 'AIC' 
-    } else if (type == 'raw_loss'){
-        lab = 'Raw count log loss (training dataset)' 
-    } else if (type == 'old_loss_cv'){
-        lab = 'Raw count conditional log loss\n(held-out dataset)' 
-    }
-
+    lab = make_loss_type_names_neat(type)
+ 
     plot = ggplot(together) +
         geom_abline(intercept = 0, slope = 1, size = 3, color = 'gray60', linetype = 'dashed') +
         geom_point(aes(y = get(paste0(type, '.y')), x = get(paste0(type, '.x')), color = model_type), size = 5)+

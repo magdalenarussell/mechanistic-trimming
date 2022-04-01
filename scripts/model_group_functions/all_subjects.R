@@ -70,8 +70,12 @@ get_predicted_distribution_data <- function(){
     return(predicted_trims)
 }
 
-get_model_coefficient_data <- function(){
-    pwm_file_path = get_coefficient_output_file_path()
+get_model_coefficient_data <- function(specific_path = NULL){
+    if (is.null(specific_path)){
+        pwm_file_path = get_coefficient_output_file_path()
+    } else {
+        pwm_file_path = specific_path
+    }
     pwm_file_name = get_pwm_matrix_file_name(subgroup = NULL)
     location = file.path(pwm_file_path, pwm_file_name)
     

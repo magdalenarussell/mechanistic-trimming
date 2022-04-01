@@ -49,7 +49,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[10])
 
 MODEL_TYPE <<- args[11]
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -79,7 +79,7 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[13])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[14])
 
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[15])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -99,13 +99,13 @@ per_gene_resid2$model = MODEL_TYPE
 together = rbind(per_gene_resid1, per_gene_resid2)
 
 #get plot path and name
-if (grepl('_side_terminal', MODEL_TYPE1, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE1, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE1, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE1, fixed = TRUE)){
     model1 = paste0(MODEL_TYPE1, '_', LEFT_SIDE1, '_length_melting_left')
 } else {
     model1 = MODEL_TYPE1
 }
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     model2 = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_melting_left')
 } else {
     model2 = MODEL_TYPE 

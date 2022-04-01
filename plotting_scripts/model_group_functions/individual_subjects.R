@@ -43,6 +43,9 @@ plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALS
         if (MODEL_TYPE %like% 'dna_shape'){
             plot_shape_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('dna_shape', indiv)), with_values = with_values, write_plot = write_plot, limits = limits)
         }
+        if (MODEL_TYPE %like% 'base-count'){
+            plot_base_count_coefficient_heatmap_single_group(model_coef_matrix = model_coef_matrix, file_name = file.path(file_path, get_coef_heatmap_file_name('base-count', indiv)), with_values = with_values, write_plot = write_plot, limits = limits)
+        }
         print(paste0('finished plotting for ', indiv))
     }
 }
