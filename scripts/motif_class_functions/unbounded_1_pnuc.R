@@ -24,7 +24,7 @@ set_contrasts <- function(group_motif_data, ref_base = 'A'){
         }
     }
 
-    if (grepl('distance', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('distance', MODEL_TYPE, fixed = TRUE) & !grepl('linear-distance', MODEL_TYPE, fixed = TRUE)){
         trim_count = UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1
         group_motif_data$trim_length = as.factor(group_motif_data$trim_length)
         contrasts(group_motif_data$trim_length) = contr.sum(trim_count) 

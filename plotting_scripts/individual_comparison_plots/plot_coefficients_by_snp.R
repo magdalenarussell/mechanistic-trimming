@@ -46,7 +46,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[10])
 
 MODEL_TYPE <<- args[11]
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -76,7 +76,7 @@ formatted_coef_snps = coef_snps %>%
 formatted_coef_snps[!(base ==  ''), parameter := paste0(parameter, ', base ', base)]
 
 for (snp in snps) {
-    for (parameter_group in c('motif', 'trim_length', 'terminal_melting')) {
+    for (parameter_group in c('motif', 'trim_length', 'terminal_melting', 'base_count')) {
         if (!(MODEL_TYPE %like% parameter_group)){
             if (parameter_group != 'trim_length' | !(MODEL_TYPE %like% 'distance')){
                 next

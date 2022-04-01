@@ -75,7 +75,7 @@ fit_model <- function(group_motif_data){
 }
 
 get_predicted_dist_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -144,9 +144,15 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
             as.data.table()
         coef_dt = rbind(coef_dt, formatted_pwm, fill = TRUE)
     } else {
-        coef_dt$base = NA
+        if (MODEL_TYPE %like% 'base-count'){
+            coef_dt[parameter %like% 'base_count', base := substring(parameter, nchar(parameter)-1, nchar(parameter))]
+            coef_dt[parameter %like% 'base_count', parameter := str_remove(parameter, substring(parameter, nchar(parameter)-2, nchar(parameter)))]
+        } else {
+            coef_dt$base = NA
+        }
     }
-    if (MODEL_TYPE %like% 'distance') {
+
+    if ((MODEL_TYPE %like% 'distance') & !(MODEL_TYPE %like% 'linear-distance')) {
         dist_coefs = get_complete_distance_coefficients(coef_dt)
         coef_dt = coef_dt[!(parameter %like% 'trim_length')]
         coef_dt = rbind(coef_dt, dist_coefs)
@@ -155,7 +161,7 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
 }
 
 get_pwm_matrix_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE
@@ -167,7 +173,7 @@ get_pwm_matrix_file_path <- function(){
 }
 
 get_coefficient_output_file_path <- function(){
-    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+    if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
         model = paste0(MODEL_TYPE, '_', LEFT_SIDE_TERMINAL_MELT_LENGTH, '_length_left')
     } else {
         model = MODEL_TYPE

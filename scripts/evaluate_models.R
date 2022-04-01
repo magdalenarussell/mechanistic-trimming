@@ -51,7 +51,7 @@ MODEL_TYPE <<- args[10]
 
 TYPE <<- args[11]
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -71,4 +71,4 @@ motif_data = aggregate_all_subject_data()
 loss = evaluate_loss(motif_data)
 
 # Append results to the end of a file
-write_result_dt(loss$loss, TYPE, loss$model_parameter_count)
+write_result_dt(loss$loss, rep(TYPE, length(loss$loss)), loss$model_parameter_count, loss$held_out_cluster_number, loss$held_out_genes)

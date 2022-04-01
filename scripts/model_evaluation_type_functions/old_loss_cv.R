@@ -34,5 +34,5 @@ evaluate_loss <- function(motif_data) {
     sample = calculate_subject_gene_weight(sample)
     log_loss = calculate_cond_expected_log_loss(model, sample)
 
-    return(list(loss = log_loss, model_parameter_count = unique(parameter_count)))
+    return(list(loss = log_loss, model_parameter_count = unique(parameter_count), held_out_cluster_number = NA, held_out_genes = NA))
 }
