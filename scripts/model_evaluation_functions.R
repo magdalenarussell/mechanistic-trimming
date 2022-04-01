@@ -4,9 +4,11 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     formula = model$formula
     lhs = formula[[2]]
     rhs = formula[-2]
-    if(length(lhs)==3)
+    if(length(lhs)==3) {
         sets = lhs[[3]]
-    else stop("no way to determine choice set ids")
+    } else {
+        stop("no way to determine choice set ids")
+    }
     if(missing(newdata)){
         model_data =  model.frame(formula,data=model$data)
         set = model_data[[1]][,2]
@@ -75,16 +77,16 @@ get_per_run_model_evaluation_file_name <- function(type){
     return(name)
 }
 
-compile_result <- function(loss_list, type, parameter_count){
+compile_result <- function(loss_list, type, parameter_count, held_out_genes = NA, held_out_clusters = NA){
     loss_length = length(loss_list)
-    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(HELD_OUT_FRACTION, loss_length), sample_repetitions = rep(REPETITIONS, loss_length), model_parameter_count = parameter_count) 
-    result[[type]] = loss_list
+    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(HELD_OUT_FRACTION, loss_length), sample_repetitions = rep(REPETITIONS, loss_length), model_parameter_count = parameter_count, held_out_genes = held_out_genes, held_out_clusters = held_out_clusters) 
+    result[[unique(type)]] = loss_list
     return(result)
 }
  
-write_result_dt <- function(log_loss, type, parameter_count){
-    file_name = get_per_run_model_evaluation_file_name(type)
-    result = compile_result(log_loss, type, parameter_count)
+write_result_dt <- function(log_loss, type, parameter_count, held_out_clusters, held_out_genes){
+    file_name = get_per_run_model_evaluation_file_name(unique(type))
+    result = compile_result(log_loss, type, parameter_count, held_out_genes, held_out_clusters)
     fwrite(result, file_name, sep = '\t')
     return(result)
 }
@@ -96,7 +98,7 @@ compile_evaluation_results <- function(type){
     files_dt = parLapply(cluster, files, function(x){
                         data.table::fread(x)})
     stopCluster(cluster)
-    rbound = rbindlist(files_dt)
+    rbound = rbindlist(files_dt, fill = TRUE)
     return(rbound)
 }
 

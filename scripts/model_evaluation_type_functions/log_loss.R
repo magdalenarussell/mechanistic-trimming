@@ -16,5 +16,5 @@ evaluate_loss <- function(motif_data) {
     motif_data = calculate_subject_gene_weight(motif_data)
     # compute conditional logistic loss value for training data 
     log_loss = calculate_cond_expected_log_loss(model, motif_data)
-    return(list(loss = log_loss, model_parameter_count = parameter_count))
+    return(list(loss = log_loss, model_parameter_count = parameter_count, held_out_cluster_number = NA, held_out_genes = NA))
 }
