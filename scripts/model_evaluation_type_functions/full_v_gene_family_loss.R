@@ -5,7 +5,7 @@ WRITE_INTERMEDIATE_LOSS <<- NA
 source(paste0(PROJECT_PATH, '/scripts/model_evaluation_type_functions/evaluation_type_classes/gene_family.R'))
 
 evaluate_loss <- function(motif_data) {
-    gene_families = get_gene_families(cluster_count = 3, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE)$cluster_data
+    gene_families = get_gene_families(cluster_count = 5, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
     cluster_counts = gene_families[, .N, by = clusters_grouped]
     largest_cluster = cluster_counts[N == max(N)]$clusters_grouped
     big_enough_clusters = cluster_counts[N > 1]$clusters_grouped

@@ -56,7 +56,7 @@ LOWER_TRIM_BOUND <<- 2
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
 
 TYPE <<- args[12]
-stopifnot(TYPE %in% c('log_loss', 'expected_log_loss', 'aic', 'raw_loss', 'old_loss_cv', 'log_loss_j_gene', 'v_gene_family_loss'))
+stopifnot(TYPE %in% c('log_loss', 'expected_log_loss', 'aic', 'raw_loss', 'old_loss_cv', 'log_loss_j_gene', 'v_gene_family_loss', 'full_v_gene_family_loss'))
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')

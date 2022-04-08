@@ -512,7 +512,7 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
 
     # reformat loss names to be nice
     nice_loss_names = c()
-    for (type in unique(all_eval_data$loss_type)){
+    for (type in unique(eval_data$loss_type)){
         nice_name = make_loss_type_names_neat(type)
         nice_loss_names = c(nice_loss_names,  nice_name)
     }
@@ -523,22 +523,23 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
     eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
 
     # create label dataset
-    eval_data$nice_loss_type = factor(eval_data$nice_loss_type, levels = nice_loss_names)
-    last_loss = nice_loss_names[length(nice_loss_names)]
+    ordered_losses = order_losses(nice_loss_names)
+    eval_data$nice_loss_type = factor(eval_data$nice_loss_type, levels = ordered_losses)
+    last_loss = ordered_losses[length(ordered_losses)]
     label_data = eval_data[nice_loss_type == last_loss] 
 
     # create plot
     require(ggrepel)
     plot = ggplot(eval_data) +
-        geom_point(aes(y = loss, x = nice_loss_type, color = nice_model_type), size = 11)+
-        geom_line(aes(y = loss, x = nice_loss_type, group = nice_model_type, color = nice_model_type), size = 7, alpha = 0.8)+
-        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 11, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf) +
+        geom_point(aes(y = loss, x = nice_loss_type, color = nice_model_type), size = 14)+
+        geom_line(aes(y = loss, x = nice_loss_type, group = nice_model_type, color = nice_model_type), size = 9, alpha = 0.8)+
+        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 12, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf) +
         theme_cowplot(font_family = 'Arial') + 
         xlab(' ') +
         ylab('Log loss\n') +
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
-        theme(legend.position = 'none', text = element_text(size = 32), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 28), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
+        theme(legend.position = 'none', text = element_text(size = 36), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 33), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
         scale_x_discrete(expand = expansion(add = c(0.2, 4)))
 
     if (!is.null(loss_bound)){
@@ -554,12 +555,13 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
         file_name = paste0(file_name, '_motif.pdf')
     }
 
-    ggsave(file_name, plot = plot, width = 32, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+    ggsave(file_name, plot = plot, width = 48, height = 25, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
 
 plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
     # process evaluation file
+    eval_data$loss_type = type
     eval_data_murugan = process_model_evaluation_file(eval_data, 'motif', 2, 4, NA)
     eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
     eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
@@ -582,7 +584,7 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
         panel_border(color = 'gray60', size = 1.5) +
         ylim(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05)
 
-    if (type == 'v_gene_family_loss2') {
+    if (type == 'v_gene_family_loss') {
         plot = plot + facet_grid(cols = vars(held_out_clusters))
         width_dim = 12 * length(unique(eval_data$held_out_clusters)) 
         label_cols = c(type, 'model_parameter_count', 'nice_model_type', 'held_out_clusters')
