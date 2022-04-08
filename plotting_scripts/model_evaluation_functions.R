@@ -1,8 +1,8 @@
 make_loss_type_names_neat <- function(type) {
     if (type == 'expected_log_loss'){
-        nice = 'Expected log loss\n(held-out datasets)'
+        nice = 'Expected\nlog loss\n(held-out\ndatasets)'
     } else if (type == 'log_loss'){
-        nice = 'Log loss\n(training dataset)'
+        nice = 'Log loss\n(full training\ndataset)'
     } else if (type == 'aic'){
         nice = 'AIC' 
     } else if (type == 'raw_loss'){
@@ -10,14 +10,29 @@ make_loss_type_names_neat <- function(type) {
     } else if (type == 'old_loss_cv'){
         nice = 'Raw count conditional log loss\n(held-out dataset)' 
     } else if (type == 'log_loss_j_gene'){
-        nice = 'Log loss\n(J-gene dataset)' 
-    } else if (type %in% c('v_gene_family_loss', 'v_gene_family_loss2')){
-        nice = 'Log loss\n(\"most different\" V-gene families held-out)' 
-    } else if (type %like% 'v_gene_family_loss2,'){
-        nice = str_replace(type, 'v_gene_family_loss2,', 'Log loss\n(V-gene family\n')
-        nice = paste0(nice, '\nheld-out)')
+        nice = 'Log loss\n(full J-gene\ndataset)' 
+    } else if (type %like% 'v_gene_family_loss'){
+        if (type == 'v_gene_family_loss'){
+            nice = 'Log loss (\"most-different\"\nheld-out dataset)'
+        } else {
+            if (type %like% 'full_v_gene_family_loss') {
+                nice = str_replace(type, 'full_v_gene_family_loss,', 'Log loss\n(full seq.\nV-gene family\n')
+            } else {
+                nice = str_replace(type, 'v_gene_family_loss,', 'Log loss\n(V-gene family\n')
+            }
+            nice = paste0(nice, '\nheld-out)')
+        }
     }
     return(nice)
+}
+
+order_losses <- function(loss_list){
+    loss_list_ordered = c(loss_list[loss_list %like% 'training'], 
+                          loss_list[loss_list %like% 'Expected'],
+                          loss_list[loss_list %like% 'V-gene family' & !(loss_list %like% 'full seq.')],
+                          loss_list[loss_list %like% 'full seq.'], 
+                          loss_list[loss_list %like% 'J-gene'])
+    return(loss_list_ordered)
 }
  
 make_model_names_neat <- function(model_names){
@@ -87,6 +102,7 @@ process_model_evaluation_file <- function(eval_data, model_types_neat, left_moti
     eval_data = eval_data[gene_weight_type == GENE_WEIGHT_TYPE]
     eval_data = eval_data[lower_bound %in% lower_trim_bound]
     eval_data = eval_data[upper_bound %in% upper_trim_bound]
+    eval_data[loss_type == 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
     return(eval_data)
 }
 
