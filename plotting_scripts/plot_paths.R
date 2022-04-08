@@ -93,4 +93,8 @@ get_individual_comparison_file_path <- function(negative_control = FALSE, negati
     return(path)
 }
 
-
+get_analysis_path <- function(){
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'analysis')
+    dir.create(path, recursive = TRUE)
+    return(path)
+}

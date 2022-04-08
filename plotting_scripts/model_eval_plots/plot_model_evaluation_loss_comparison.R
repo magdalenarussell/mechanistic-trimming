@@ -55,7 +55,7 @@ LOWER_TRIM_BOUND <<- 2
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[10])
 
 TYPE <<- 'log_loss'
-all_types = c('log_loss', 'expected_log_loss', 'v_gene_family_loss2', 'log_loss_j_gene')
+all_types = c('log_loss', 'expected_log_loss', 'v_gene_family_loss', 'log_loss_j_gene', 'full_v_gene_family_loss')
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
@@ -69,14 +69,14 @@ for (type in all_types) {
     all_eval_results = rbind(all_eval_results, temp_eval_results, fill = TRUE)
 }
 
-all_eval_results[loss_type == 'v_gene_family_loss2', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
+all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
 
 # get model types
 model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-base-count', 'two-side-mirror-base-count'))
 
-plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.95, 2.72))
+plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.82, 2.72))
 
 for (class in c('two_side_terminal_melting_score', 'motif', 'distance', 'dna_shape-std', 'base-count')) {
     model_types_subset = model_types[(model_types %like% class) | (model_types %like% 'null')]
-    plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types_subset, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), custom_name = class, loss_bound = c(1.95, 2.72))
+    plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types_subset, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), custom_name = class, loss_bound = c(1.82, 2.72))
 }
