@@ -18,7 +18,7 @@ get_terminal_sequences <- function(combine_by_terminal){
     return(together)
 }
 
-get_distances <- function(sequences, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE){
+get_distances <- function(sequences, gene_var, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE){
     require(ape)
     require(DECIPHER)
     if (isTRUE(full_sequence)){
@@ -31,12 +31,6 @@ get_distances <- function(sequences, combine_by_terminal = TRUE, full_sequence =
         stopifnot(isFALSE(align))
     }
 
-    if (isTRUE(combine_by_terminal)){
-        gene_var = 'gene'
-    } else {
-        gene_var = GENE_NAME
-    }
-
     dists = DistanceMatrix(seq_list)
 
     colnames(dists) = sequences[[gene_var]]
@@ -47,8 +41,15 @@ get_distances <- function(sequences, combine_by_terminal = TRUE, full_sequence =
 get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE){
     require(ape)
     require(DECIPHER)
+
+    if (isTRUE(combine_by_terminal)){
+        gene_var = 'gene'
+    } else {
+        gene_var = GENE_NAME
+    }
+ 
     seqs = get_terminal_sequences(combine_by_terminal)
-    dists = get_distances(dists, combine_by_terminal, full_sequence, align)
+    dists = get_distances(seqs, gene_var, combine_by_terminal, full_sequence, align)
     dist_format = as.dist(dists) 
     
     clusters = hclust(dist_format)
