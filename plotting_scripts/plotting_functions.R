@@ -539,7 +539,7 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
         ylab('Log loss\n') +
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
-        theme(legend.position = 'none', text = element_text(size = 36), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 33), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
+        theme(legend.position = 'none', text = element_text(size = 36), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 35), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
         scale_x_discrete(expand = expansion(add = c(0.2, 4)))
 
     if (!is.null(loss_bound)){
