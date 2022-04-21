@@ -38,9 +38,9 @@ order_losses <- function(loss_list){
 make_model_names_neat <- function(model_names){
     model_names = str_replace_all(model_names, 'two_side', 'two-side')
     two_side_original = sapply(strsplit(model_names, 'two-side'), `[`, 2)
-    two_side_original_subset = unique(two_side_original[!is.na(two_side_original) & !(two_side_original %like% 'base-count')])
+    two_side_original_subset = unique(two_side_original[!is.na(two_side_original) & !(two_side_original %like% 'base-count') & !(two_side_original %like% 'dinuc-count')])
     two_side_nice = str_replace_all(two_side_original, '_', ' ') 
-    two_side_nice_subset = unique(two_side_nice[!is.na(two_side_nice) & !(two_side_nice %like% 'base-count')]) 
+    two_side_nice_subset = unique(two_side_nice[!is.na(two_side_nice) & !(two_side_nice %like% 'dinuc-count') & !(two_side_nice %like% 'base-count')]) 
     model_names = str_replace_all(model_names, 'dna_shape', 'dna-shape') 
     if (length(two_side_original_subset) > 0) {
         model_names = str_replace_all(model_names, two_side_original_subset, two_side_nice_subset) 

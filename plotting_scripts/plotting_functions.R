@@ -1,6 +1,18 @@
 source(paste0('plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
 source(paste0(PROJECT_PATH, '/plotting_scripts/plot_paths.R'))
 
+set_color_palette <- function(model_type_list){
+    require(RColorBrewer)
+    model_types = model_type_list[!(model_type_list %in% c('null', '2x4motif'))]
+    colors = c(brewer.pal(7, 'Dark2'), brewer.pal(8, 'Set1'), brewer.pal(7, 'Set2'))
+    colors = colors[!(colors %in% c("#E41A1C", "#FFFF33", "#FFD92F"))]
+    names(colors) = model_types
+    temp = c("#E41A1C", "#666666")
+    names(temp) = c('2x4motif', 'null')
+    colors = c(colors, temp)
+    return(colors)
+}
+
 get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
     whole_nucseq = get_oriented_whole_nucseqs()
     temp_data = whole_nucseq[toupper(substring(gene, 4, 4)) == toupper(substring(GENE_NAME, 1,1))]
@@ -76,17 +88,28 @@ map_positions_to_values <- function(positions){
 }
 
 plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
-    model_coef_matrix = model_coef_matrix[parameter %like% 'base_count']
+    model_coef_matrix = model_coef_matrix[(parameter %like% 'base_count') | (parameter %like% 'dinuc_count')]
+    if (is.na(unique(model_coef_matrix$base)) | unique(model_coef_matrix$base) == ''){
+        model_coef_matrix[, base := sapply(parameter, function(x) str_split(x, '_count_')[[1]][2])]
+        model_coef_matrix[, parameter := sapply(parameter, function(x) str_split(x, '_count_')[[1]][1])]
+        model_coef_matrix[, parameter := paste0(parameter, '_count')]
+    }
+
+    model_coef_matrix[, parameter := str_replace(parameter, '_base', '')]
+    model_coef_matrix[, parameter := str_replace(parameter, '_dinuc', '')]
+
     # convert to log_10
     model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
+    
     # order variables
     left_vars = unique(model_coef_matrix[parameter %like% 'left']$parameter)
     right_vars = unique(model_coef_matrix[parameter %like% 'right']$parameter)
+    unique_bases = unique(model_coef_matrix$base)
     if (length(left_vars) == 0){
-        fake_row = data.table(coefficient = rep(0, 2), parameter = rep("left_base_count", 2), base = c('AT', 'GC'), model_group = rep(MODEL_GROUP,2), log_10_pdel = rep(0,2))
+        fake_row = data.table(coefficient = rep(0, length(unique_bases)), parameter = rep("left_count", length(unique_bases)), base = unique_bases, model_group = rep(MODEL_GROUP,length(unique_bases)), log_10_pdel = rep(0,length(unique_bases)))
         extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
     } else if (length(right_vars) == 0){
-        fake_row = data.table(coefficient = rep(0, 2), parameter = rep("right_base_count", 2), base = c('AT', 'GC'), model_group = rep(MODEL_GROUP,2), log_10_pdel = rep(0,2))
+        fake_row = data.table(coefficient = rep(0, length(unique_bases)), parameter = rep("right_count", length(unique_bases)), base = unique_bases, model_group = rep(MODEL_GROUP,length(unique_bases)), log_10_pdel = rep(0,length(unique_bases)))
         extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
     } else {
         extended_data = model_coef_matrix
@@ -502,7 +525,7 @@ plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, 
     ggsave(file_name, plot = plot, width = 11, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
-plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL) {
+plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL) {
     # process evaluation file and combine with Murugan 2x4 motif evaluation losses
     eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
     eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
@@ -547,6 +570,10 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
             ylim(loss_bound)
     }
 
+    if (!is.null(color_palette)){
+        plot = plot + scale_color_manual(values = color_palette)
+    }
+
     path = get_model_eval_file_path('compare')
     file_name = paste0(path, '/neat_loss_paracoord_', left_motif_size_filter, '_', right_motif_size_filter)
     if (!is.null(custom_name)){
@@ -559,9 +586,10 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
 }
 
 
-plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
+plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, color_palette = NULL) {
     # process evaluation file
     eval_data$loss_type = type
+    setnames(eval_data, type, 'loss')
     eval_data_murugan = process_model_evaluation_file(eval_data, 'motif', 2, 4, NA)
     eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
     eval_data = process_model_evaluation_file(eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
@@ -574,45 +602,37 @@ plot_model_evaluation_scatter_coef_count <- function(eval_data, type, model_type
     nice_names = make_model_names_neat(unique(eval_data$model_type)) 
     eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
 
+    label_cols = c('loss', 'model_parameter_count', 'nice_model_type', 'held_out_clusters')
+    label_data = unique(eval_data[, ..label_cols])
+
     require(ggrepel)
     plot = ggplot(eval_data) +
-        geom_point(aes(y = get(type), x = model_parameter_count, color = nice_model_type), size = 5)+
+        geom_point(aes(y = loss, x = model_parameter_count, color = nice_model_type), size = 5)+
         theme_cowplot(font_family = 'Arial') + 
         xlab('Total number of terms') +
         ylab(ylab) +
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
-        ylim(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05)
+        ylim(min(eval_data$loss)-0.05, max(eval_data$loss)+0.05) +
+        coord_cartesian(clip = 'off') +
+        geom_text_repel(data = label_data, aes(y = loss, x = model_parameter_count, label = nice_model_type, color = nice_model_type), nudge_x = 0.75, hjust = 0, point.padding = 1, max.overlaps = Inf, fontface = "bold", size = 6, xlim = c(0, 90), ylim = c(min(eval_data$loss)-0.05, max(eval_data$loss)+0.05), direction = 'y') +
+        theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,12,0.5,0.5), "cm")) 
 
     if (type == 'v_gene_family_loss') {
         plot = plot + facet_grid(cols = vars(held_out_clusters))
         width_dim = 12 * length(unique(eval_data$held_out_clusters)) 
-        label_cols = c(type, 'model_parameter_count', 'nice_model_type', 'held_out_clusters')
-        label_data = unique(eval_data[, ..label_cols])
     } else {
         width_dim = 16
-        label_cols = c(type, 'model_parameter_count', 'nice_model_type')
-        label_data = unique(eval_data[, ..label_cols])
     }
 
     path = get_model_eval_file_path(type)
-    file_name = paste0(path, '/neat_', type, '_term_count_scatter_', left_motif_size_filter, '_', right_motif_size_filter, '_motif')
+    file_name = paste0(path, '/neat_', type, '_term_count_scatter_', left_motif_size_filter, '_', right_motif_size_filter, '_motif.pdf')
 
-    if (isTRUE(label)){
-        plot = plot +
-            coord_cartesian(clip = 'off') +
-            geom_text_repel(data = label_data, aes(y = get(type), x = model_parameter_count, label = nice_model_type, color = nice_model_type), nudge_x = 0.75, hjust = 0, point.padding = 1, max.overlaps = Inf, fontface = "bold", size = 6, xlim = c(0, 90), ylim = c(min(eval_data[[type]])-0.05, max(eval_data[[type]])+0.05), direction = 'y') +
-            theme(legend.position = 'none', text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18), plot.margin = unit(c(0.5,17,0.5,0.5), "cm")) 
-
-        file_name = paste0(file_name, '.pdf')
-        
-        ggsave(file_name, plot = plot, width = width_dim, height = 8.5, units = 'in', dpi = 750, device = cairo_pdf)
-    } else {
-        plot = plot +
-            theme(text = element_text(size = 25), axis.line = element_blank(), axis.ticks = element_blank()) 
-        file_name = paste0(file_name, '_no_label.pdf')
-        ggsave(file_name, plot = plot, width = width_dim + 3, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+    if (!is.null(color_palette)){
+        plot = plot + scale_color_manual(values = color_palette)
     }
+
+    ggsave(file_name, plot = plot, width = width_dim, height = 8.5, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
 plot_model_evaluation_compare <- function(eval_data1, eval_data2, type1, type2, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, label = FALSE) {
@@ -745,11 +765,11 @@ plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL
     if (!is.null(parameter_group)){
         coef_snp_data = coef_snp_data[parameter %like% parameter_group]
         file_name = paste0(file_path, '/', parameter_group, '_parameters_by_snp', snpID, '.pdf')
+        if (parameter_group == 'trim_length'){
+            coef_snp_data$parameter = factor(coef_snp_data$parameter, levels = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
+        }
     } else {
         file_name = paste0(file_path, '/parameters_by_snp', snpID, '.pdf')
-    }
-    if (parameter_group == 'trim_length'){
-        coef_snp_data$parameter = factor(coef_snp_data$parameter, levels = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
     }
     subset = coef_snp_data[snp == snpID & !is.na(genotype)]
     subset$genotype = as.character(subset$genotype)
