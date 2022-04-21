@@ -72,11 +72,14 @@ for (type in all_types) {
 all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
 
 # get model types
-model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-base-count', 'two-side-mirror-base-count'))
+model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-mirror-base-count', 'two_side_terminal_melting', '_dna_shape-std', 'dna_shape-std_', 'dna_shape-std', 'spanning-identity'))
 
-plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.82, 2.72))
+neat_names = make_model_names_neat(model_types)
+colors = set_color_palette(c(neat_names, '2x4motif'))
 
-for (class in c('two_side_terminal_melting_score', 'motif', 'distance', 'dna_shape-std', 'base-count')) {
+plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.82, 2.72), color_palette = colors)
+
+for (class in c('two_side_terminal_melting_score', 'motif', 'distance', 'dna_shape-std', 'count')) {
     model_types_subset = model_types[(model_types %like% class) | (model_types %like% 'null')]
-    plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types_subset, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), custom_name = class, loss_bound = c(1.82, 2.72))
+    plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types_subset, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), custom_name = class, loss_bound = c(1.82, 2.72), color_palette = colors)
 }

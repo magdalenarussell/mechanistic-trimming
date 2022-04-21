@@ -46,7 +46,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[10])
 
 MODEL_TYPE <<- args[11]
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)){
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)| grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE)){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
@@ -83,6 +83,9 @@ for (snp in snps) {
             }
         }
         plot_coefficient_by_snp(formatted_coef_snps, snp, parameter_group)
+    }
+    if (MODEL_TYPE %like% 'linear-distance_right-base-prop') {
+        plot_coefficient_by_snp(formatted_coef_snps, snp)
     }
 }
 
