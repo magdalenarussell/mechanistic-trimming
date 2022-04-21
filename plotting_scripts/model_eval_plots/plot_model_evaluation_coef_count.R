@@ -64,8 +64,9 @@ source('plotting_scripts/model_evaluation_functions.R')
 eval_results = compile_evaluation_results(TYPE)
 
 # get model types
-model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-base-count', 'two-side-mirror-base-count'))
+model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-mirror-base-count', 'two_side_terminal_melting', '_dna_shape-std', 'dna_shape-std_', 'dna_shape-std', 'spanning-identity'))
 
-plot_model_evaluation_scatter_coef_count(eval_results, type = TYPE, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), label = FALSE)
+neat_names = make_model_names_neat(model_types)
+colors = set_color_palette(c(neat_names, '2x4motif'))
 
-plot_model_evaluation_scatter_coef_count(eval_results, type = TYPE, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), label = TRUE)
+plot_model_evaluation_scatter_coef_count(eval_results, type = TYPE, model_type_list = model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), color_palette = colors)
