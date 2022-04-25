@@ -53,12 +53,12 @@ source('plotting_scripts/model_evaluation_functions.R')
 
 eval_results = compile_evaluation_results(TYPE)
 
-model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content'))
+model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'dna_shape'))
 
 model_types = model_types[(model_types %like% 'motif') | (model_types %like% 'shape')]
 
 for (model_type in model_types){
-    if (model_type %like% 'two_side_terminal_'){
+    if (model_type %like% 'two_side' | model_type %like% 'two-side'){
         left_melt = LEFT_SIDE_TERMINAL_MELT_LENGTH
     } else {
         left_melt = NA

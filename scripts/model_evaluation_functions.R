@@ -99,6 +99,7 @@ compile_evaluation_results <- function(type){
                         data.table::fread(x)})
     stopCluster(cluster)
     rbound = rbindlist(files_dt, fill = TRUE)
+    rbound$loss_type = type
     return(rbound)
 }
 
