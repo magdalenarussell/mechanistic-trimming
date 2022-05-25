@@ -56,7 +56,7 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
 }
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
-TYPE <<- 'log_loss'
+TYPE <<- 'full_v_gene_family_loss'
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
@@ -115,7 +115,7 @@ path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY
 dir.create(path, recursive = TRUE)
  
 # get difference
-wide = together %>% pivot_wider(names_from = 'model', values_from = 'rmse') %>% as.data.table()
+wide = together[, -c('p_gene')] %>% pivot_wider(names_from = 'model', values_from = 'rmse') %>% as.data.table()
 slopes = wide[,(get(MODEL_TYPE) - get(MODEL_TYPE1)), by = gene]
 setnames(slopes, 'V1', 'slope')
 together = merge(together, slopes)
@@ -123,9 +123,15 @@ together = merge(together, slopes)
 together = together[order(abs(slope))]
 
 # get outliers
-outlier_slope_values = boxplot.stats(together[model %like% 'motif']$slope)$out
-outliers = together[slope %in% outlier_slope_values]
-no_outliers = together[!(slope %in% outlier_slope_values)]
+if (TRIM_TYPE == 'v_trim'){
+    out_slope = -0.12
+    outliers = together[slope < out_slope]
+    no_outliers = together[slope > out_slope]
+} else {
+    outlier_slope_values = boxplot.stats(together[model %like% 'motif']$slope)$out
+    outliers = together[slope %in% outlier_slope_values]
+    no_outliers = together[!(slope %in% outlier_slope_values)]
+}
 
 # re-fit_model without outliers
 motif_data = aggregate_all_subject_data()
@@ -139,6 +145,7 @@ dir.create(file.path(path, 'model_without_motif_addition_outliers'))
 plot_melting_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers', 'melting_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
 plot_distance_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers', 'distance_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
 plot_model_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers', 'motif_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
+plot_base_count_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers', 'base_count_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
 
 
 # plot predicted distributions on held out (outlier genes)
@@ -156,4 +163,34 @@ for (gene in unique(outlier_motif_data$gene)){
 # per_gene_outlier_resid_motif_model = calculate_rmse_by_gene(outlier_motif_data) 
 # per_gene_outlier_resid_NO_motif_model = calculate_rmse_by_gene(predicted_trims1[gene %in% outliers$gene]) 
 
+# No fit without outliers and genes similar to outliers...
+# re-fit_model without outliers
+gene_families = get_gene_families(cluster_count = 5, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
+outlier_clusters = unique(gene_families[gene %in% unique(outliers$gene)]$clusters_grouped)
+outlier_cluster_genes = unique(gene_families[clusters_grouped %in% outlier_clusters]$gene)
+no_outliers = together[!(gene %in% outliers) & !(gene %in% outlier_cluster_genes)]
+new_motif_data = motif_data[gene %in% no_outliers$gene]
+
+new_coefs = fit_model_by_group(new_motif_data, write_coeffs=FALSE)
+
+# get coefficient plots 
+
+dir.create(file.path(path, 'model_without_motif_addition_outliers_and_families'))
+plot_melting_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers_and_families', 'melting_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
+plot_distance_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers_and_families', 'distance_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
+plot_model_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers_and_families', 'motif_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
+plot_base_count_coefficient_heatmap_single_group(new_coefs, file_name = file.path(path, 'model_without_motif_addition_outliers_and_families', 'base_count_heatmap.pdf'), limits = NULL, write_plot = TRUE, with_values = TRUE)
+
+
+# plot predicted distributions on held out (outlier genes)
+model = fit_model(new_motif_data)
+outlier_motif_data = motif_data[gene %in% outliers$gene]
+outlier_motif_data = process_data_for_model_fit(outlier_motif_data)
+outlier_motif_data$predicted_prob = temp_predict(model, newdata = outlier_motif_data)
+outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
+
+dir.create(file.path(path, 'model_without_motif_addition_outliers_and_families', 'predicted_gene_dists'))
+for (gene in unique(outlier_motif_data$gene)){
+    plot_predicted_trimming_dists_single_group(outlier_motif_data, gene, file_name = file.path(path, 'model_without_motif_addition_outliers_and_families', 'predicted_gene_dists', paste0(gene, '.pdf')))
+}
 

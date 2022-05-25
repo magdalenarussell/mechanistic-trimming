@@ -76,16 +76,25 @@ formatted_coef_snps = coef_snps %>%
 formatted_coef_snps[!(base ==  ''), parameter := paste0(parameter, ', base ', base)]
 
 for (snp in snps) {
-    for (parameter_group in c('motif', 'trim_length', 'terminal_melting', 'base_count')) {
-        if (!(MODEL_TYPE %like% parameter_group)){
-            if (parameter_group != 'trim_length' | !(MODEL_TYPE %like% 'distance')){
-                next
-            }
-        }
-        plot_coefficient_by_snp(formatted_coef_snps, snp, parameter_group)
-    }
-    if (MODEL_TYPE %like% 'linear-distance_right-base-prop') {
+    if (MODEL_TYPE %like% 'linear-distance_right-base-prop' | MODEL_TYPE %like% 'linear-distance_two-side-base-count-prop') {
         plot_coefficient_by_snp(formatted_coef_snps, snp)
+    } else if (MODEL_TYPE %like% 'motif_linear-distance_two-side-base-count-beyond') {
+        for (parameter_group in c('motif', 'trim_length', 'base_count')) {
+            plot_coefficient_by_snp(formatted_coef_snps, snp, parameter_group)
+        }
+    }
+    else {
+        for (parameter_group in c('motif', 'trim_length', 'terminal_melting', 'base_count')) {
+            if (!(MODEL_TYPE %like% parameter_group)){
+                if (parameter_group == 'base_count' & MODEL_TYPE %like% 'base-count') {
+                    print('plotting base-count') 
+                }
+                else if (parameter_group != 'trim_length' | !(MODEL_TYPE %like% 'distance')){
+                    next
+                }
+            }
+            plot_coefficient_by_snp(formatted_coef_snps, snp, parameter_group)
+        }
     }
 }
 
