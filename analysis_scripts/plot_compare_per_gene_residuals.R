@@ -56,17 +56,20 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
 }
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
-
+TYPE <<- 'v_gene_family_loss'
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/residual_comparison_functions.R')
 source('analysis_scripts/pwm_profile_functions.R')
+source('scripts/model_evaluation_functions.R')
 
 # Read in dist data
 predicted_trims1 = get_predicted_distribution_data() 
 per_gene_resid1 = calculate_rmse_by_gene(predicted_trims1) 
 per_gene_resid1$model = MODEL_TYPE
+per_gene_trim_resid1 = calculate_rmse_by_gene_trim(predicted_trims1)
+per_gene_trim_resid1$model = MODEL_TYPE
 
 MODEL_TYPE1 = MODEL_TYPE
 LEFT_SIDE1 = LEFT_SIDE_TERMINAL_MELT_LENGTH
@@ -93,9 +96,13 @@ source('analysis_scripts/pwm_profile_functions.R')
 predicted_trims2 = get_predicted_distribution_data() 
 per_gene_resid2 = calculate_rmse_by_gene(predicted_trims2) 
 per_gene_resid2$model = MODEL_TYPE
+per_gene_trim_resid2 = calculate_rmse_by_gene_trim(predicted_trims2)
+per_gene_trim_resid2$model = MODEL_TYPE
 
 #merge two predictions
 together = rbind(per_gene_resid1, per_gene_resid2)
+together_trim = rbind(per_gene_trim_resid1, per_gene_trim_resid2)
+
 
 #get plot path and name
 if (grepl('_side_terminal', MODEL_TYPE1, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE1, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE1, fixed = TRUE)){
@@ -124,19 +131,31 @@ plot = ggplot(together) +
 file_name = file.path(path, 'compare_rmse_by_subject_count.pdf') 
 ggsave(file_name, plot = plot, width = 18, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
-wide = together %>% pivot_wider(names_from = 'model', values_from = 'rmse') %>% as.data.table()
+wide = together[, -c('p_gene')] %>% pivot_wider(names_from = 'model', values_from = 'rmse') %>% as.data.table()
 slopes = wide[,(get(MODEL_TYPE) - get(MODEL_TYPE1)), by = gene]
 setnames(slopes, 'V1', 'slope')
 together = merge(together, slopes)
 
 together = together[order(abs(slope))]
 
+# get outliers
+if (TRIM_TYPE == 'v_trim'){
+    out_slope = -0.12
+    outliers = together[slope < out_slope]
+    no_outliers = together[slope >= out_slope]
+} else {
+    outlier_slope_values = boxplot.stats(together[model %like% 'motif']$slope)$out
+    outliers = together[slope %in% outlier_slope_values]
+    no_outliers = together[!(slope %in% outlier_slope_values)]
+}
+
+
 plot2 = ggplot(together) +
     geom_line(aes(x = model, y = rmse, group = gene, color = slope), size = 4, alpha = 0.8) +
     geom_point(aes(x = model, y = rmse, color = slope), size =6, alpha = 0.8) +
     scale_color_gradient2() +
     theme_cowplot(font_family = 'Arial') + 
-    theme(legend.key.height = unit(3, 'cm'), text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    theme(legend.key.height = unit(3, 'cm'), text = element_text(size = 40), axis.text.x=element_text(size = 30), axis.text.y = element_text(size = 30), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
     background_grid(major = 'xy') + 
     panel_border(color = 'gray60', size = 1.5) 
 
@@ -189,5 +208,72 @@ plot4 = ggplot(tog_rmse) +
 
 file_name = file.path(path, 'compare_pwm_only_rmse_slope.pdf') 
 ggsave(file_name, plot = plot4, width = 18, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+
+plot4 = ggplot(tog_rmse) +
+    geom_point(aes(x = slope, y = rmse), size = 6, alpha = 0.6)+
+    theme_cowplot(font_family = 'Arial') + 
+    theme(text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    background_grid(major = 'xy') + 
+    ylab('PWM-only prediction RMSE') +
+    panel_border(color = 'gray60', size = 1.5) 
+
+file_name = file.path(path, 'compare_pwm_only_rmse_slope.pdf') 
+ggsave(file_name, plot = plot4, width = 18, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+
+# get empirical dists
+motif_data = aggregate_all_subject_data()
+simple = motif_data[, mean(p_trim_given_gene), by = .(trim_length, gene)]
+setnames(simple, 'V1', 'empirical_avg')
+
+simple = merge(simple, slopes, by = 'gene')
+simple[gene %in% outliers$gene, outlier := TRUE]
+simple[!(gene %in% outliers$gene), outlier := FALSE]
+
+plot5 = ggplot(simple) +
+    geom_line(aes(x = trim_length, y = empirical_avg, group = gene, color = slope), size = 4, alpha = 0.6) +
+    facet_grid(rows = vars(outlier)) +
+    scale_color_gradient2() +
+    theme_cowplot(font_family = 'Arial') + 
+    theme(legend.key.height = unit(3, 'cm'), text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    background_grid(major = 'xy') + 
+    panel_border(color = 'gray60', size = 1.5) 
+
+file_name = file.path(path, 'compare_gene_by_empirical_dist_most_improved_slope.pdf') 
+ggsave(file_name, plot = plot5, width = 22, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
+
+## Now, plot alignments of outliers 
+v_families = get_gene_families(cluster_count = 1, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE)$cluster_data
+v_seqs = DNAStringSet(v_families$terminal_seq)
+names(v_seqs) = v_families$gene
+
+outlier_seqs = v_seqs[names(v_seqs) %in% outliers$gene]
+no_outlier_seqs = v_seqs[names(v_seqs) %in% no_outliers$gene]
+
+require(ggmsa)
+out_plot = ggmsa(outlier_seqs, seq_name = TRUE, color = "Chemistry_NT") + geom_seqlogo(color = "Chemistry_NT") + geom_msaBar()
+ggsave(file.path(path, 'most_improved_outlier_alignment.pdf'), plot = out_plot, width = 10, height = (length(unique(outlier_seqs)))/2, dpi = 750, device = cairo_pdf)
+
+no_out_plot = ggmsa(no_outlier_seqs, seq_name = TRUE, color = "Chemistry_NT") + geom_seqlogo(color = "Chemistry_NT") + geom_msaBar()
+ggsave(file.path(path, 'most_improved_non-outlier_alignment.pdf'), plot = no_out_plot, width = 10, height = (length(unique(no_outlier_seqs)))/2, dpi = 750, device = cairo_pdf)
+
+# plot per trim length per gene residuals
+wider_trim = together_trim[, -c('p_gene')] %>% pivot_wider(values_from = 'rmse_by_trim', names_from = 'model') %>% as.data.table()
+wider_trim[, relative_error := (get(MODEL_TYPE1))^2/(get(MODEL_TYPE))^2]
+wider_trim_tog = merge(wider_trim, slopes, by = 'gene')
+wider_trim_tog[gene %in% outliers$gene, outlier := TRUE]
+wider_trim_tog[!(gene %in% outliers$gene), outlier := FALSE]
+
+plot6 = ggplot(wider_trim_tog[order(trim_length)]) +
+    geom_line(aes(x = trim_length, y = log(relative_error), group = gene, color = slope), size = 4, alpha = 0.9) +
+    geom_hline(yintercept = 0, color = 'black', linetype = 'dashed', size = 2) +
+    facet_grid(rows = vars(outlier)) +
+    scale_color_gradient2() +
+    theme_cowplot(font_family = 'Arial') + 
+    theme(legend.key.height = unit(3, 'cm'), text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    background_grid(major = 'xy') + 
+    panel_border(color = 'gray60', size = 1.5) 
+
+file_name = file.path(path, 'compare_rmse_by_gene_trim_by_slope.pdf') 
+ggsave(file_name, plot = plot6, width = 22, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
 
 
