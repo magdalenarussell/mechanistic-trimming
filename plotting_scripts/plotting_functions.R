@@ -129,8 +129,8 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
         xlab('Base count') +
         ylab('Base type') +
         geom_vline(xintercept = 1 + 0.5, size = 3, color = 'black') +
-        theme(text = element_text(size = 15), axis.line = element_blank(), axis.ticks = element_blank()) +
-        guides(fill = guide_colourbar(barheight = 8)) +
+        theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight = 14)) +
         scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
         annotate("text", x = 0.55, y = 0.45, label = "5\'", size = 6) +  
         annotate("text", x = 2.5 , y = 0.45, label = "3\'", size = 6) 
@@ -141,7 +141,7 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
     }
 
     if (isTRUE(write_plot)){
-        ggsave(file_name, plot = plot, width = 8, height = 5, units = 'in', dpi = 750, device = cairo_pdf)
+        ggsave(file_name, plot = plot, width = 8, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
     } else {
         return(plot)
     }
@@ -765,7 +765,7 @@ plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL
     if (!is.null(parameter_group)){
         coef_snp_data = coef_snp_data[parameter %like% parameter_group]
         file_name = paste0(file_path, '/', parameter_group, '_parameters_by_snp', snpID, '.pdf')
-        if (parameter_group == 'trim_length'){
+        if (unique(coef_snp_data$parameter) == 'as.factor(trim_length)'){
             coef_snp_data$parameter = factor(coef_snp_data$parameter, levels = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
         }
     } else {
@@ -774,6 +774,7 @@ plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL
     subset = coef_snp_data[snp == snpID & !is.na(genotype)]
     subset$genotype = as.character(subset$genotype)
     subset$log_10_coef = subset$coefficient/log(10)
+    subset = subset[!is.na(parameter)]
     comparisons = list(c("0", "1"), c("1", "2"), c("0", "2")) 
     row_count = ceiling(length(unique(subset$parameter))/6)
     col_count = min(6, length(unique(subset$parameter)))

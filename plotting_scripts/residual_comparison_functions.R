@@ -6,7 +6,7 @@ if (!is.null(RESIDUAL_COMPARE_FEATURE)){
 calculate_rmse_by_gene <- function(predicted_trims){
     total_trims = unique(predicted_trims$trim_length)
     # calculate subjects per gene
-    subj_counts = predicted_trims[, .N/length(total_trims), by = .(p_gene, gene)]
+    subj_counts = predicted_trims[, .N/length(total_trims), by = .(gene)]
     setnames(subj_counts, 'V1', 'subject_count')
     
     # calculate residuals for each subject, gene, trim
@@ -61,4 +61,23 @@ calculate_residual_by_position <- function(predicted_trims){
     avg_resids = predicted_trims[, mean(residual), by = .(gene, trim_length)]
     setnames(avg_resids, 'V1', 'avg_resid')
     return(avg_resids)
+}
+
+calculate_rmse_by_gene_trim <- function(predicted_trims){
+    total_trims = unique(predicted_trims$trim_length)
+    # calculate subjects per gene
+    subj_counts = predicted_trims[, .N/length(total_trims), by = .(gene)]
+    setnames(subj_counts, 'V1', 'subject_count')
+    
+    # calculate residuals for each subject, gene, trim
+    predicted_trims[, residual := empirical_prob - predicted_prob]
+    predicted_trims[, residual_sq := (residual)^2]
+    together = merge(predicted_trims, subj_counts, by = 'gene')
+
+    # calculate mean residual sum by gene, calculate root mean square error by dividing by subject count
+    mean_resid_sq_sums = together[, sum(residual_sq), by = .(gene, trim_length, subject_count, p_gene)]
+    setnames(mean_resid_sq_sums, 'V1', 'mean_resid_sq_sum')
+    mean_resid_sq_sums[, rmse_by_trim := sqrt(mean_resid_sq_sum/subject_count)]
+
+    return(mean_resid_sq_sums[, -c('mean_resid_sq_sum')])
 }
