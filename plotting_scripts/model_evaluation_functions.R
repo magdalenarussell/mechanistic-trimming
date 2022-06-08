@@ -49,6 +49,16 @@ make_model_names_neat <- function(model_names){
     return(nice_model_names)
 }
 
+make_hairpin_names_neat <- function(motif_types){
+    pnucs = sapply(strsplit(motif_types, '_'), `[`, 2) 
+    pnucs = str_replace_all(pnucs, '^1', '+1')
+    pnucs = str_replace_all(pnucs, '^3', '+3')
+    pnucs = paste0(pnucs, ' hairpin opening position')
+    pnucs = str_replace_all(pnucs, 'no', 'blunt')
+    pnucs= str_replace_all(pnucs, 'NA', '+2')
+    return(pnucs)
+}
+
 filter_model_types <- function(remove_types_with_string = NA){
     model_type_files = list.files(path = 'scripts/model_formula_functions/')
     model_types = str_sub(model_type_files[model_type_files != '_ignore' & model_type_files != "model_formula_specific_functions"], end = -3)
