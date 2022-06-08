@@ -84,3 +84,5 @@ for (class in c('two_side_terminal_melting_score', 'motif', 'distance', 'dna_sha
     model_types_subset = model_types[(model_types %like% class) | (model_types %like% 'null')]
     plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = model_types_subset, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), custom_name = class, loss_bound = c(1.82, 2.72), color_palette = colors)
 }
+
+
