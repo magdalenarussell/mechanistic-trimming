@@ -1,4 +1,3 @@
-#MR TODO change to 1 once we are done with model eval
 LOWER_TRIM_BOUND <<- 2 
 PNUC_COUNT <<- -2
 

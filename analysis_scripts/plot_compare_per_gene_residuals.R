@@ -120,6 +120,8 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
 path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, MODEL_GROUP, GENE_WEIGHT_TYPE, paste0('compare_', model1, '-', model2) , paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
 dir.create(path, recursive = TRUE)
     
+together$model = factor(together$model, levels = c(model1, MODEL_TYPE))
+
 plot = ggplot(together) +
     geom_point(aes(x = model, y = rmse, color = subject_count), size =6, alpha = 0.6) +
     geom_line(aes(x = model, y = rmse, group = gene, color = subject_count), size = 4, alpha = 0.6) +
