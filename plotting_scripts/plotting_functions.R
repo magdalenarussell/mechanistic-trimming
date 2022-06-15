@@ -847,6 +847,9 @@ plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL
         file_name = paste0(file_path, '/', parameter_group, '_parameters_by_snp', snpID, '.pdf')
         if (unique(coef_snp_data$parameter) == 'as.factor(trim_length)'){
             coef_snp_data$parameter = factor(coef_snp_data$parameter, levels = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
+        } else if (parameter_group == 'motif'){
+            motif_order = paste0('motif_', c(rep(5, LEFT_NUC_MOTIF_COUNT), rep(3, RIGHT_NUC_MOTIF_COUNT)), 'end_pos', c(seq(LEFT_NUC_MOTIF_COUNT, 1), seq(1, RIGHT_NUC_MOTIF_COUNT)), ', base ', rep(c('A', 'C', 'G', 'T'), each = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT))
+            coef_snp_data$parameter = factor(coef_snp_data$parameter, levels = motif_order)
         }
     } else {
         file_name = paste0(file_path, '/parameters_by_snp', snpID, '.pdf')
@@ -856,8 +859,13 @@ plot_coefficient_by_snp <- function(coef_snp_data, snpID, parameter_group = NULL
     subset$log_10_coef = subset$coefficient/log(10)
     subset = subset[!is.na(parameter)]
     comparisons = list(c("0", "1"), c("1", "2"), c("0", "2")) 
-    row_count = ceiling(length(unique(subset$parameter))/6)
-    col_count = min(6, length(unique(subset$parameter)))
+    if (parameter_group == 'motif'){
+        row_count = 4
+        col_count = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT
+    } else {
+        row_count = ceiling(length(unique(subset$parameter))/6)
+        col_count = min(6, length(unique(subset$parameter)))
+    }
     plot = ggplot(subset, aes(x = genotype, y = log_10_coef)) +
         facet_wrap(~parameter, ncol = col_count, nrow = row_count) +
         geom_boxplot(size = 2) +
