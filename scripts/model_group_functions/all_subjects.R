@@ -10,8 +10,8 @@ get_coefficient_output_file_name <- function(subgroup){
     return(paste0(MODEL_GROUP, '_weighting_with_', GENE_WEIGHT_TYPE, '.tsv'))
 }
 
-fit_model_by_group <- function(motif_data, write_coeffs = TRUE){
-    model = fit_model(motif_data)
+fit_model_by_group <- function(motif_data, formula = get_model_formula(), write_coeffs = TRUE){
+    model = fit_model(motif_data, formula)
 
     # get predicted probabilities and empirical probabilities
     motif_data$predicted_prob = predict(model, type = 'response')

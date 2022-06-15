@@ -61,9 +61,8 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
     return(weighted_together)
 }
 
-fit_model <- function(group_motif_data){
+fit_model <- function(group_motif_data, formula = get_model_formula()){
     stopifnot(unique(group_motif_data$gene_weight_type) == GENE_WEIGHT_TYPE)
-    formula = get_model_formula()
     group_motif_data = set_contrasts(group_motif_data)
     start_list = get_start_list(group_motif_data)
 
