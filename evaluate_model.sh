@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source $HOME/miniconda3/etc/profile.d/conda.sh
-conda activate exomotif2 
+conda activate mechanistic-trimming 
 set -eu
 
 ANNOTATION_TYPE=$1
