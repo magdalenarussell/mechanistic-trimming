@@ -1,5 +1,5 @@
-OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/exomotif/motif_data'
-PROJECT_PATH = '/home/mrussel2/exomotif'
+OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/mechanistic-trimming/motif_data'
+PROJECT_PATH = '/home/mrussel2/mechanistic-trimming'
 
 TCR_REPERTOIRE_DATA_parsimony = '_ignore/emerson_stats/'
 TCR_REPERTOIRE_DATA_igor = '_ignore/emerson_igor_stats/'
