@@ -1,1 +1,1 @@
-# exomotif
+# mechanistic-trimming 
