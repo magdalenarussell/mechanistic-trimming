@@ -1,4 +1,7 @@
 calculate_subject_gene_weight <- function(compiled_data){
+    cols = colnames(compiled_data)[colnames(compiled_data) != "count"]
+    compiled_data = compiled_data[, sum(count), by = cols]
+    setnames(compiled_data, 'V1', 'count')
     compiled_data[, total_tcr := sum(count), by = subject]
     compiled_data[, gene_count := sum(count), by = .(gene, subject)]
 

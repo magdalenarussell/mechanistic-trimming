@@ -34,7 +34,7 @@ fit_model_by_group <- function(motif_data, formula = get_model_formula(), write_
 
     if (grepl('motif', MODEL_TYPE, fixed = TRUE)){
         # calculate coeffiecients
-        pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')
+        pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')$result
         pwm_dt = as.data.table(pwm_matrix)
         pwm_dt$base = rownames(pwm_matrix)
         pwm_dt$model_group = MODEL_GROUP

@@ -92,9 +92,10 @@ get_levels <- function(group_motif_data, ref_base, position){
 }
 
 
-get_coeffiecient_matrix <- function(group_motif_data, ref_base){
+get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_model_formula()){
+    stopifnot(MODEL_TYPE %like% "motif")
     group_motif_data = set_contrasts(group_motif_data, ref_base)
-    model = fit_model(group_motif_data)
+    model = fit_model(group_motif_data, formula = formula)
     positions = get_positions()
 
     together = matrix(0, nrow = 4, ncol = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT)
@@ -116,7 +117,7 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base){
         together[missing_base,position] = -1*sum(together[, position])
     }
 
-    return(together)
+    return(list(result = together, model = model))
 }
 
 get_complete_distance_coefficients <- function(model_coefficients_dt){
@@ -182,3 +183,59 @@ get_coefficient_output_file_path <- function(){
     
     return(path)
 }
+
+cluster_sample <- function(motif_data){
+    # sample size is the number of gene, subject combos
+    motif_data$cluster = interaction(motif_data$subject, motif_data$gene)
+    sample_genes = sample(unique(motif_data$cluster), length(unique(motif_data$cluster)), replace = TRUE)
+    sample_genes_dt = data.table(sample_genes)
+    counts = sample_genes_dt[, .N, by = sample_genes]
+    motif_data = merge(motif_data, counts, by.x = 'cluster', by.y = 'sample_genes')
+    # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
+    source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    sample_data = calculate_subject_gene_weight(motif_data)
+    return(sample_data)
+}
+
+cluster_bootstrap_model_fit <- function(motif_data, formula = get_model_formula(), iter){
+    set.seed(66)
+    results = data.table()
+    for (i in seq(iter)){
+        sample_data = cluster_sample(motif_data)
+        result = get_coeffiecient_matrix(sample_data, formula = formula, ref_base = 'A')
+        pwm_matrix = result$result
+        pwm_dt = as.data.table(pwm_matrix)
+        pwm_dt$base = rownames(pwm_matrix)
+        coefs = format_model_coefficient_output(result$model, pwm_dt)
+        coefs$iteration = i
+        results = rbind(results, coefs)
+    }
+    return(results)
+}
+
+get_coef_pvalues <- function(bootstrap_results, original_model_results){
+    sd_coeff = bootstrap_results[, sd(coefficient), by = .(parameter, base)]
+    setnames(sd_coeff, 'V1', 'sd')
+
+    together = merge(original_model_results, sd_coeff)
+
+    together[, zstat := coefficient/sd]
+    together[, pvalue := 2*pnorm(-abs(zstat))]
+    together$iterations = max(bootstrap_results$iteration)
+    return(together)
+}
+get_model_bootstrap_path <- function(){
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'model_bootstrap') 
+    if (!dir.exists(path)){
+        dir.create(path, recursive = TRUE)
+    }
+    return(path)
+}
+
+get_model_bootstrap_file_name <- function(){
+    path = get_model_bootstrap_path()
+    name = file.path(path, paste0('bootstrap_', MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.tsv'))
+    return(name)
+}
+
+
