@@ -67,11 +67,19 @@ bootstrap_result = cluster_bootstrap_model_fit(motif_data, iter = 1000)
 bootstrap_result$original_model_fit = FALSE
 
 # fit model with original dataset
-model = fit_model(motif_data)
 pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')
-pwm_dt = as.data.table(pwm_matrix)
-pwm_dt$base = rownames(pwm_matrix)
-coefs = format_model_coefficient_output(model, pwm_dt)
+pwm_dt = as.data.table(pwm_matrix$result)
+pwm_dt$base = rownames(pwm_matrix$result)
+pwm_dt$snp_interaction = FALSE
+if (MODEL_TYPE %like% 'snp-interaction'){
+    pwm_snp_dt = as.data.table(pwm_matrix$snp_interaction_result)
+    pwm_snp_dt$base = rownames(pwm_matrix$snp_interaction_result)
+    pwm_snp_dt$snp_interaction = TRUE
+    pwm_dt = rbind(pwm_dt, pwm_snp_dt)
+}
+
+coefs = format_model_coefficient_output(pwm_matrix$model, pwm_dt)
+coefs[snp_interaction == TRUE, parameter := paste0(parameter, ':snp')]
 coefs$original_model_fit = TRUE
 
 # write results
