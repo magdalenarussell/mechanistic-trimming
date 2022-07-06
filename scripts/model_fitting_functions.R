@@ -99,6 +99,14 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_mo
     positions = get_positions()
 
     together = matrix(0, nrow = 4, ncol = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT)
+    if (MODEL_TYPE %like% 'snp-interaction'){
+        snp_together = matrix(0, nrow = 4, ncol = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT)
+        colnames(snp_together) = paste0(positions)
+        rownames(snp_together) = c('A', 'C', 'T', 'G')
+    } else {
+        snp_together = NULL
+    }
+
     colnames(together) = positions
     rownames(together) = c('A', 'C', 'T', 'G')
  
@@ -108,6 +116,9 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_mo
         for (index in indices){
             base = levels[number == index]$base
             together[base, position] = coef(model)[[paste0(position, index)]]
+            if (MODEL_TYPE %like% 'snp-interaction'){
+                snp_together[base, position] = coef(model)[[paste0(position, index, ':snp')]]
+            }
         }
     }
 
@@ -115,9 +126,12 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_mo
         levels = get_levels(group_motif_data, ref_base, position)
         missing_base = levels[is.na(number)]$base
         together[missing_base,position] = -1*sum(together[, position])
+        if (MODEL_TYPE %like% 'snp-interaction'){
+            snp_together[missing_base,position] = -1*sum(snp_together[, position])
+        }
     }
 
-    return(list(result = together, model = model))
+    return(list(result = together, model = model, snp_interaction_result = snp_together))
 }
 
 get_complete_distance_coefficients <- function(model_coefficients_dt){
@@ -139,8 +153,10 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
     if (!is.null(formatted_pwm_matrix)){
         stopifnot(MODEL_TYPE %like% 'motif')
         coef_dt = coef_dt[!(parameter %like% 'motif')]
+        positions = get_positions()
+        not_cols = colnames(formatted_pwm_matrix)[!(colnames(formatted_pwm_matrix)%in% positions)]
         formatted_pwm = formatted_pwm_matrix[, -c('model_group')] %>% 
-            pivot_longer(!base, values_to = 'coefficient', names_to = 'parameter') %>%
+            pivot_longer(!not_cols, values_to = 'coefficient', names_to = 'parameter') %>%
             as.data.table()
         coef_dt = rbind(coef_dt, formatted_pwm, fill = TRUE)
     } else {
@@ -206,10 +222,21 @@ cluster_bootstrap_model_fit <- function(motif_data, formula = get_model_formula(
         pwm_matrix = result$result
         pwm_dt = as.data.table(pwm_matrix)
         pwm_dt$base = rownames(pwm_matrix)
+        if (MODEL_TYPE %like% 'snp-interaction'){
+            pwm_snp_matrix = result$snp_interaction_result
+            pwm_snp_dt = as.data.table(pwm_snp_matrix)
+            pwm_snp_dt$base = rownames(pwm_snp_matrix)
+            pwm_snp_dt$snp_interaction = TRUE
+            pwm_dt$snp_interaction = FALSE
+            pwm_dt = rbind(pwm_dt, pwm_snp_dt)
+        } else {
+            pwm_dt$snp_interaction = FALSE
+        }
         coefs = format_model_coefficient_output(result$model, pwm_dt)
         coefs$iteration = i
         results = rbind(results, coefs)
     }
+    results[snp_interaction == TRUE, parameter := paste0(parameter, ':snp')]
     return(results)
 }
 
