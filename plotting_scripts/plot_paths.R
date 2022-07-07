@@ -98,3 +98,9 @@ get_analysis_path <- function(){
     dir.create(path, recursive = TRUE)
     return(path)
 }
+
+get_manuscript_path <- function(){
+    path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'manuscript')
+    dir.create(path, recursive = TRUE)
+    return(path)
+}

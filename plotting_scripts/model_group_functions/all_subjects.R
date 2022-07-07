@@ -20,11 +20,11 @@ get_all_residual_figure_file_name <- function(subgroup = NULL){
     return(filename)
 }
 
-plot_predicted_trimming_dists <- function(data, gene_name){
+plot_predicted_trimming_dists <- function(data, gene_name, ylim = NULL){
     file_path = get_predicted_dist_figure_file_path()
     file_name = get_predicted_dist_figure_file_name(gene_name)
     complete_path = file.path(file_path, file_name)
-    plot_predicted_trimming_dists_single_group(data, gene_name, complete_path)
+    plot_predicted_trimming_dists_single_group(data, gene_name, complete_path, ylim)
 }
 
 plot_model_coefficient_heatmap <- function(model_coef_matrix, with_values = FALSE, write_plot = TRUE, melt_limits = NULL, motif_limits = NULL, dist_limits = NULL, shape_limits = NULL, count_limits = NULL){
