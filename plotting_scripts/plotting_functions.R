@@ -38,7 +38,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
     return(together)
 }
 
-plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name){
+plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name, ylim = NULL){
     important_cols = c('trim_length', 'predicted_prob', 'gene')
     predicted_data = data[gene == gene_name, ..important_cols]
     empirical_data = data[gene == gene_name][order(subject, trim_length)]
@@ -48,20 +48,24 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
     gene_seq = get_gene_sequence(gene_name, max(data$trim_length))
     gene_seq_with_positions = get_plot_positions_for_gene_sequence(gene_seq)
     
-    max_prob = max(max(empirical_data$empirical_prob), max(predicted_data$predicted_prob))
+    if (!is.null(ylim)){
+        max_prob = ylim
+    } else {
+        max_prob = max(max(empirical_data$empirical_prob), max(predicted_data$predicted_prob))
+    }
 
     plot = ggplot() +
-        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 2, alpha = 0.7, color = 'grey') +
-        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 3, alpha = 0.7, color = 'blue') +
-        geom_vline(xintercept = 0, color = 'black', size = 4) +
-        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base), size = 8) +
-        geom_text(y = max_prob, aes(x = -2.1), label = '3\' -', size = 10) +
-        geom_text(y = max_prob, aes(x = UPPER_TRIM_BOUND + 0.1), label = '- 5\'', size = 10) +
+        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.5, color = 'grey') +
+        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 2, alpha = 0.7, color = 'blue') +
+        geom_vline(xintercept = 0, color = 'black', size = 3) +
+        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base), size = 7) +
+        geom_text(y = max_prob, aes(x = -2.1), label = '3\'- ', size = 6) +
+        geom_text(y = max_prob, aes(x = UPPER_TRIM_BOUND + 0.1), label = ' -5\'', size = 6) +
         ggtitle(title) +
         xlab('Number of trimmed nucleotides') +
         ylab('Probability') +
         theme_cowplot(font_family = 'Arial') + 
-        theme(legend.position = "none", text = element_text(size = 30), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+        theme(legend.position = "none", text = element_text(size = 25), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) 
 
@@ -245,7 +249,7 @@ plot_model_coefficient_heatmap_single_group <- function(model_coef_matrix, file_
         xlab('Position') +
         ylab ('Base') +
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
-        geom_vline(xintercept = LEFT_NUC_MOTIF_COUNT + 0.5, size = 3, color = 'black') +
+        geom_vline(xintercept = LEFT_NUC_MOTIF_COUNT + 0.5, size = 3.5, color = 'black') +
         guides(fill = guide_colourbar(barheight = 14)) +
         scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
         annotate("text", x = 0.35, y = 0.25, label = "5\'", size = 8) +  
