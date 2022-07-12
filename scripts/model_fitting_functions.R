@@ -155,7 +155,8 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
         coef_dt = coef_dt[!(parameter %like% 'motif')]
         positions = get_positions()
         not_cols = colnames(formatted_pwm_matrix)[!(colnames(formatted_pwm_matrix)%in% positions)]
-        formatted_pwm = formatted_pwm_matrix[, -c('model_group')] %>% 
+        # formatted_pwm = formatted_pwm_matrix[, -c('model_group')] %>% 
+        formatted_pwm = formatted_pwm_matrix %>% 
             pivot_longer(!not_cols, values_to = 'coefficient', names_to = 'parameter') %>%
             as.data.table()
         coef_dt = rbind(coef_dt, formatted_pwm, fill = TRUE)

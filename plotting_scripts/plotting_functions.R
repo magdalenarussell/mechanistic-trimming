@@ -38,7 +38,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
     return(together)
 }
 
-plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name, ylim = NULL){
+plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name = NULL, ylim = NULL, write_plot = TRUE){
     important_cols = c('trim_length', 'predicted_prob', 'gene')
     predicted_data = data[gene == gene_name, ..important_cols]
     empirical_data = data[gene == gene_name][order(subject, trim_length)]
@@ -68,8 +68,11 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
         theme(legend.position = "none", text = element_text(size = 25), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) 
-
-    ggsave(file_name, plot = plot, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+    
+    if (isTRUE(write_plot)){
+        stopifnot(!is.null(file_name))
+        ggsave(file_name, plot = plot, width = 14, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+    }
     print(paste0('finished plot for ', gene_name))
     return(plot)
 }
@@ -118,8 +121,9 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
     } else {
         extended_data = model_coef_matrix
     }
- 
-    vars = c(unique(extended_data[parameter %like% 'left']$parameter), unique(extended_data[parameter %like% 'right']$parameter))
+    require(plyr) 
+    extended_data$parameter = mapvalues(extended_data$parameter, from = unique(extended_data$parameter), to = c('5\' base count', '3\' base count'))
+    vars = c(unique(extended_data[parameter %like% '5']$parameter), unique(extended_data[parameter %like% '3']$parameter))
     extended_data$parameter = factor(extended_data$parameter, levels = vars)
 
     if (is.null(limits)){
@@ -130,14 +134,12 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
     plot = ggplot(extended_data, aes(x=parameter, y=base, fill=log_10_pdel)) +
         geom_tile() +
         theme_cowplot(font_family = 'Arial') + 
-        xlab('Base count') +
+        xlab('') +
         ylab('Base type') +
-        geom_vline(xintercept = 1 + 0.5, size = 3, color = 'black') +
+        geom_vline(xintercept = 1 + 0.5, size = 3.5, color = 'black') +
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
         guides(fill = guide_colourbar(barheight = 14)) +
-        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
-        annotate("text", x = 0.55, y = 0.45, label = "5\'", size = 6) +  
-        annotate("text", x = 2.5 , y = 0.45, label = "3\'", size = 6) 
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) 
     
     if (with_values == TRUE){
         plot = plot +
@@ -195,22 +197,25 @@ plot_distance_coefficient_heatmap_single_group <- function(model_coef_matrix, fi
     # convert to log_10
     model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
     # order variables
-    model_coef_matrix$parameter = factor(model_coef_matrix$parameter, levels = paste0('trim_length_', seq(UPPER_TRIM_BOUND, LOWER_TRIM_BOUND)))
+    model_coef_matrix$parameter = mapvalues(model_coef_matrix$parameter, from = paste0('trim_length_', seq(UPPER_TRIM_BOUND, LOWER_TRIM_BOUND)), to = seq(UPPER_TRIM_BOUND, LOWER_TRIM_BOUND))
+    model_coef_matrix$parameter = factor(model_coef_matrix$parameter, levels = seq(UPPER_TRIM_BOUND, LOWER_TRIM_BOUND))
     total_dist = UPPER_TRIM_BOUND - LOWER_TRIM_BOUND
 
     if (is.null(limits)){
         max_val = max(abs(model_coef_matrix$log_10_pdel))
         limits = c(-max_val, max_val)
     }
-    
+     
     plot = ggplot(model_coef_matrix, aes(x=parameter, y=base, fill=log_10_pdel)) +
         geom_tile() +
         theme_cowplot(font_family = 'Arial') + 
-        xlab('Distance') +
+        xlab('\nTrimming distance (categorical)') +
         ylab('') +
         theme(text = element_text(size = 35), axis.text.x = element_text(size = 22), axis.text.y = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
         guides(fill = guide_colourbar(barheight =12)) +
-        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) 
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+        annotate("text", x = 0.56, y = 0.45, label = "5\'", size = 6) +  
+        annotate("text", x = 13.36 , y = 0.45, label = "3\'", size = 6) 
     
     if (with_values == TRUE){
         plot = plot +
@@ -488,7 +493,7 @@ plot_all_model_residuals_plot <- function(data, file_name, color_gene_list = NUL
     return(plot) 
 }
 
-plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, model_type, terminal_melting_5_end_length_filter, limits = NULL){
+plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, model_type, terminal_melting_5_end_length_filter, limits = NULL, write_plot = TRUE){
     stopifnot(length(model_type) == 1)
     path = get_model_eval_file_path(type)
     if (model_type %like% 'two_side_terminal') {
@@ -525,16 +530,25 @@ plot_model_evaluation_heatmap <- function(eval_data, type, with_values = FALSE, 
         plot = plot +
             geom_text(data = eval, aes(x = motif_length_5_end, y = motif_length_3_end, label = round(loss, 0)))
     }
-
-    ggsave(file_name, plot = plot, width = 11, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+    
+    if (write_plot == TRUE){
+        ggsave(file_name, plot = plot, width = 11, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
 }
 
-plot_model_evaluation_hairpin_nick_paracoord <- function(all_eval_data, model_type_list, type_of_loss, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL, plot_size = NULL) {
+plot_model_evaluation_hairpin_nick_paracoord <- function(all_eval_data, model_type_list, type_of_loss, pre_filter = FALSE, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL, plot_size = NULL, write_plot = TRUE, expand_var = 4) {
     # process evaluation file and combine with Murugan 2x4 motif evaluation losses
-    eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
-    eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
-    eval_data = process_model_evaluation_file(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
-    eval_data = rbind(eval_data, eval_data_murugan)
+    if (isFALSE(pre_filter)){
+        eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
+        eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
+        eval_data = process_model_evaluation_file(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
+        eval_data = rbind(eval_data, eval_data_murugan)
+    } else {
+        eval_data = all_eval_data
+    }
+    
     nice_names = make_model_names_neat(unique(eval_data$model_type)) 
     eval_data$nice_model_type = mapvalues(eval_data$model_type, from = unique(eval_data$model_type), to = nice_names)
 
@@ -564,7 +578,7 @@ plot_model_evaluation_hairpin_nick_paracoord <- function(all_eval_data, model_ty
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
         theme(legend.position = 'none', text = element_text(size = 36), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 35), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
-        scale_x_discrete(expand = expansion(add = c(0.2, 4)))
+        scale_x_discrete(expand = expansion(add = c(0.2, expand_var)))
 
     if (!is.null(loss_bound)){
         plot = plot +
@@ -590,17 +604,25 @@ plot_model_evaluation_hairpin_nick_paracoord <- function(all_eval_data, model_ty
         width = 32
         height = 25
     }
-
-    ggsave(file_name, plot = plot, width = width, height = height, units = 'in', dpi = 750, device = cairo_pdf)
+    
+    if (write_plot == TRUE) {
+        ggsave(file_name, plot = plot, width = width, height = height, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
 }
 
 
-plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL, same_motif_type = TRUE, plot_size = NULL) {
-    # process evaluation file and combine with Murugan 2x4 motif evaluation losses
-    eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
-    eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
-    eval_data = process_model_evaluation_file(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
-    eval_data = rbind(eval_data, eval_data_murugan)
+plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, pre_filter = FALSE, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL, same_motif_type = TRUE, plot_size = NULL, write_plot = TRUE, expand_var = 4) {
+    if (isFALSE(pre_filter)){
+        # process evaluation file and combine with Murugan 2x4 motif evaluation losses
+        eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
+        eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'motif', to = '2x4motif')
+        eval_data = process_model_evaluation_file(all_eval_data, model_type_list, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter)
+        eval_data = rbind(eval_data, eval_data_murugan)
+    } else {
+        eval_data = all_eval_data
+    }
     if (isTRUE(same_motif_type)){
         eval_data = eval_data[motif_type == MOTIF_TYPE]
         # reformat model names to be nice
@@ -639,7 +661,7 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
         theme(legend.position = 'none', text = element_text(size = 36), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 35), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
-        scale_x_discrete(expand = expansion(add = c(0.2, 4)))
+        scale_x_discrete(expand = expansion(add = c(0.2, expand_var)))
 
     if (!is.null(loss_bound)){
         plot = plot +
@@ -665,8 +687,12 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
         width = 48 
         height = 25
     }
-
-    ggsave(file_name, plot = plot, width = width, height = height, units = 'in', dpi = 750, device = cairo_pdf)
+    
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = width, height = height, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
 }
 
 
