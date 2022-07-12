@@ -22,6 +22,8 @@ make_loss_type_names_neat <- function(type) {
             }
             nice = paste0(nice, '\nheld-out)')
         }
+    } else {
+        nice = type
     }
     return(nice)
 }
@@ -29,7 +31,7 @@ make_loss_type_names_neat <- function(type) {
 order_losses <- function(loss_list){
     loss_list_ordered = c(loss_list[loss_list %like% 'training'], 
                           loss_list[loss_list %like% 'Expected'],
-                          loss_list[loss_list %like% 'V-gene family' & !(loss_list %like% 'full seq.')],
+                          loss_list[(loss_list %like% 'V-gene family' & !(loss_list %like% 'full seq.')) | (loss_list %like% 'terminal')],
                           loss_list[loss_list %like% 'full seq.'], 
                           loss_list[loss_list %like% 'J-gene'])
     return(loss_list_ordered)
