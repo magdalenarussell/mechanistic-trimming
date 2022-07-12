@@ -72,7 +72,7 @@ for (type in all_types) {
 all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
 
 # get model types
-model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-mirror-base-count', 'two_side_terminal_melting', 'right-base-count', 'dinuc', 'spanning-identity'))
+model_types = filter_model_types(remove_types_with_string = c('NN', 'combo', 'base_count', 'distance_terminal_melting', 'motif_terminal_melting', 'gc_content', 'left-base-count', 'two-side-mirror-base-count', 'two_side_terminal_melting', 'right-base-count', 'dinuc', 'spanning-identity', 'snp-interaction', 'prop', "linear-distance_two-side-base-count"))
 model_types = model_types[!(model_types == 'motif_two-side-base-count')]
 
 neat_names = make_model_names_neat(model_types)
