@@ -67,7 +67,7 @@ if (TYPE == 'v_gene_family_loss'){
     full_sequence = FALSE
     align = FALSE
 } else if (TYPE == 'full_v_gene_family_loss'){
-    cluster_count = 5 
+    cluster_count = 4 
     combine_by_terminal = FALSE
     full_sequence = TRUE
     align = TRUE 
