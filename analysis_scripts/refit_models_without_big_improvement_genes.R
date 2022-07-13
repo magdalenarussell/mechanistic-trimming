@@ -165,7 +165,7 @@ for (gene in unique(outlier_motif_data$gene)){
 
 # No fit without outliers and genes similar to outliers...
 # re-fit_model without outliers
-gene_families = get_gene_families(cluster_count = 5, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
+gene_families = get_gene_families(cluster_count = 4, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
 outlier_clusters = unique(gene_families[gene %in% unique(outliers$gene)]$clusters_grouped)
 outlier_cluster_genes = unique(gene_families[clusters_grouped %in% outlier_clusters]$gene)
 no_outliers = together[!(gene %in% outliers) & !(gene %in% outlier_cluster_genes)]

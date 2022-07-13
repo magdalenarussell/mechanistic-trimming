@@ -87,10 +87,9 @@ eval_data_murugan$model_type = mapvalues(eval_data_murugan$model_type, from = 'm
 eval_tog = rbind(subset_eval_data, eval_data_murugan)
 
 #filter out extra "most different" held-out group trials
-eval_tog = eval_tog[!(loss_type == "v_gene_family_loss, cluster 2")]
-eval_tog = eval_tog[!(loss_type == "v_gene_family_loss, cluster 3")]
-eval_tog = eval_tog[!(loss_type %like% "1")]
-eval_tog = eval_tog[!(loss_type %like% "4")]
+eval_tog = eval_tog[!(loss_type == "v_gene_family_loss, cluster 2" | loss_type == "full_v_gene_family_loss, cluster 2")]
+eval_tog = eval_tog[!(loss_type == "v_gene_family_loss, cluster 3" | loss_type == "full_v_gene_family_loss, cluster 3")]
+eval_tog = eval_tog[!(loss_type == "v_gene_family_loss, cluster 4" | loss_type == "full_v_gene_family_loss, cluster 4")]
 
 loss_types = unique(eval_tog$loss_type)
 nice_loss_types = c('full V-gene\ntraining\ndataset', 'many held-out\nsubsets of\nV-gene\ntraining\ndataset', '\"most different\"\ncluster of\nV-genes\n(terminal seqs)', 'full J-gene\ndataset', '\"most different\"\ncluster of\nV-genes\n(full seqs)')

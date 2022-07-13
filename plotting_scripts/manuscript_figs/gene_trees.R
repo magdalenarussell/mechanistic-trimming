@@ -63,13 +63,22 @@ for (type in types) {
     v_families = get_gene_families(cluster_count, combine_by_terminal, full_sequence, align)
 
     clusters_grouped = v_families$cluster_data$clusters_grouped
+    clusters_grouped[clusters_grouped != 1] = 2
     names(clusters_grouped) = v_families$cluster_data$gene
     
     require(RColorBrewer)
     colors = brewer.pal(cluster_count, 'Set2')
 
-    plot(v_families$tree, type = 'unrooted', tip.color = colors[clusters_grouped], no.margin = TRUE)
+    plot(v_families$tree, type = 'unrooted', tip.color = colors[clusters_grouped], no.margin = TRUE) + theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
     temp_plot = recordPlot()
     plot.new()
     assign(type, temp_plot)
 }
+
+together = plot_grid(v_gene_family_loss, full_v_gene_family_loss, nrow = 1, labels = c("A", "B"), label_size = 35, rel_heights = c(1, 1), align = 'h')
+
+path = get_manuscript_path()
+file_name = paste0(path, '/gene_trees.pdf')
+ggsave(file_name, plot = together, width = 20, height = 8, units = 'in', dpi = 750, device = cairo_pdf)
+
+
