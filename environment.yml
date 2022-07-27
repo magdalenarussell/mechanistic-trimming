@@ -36,7 +36,7 @@ dependencies:
   - bwidget=1.9.14=ha770c72_1
   - bzip2=1.0.8=h7f98852_4
   - c-ares=1.18.1=h7f98852_0
-  - ca-certificates=2021.10.8=ha878542_0
+  - ca-certificates=2022.6.15=ha878542_0
   - cairo=1.16.0=ha12eb4b_1010
   - cffi=1.15.0=py310h0fdd8cc_0
   - curl=7.82.0=h2283fc2_0
@@ -259,6 +259,7 @@ dependencies:
   - r-gtools=3.9.2=r41hcfec24a_0
   - r-hardhat=0.2.0=r41hc72bb7e_0
   - r-haven=2.4.3=r41h2713e49_0
+  - r-here=1.0.1=r41hc72bb7e_0
   - r-hexbin=1.28.2=r41h8da6f51_0
   - r-highr=0.9=r41hc72bb7e_0
   - r-hms=1.1.1=r41hc72bb7e_0
@@ -320,6 +321,7 @@ dependencies:
   - r-plogr=0.2.0=r41hc72bb7e_1003
   - r-plotly=4.10.0=r41hc72bb7e_0
   - r-plyr=1.8.6=r41h03ef668_1
+  - r-png=0.1_7=r41hcfec24a_1004
   - r-polyclip=1.10_0=r41h03ef668_2
   - r-polynom=1.4_0=r41hc72bb7e_2
   - r-praise=1.0.0=r41hc72bb7e_1005
@@ -347,6 +349,7 @@ dependencies:
   - r-rcpp=1.0.8.3=r41h7525677_0
   - r-rcpparmadillo=0.10.8.1.0=r41h306847c_0
   - r-rcppeigen=0.3.3.9.1=r41h306847c_0
+  - r-rcpptoml=0.1.7=r41h03ef668_1
   - r-rcurl=1.98_1.6=r41hcfec24a_0
   - r-rdpack=2.3=r41hc72bb7e_0
   - r-readr=2.1.2=r41h03ef668_0
@@ -359,6 +362,7 @@ dependencies:
   - r-repr=1.1.4=r41h785f33e_0
   - r-reprex=2.0.1=r41hc72bb7e_0
   - r-reshape2=1.4.4=r41h03ef668_1
+  - r-reticulate=1.25=r41h7525677_0
   - r-rex=1.2.1=r41hc72bb7e_0
   - r-rhpcblasctl=0.21_247.1=r41hcfec24a_0
   - r-rio=0.5.29=r41hc72bb7e_0
