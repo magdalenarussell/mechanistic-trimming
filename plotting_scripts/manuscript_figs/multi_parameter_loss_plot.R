@@ -70,8 +70,8 @@ for (type in all_types) {
 all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
 
 # get model types
-orig_model_types = c("motif_distance", "motif_two-side-base-count-beyond", "null", "motif", "distance", "two-side-base-count")
-new_model_types = c('1x2motif + categorical-distance', '1x2motif + two-side-base-count-beyond', 'null', "1x2motif", "categorical-distance", 'two-side-base-count')
+orig_model_types = c("motif_distance", "motif_two-side-base-count-beyond", "null", "motif", "distance", "two-side-base-count", 'dna_shape-std', 'linear-distance')
+new_model_types = c('1x2motif + categorical-distance', '1x2motif + two-side-base-count-beyond', 'null', "1x2motif", "categorical-distance", 'two-side-base-count', '1x2DNA-shape', 'linear-distance')
 
 # pre-filter data
 subset_eval_data = process_model_evaluation_file(all_eval_results, orig_model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH))
@@ -97,10 +97,11 @@ nice_loss_types = c('full V-gene\ntraining\ndataset', 'many held-out\nsubsets of
 
 eval_tog$loss_type = mapvalues(eval_tog$loss_type, from = loss_types, to=nice_loss_types)
 
-plot = plot_model_evaluation_loss_paracoord(eval_tog, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.95, 2.6), color_palette = colors, write_plot = FALSE, expand_var = 2.6)
+plot = plot_model_evaluation_loss_paracoord(eval_tog, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.97, 2.7), color_palette = colors, write_plot = FALSE, expand_var = 2.3) +
+    ylab('Expected per-sequence log loss\n')
 
 path = get_manuscript_path()
-file_name = paste0(path, '/multi_parameter_models_loss_compare.pdf')
-ggsave(file_name, plot = plot, width = 30, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+file_name = paste0(path, '/loss_compare.pdf')
+ggsave(file_name, plot = plot, width = 32, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
 
 
