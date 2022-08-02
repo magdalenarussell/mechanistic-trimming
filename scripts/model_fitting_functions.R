@@ -219,21 +219,30 @@ cluster_bootstrap_model_fit <- function(motif_data, formula = get_model_formula(
     results = data.table()
     for (i in seq(iter)){
         sample_data = cluster_sample(motif_data)
-        result = get_coeffiecient_matrix(sample_data, formula = formula, ref_base = 'A')
-        pwm_matrix = result$result
-        pwm_dt = as.data.table(pwm_matrix)
-        pwm_dt$base = rownames(pwm_matrix)
-        if (MODEL_TYPE %like% 'snp-interaction'){
-            pwm_snp_matrix = result$snp_interaction_result
-            pwm_snp_dt = as.data.table(pwm_snp_matrix)
-            pwm_snp_dt$base = rownames(pwm_snp_matrix)
-            pwm_snp_dt$snp_interaction = TRUE
-            pwm_dt$snp_interaction = FALSE
-            pwm_dt = rbind(pwm_dt, pwm_snp_dt)
+        if (MODEL_TYPE %like% 'motif'){
+            result = get_coeffiecient_matrix(sample_data, formula = formula, ref_base = 'A')
+            pwm_matrix = result$result
+            pwm_dt = as.data.table(pwm_matrix)
+            pwm_dt$base = rownames(pwm_matrix)
+            if (MODEL_TYPE %like% 'snp-interaction'){
+                pwm_snp_matrix = result$snp_interaction_result
+                pwm_snp_dt = as.data.table(pwm_snp_matrix)
+                pwm_snp_dt$base = rownames(pwm_snp_matrix)
+                pwm_snp_dt$snp_interaction = TRUE
+                pwm_dt$snp_interaction = FALSE
+                pwm_dt = rbind(pwm_dt, pwm_snp_dt)
+            } else {
+                pwm_dt$snp_interaction = FALSE
+            }
+            model = result$model
         } else {
-            pwm_dt$snp_interaction = FALSE
+            pwm_dt = NULL
+            model = fit_model(sample_data, formula)
         }
-        coefs = format_model_coefficient_output(result$model, pwm_dt)
+        coefs = format_model_coefficient_output(model, pwm_dt)
+        if (!('snp_interaction' %in% colnames(coefs))){
+            coefs$snp_interaction = FALSE
+        }
         coefs$iteration = i
         results = rbind(results, coefs)
     }
