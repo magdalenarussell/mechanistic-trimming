@@ -59,26 +59,8 @@ heatmap = plot_base_count_coefficient_heatmap_single_group(pwm, with_values = FA
 heatmap = heatmap + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 25)) 
 
-MODEL_TYPE <<- 'distance' 
-
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA 
-
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-
-# Read in model coefficient data 
-pwm2 = get_model_coefficient_data() 
-
-heatmap2 = plot_distance_coefficient_heatmap_single_group(pwm2, with_values = FALSE, write_plot = FALSE)
-heatmap2 = heatmap2 + 
-    theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 25)) 
-
-
-all = align_plots(heatmap, heatmap2, align = 'v', axis = 'l')
-grid = plot_grid(all[[1]], NULL, all[[2]], nrow = 3, labels = c("A", "", "B"), label_size = 35, rel_heights = c(1, 0.05, 0.5), align = 'v')
-
 path = get_manuscript_path()
 file_name = paste0(path, '/single_param_coefs.pdf')
-ggsave(file_name, plot = grid, width = 21, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = heatmap, width = 16, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
 

@@ -3,6 +3,7 @@ source('config/config.R')
 library(foreach)
 library(doParallel)
 library(tidyverse)
+library(plyr)
 library(data.table)
 setDTthreads(1)
 library(Biostrings)
@@ -121,9 +122,10 @@ plot = ggplot(plot_data) +
     ylab('Per-gene RMSE\n') +
     theme_cowplot(font_family = 'Arial') + 
     labs(color = 'Difference') +
-    theme(legend.key.height = unit(2.5, 'cm'), text = element_text(size = 30), axis.text.x=element_text(size = 25), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    theme(legend.key.height = unit(2.5, 'cm'), text = element_text(size = 30), axis.text.x=element_text(size = 30), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
     background_grid(major = 'xy') + 
-    panel_border(color = 'gray60', size = 1.5) 
+    panel_border(color = 'gray60', size = 1.5) +
+    scale_x_discrete(expand=c(0.3,0))
 
 path = get_manuscript_path()
 file_name = paste0(path, '/most_improved.pdf')
@@ -200,7 +202,7 @@ for (gene_name in genes){
 
 all = align_plots(TRBV9, TRBV13, plot, align = 'v', axis = 'l')
 
-first_row = plot_grid(all[[3]], NULL, nrow = 1, rel_widths = c(1, 0.2))
+first_row = plot_grid(all[[3]], NULL, nrow = 1, rel_widths = c(1, 0.4))
 
 all_tog = plot_grid(first_row, NULL, all[[1]], NULL, all[[2]], NULL, nrow = 6, rel_heights = c(0.8, 0.05, 0.5, 0.05, 0.5, 0.05), labels = c('A', '', 'B', '', 'C', ''), label_size = 35)
 
