@@ -1,14 +1,22 @@
 source(paste0('plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
 source(paste0(PROJECT_PATH, '/plotting_scripts/plot_paths.R'))
 
-set_color_palette <- function(model_type_list){
+set_color_palette <- function(model_type_list, with_params = FALSE){
     require(RColorBrewer)
-    model_types = model_type_list[!(model_type_list %in% c('null', '2x4motif'))]
+    if (isTRUE(with_params)){
+        model_types = model_type_list[!(model_type_list %in% c('null (0 params)', '2x4motif (18 params)'))]
+    } else {
+        model_types = model_type_list[!(model_type_list %in% c('null', '2x4motif'))]
+    }
     colors = c(brewer.pal(7, 'Dark2'), brewer.pal(8, 'Set1'), brewer.pal(7, 'Set2'))
     colors = colors[!(colors %in% c("#E41A1C", "#FFFF33", "#FFD92F"))]
     names(colors) = model_types
     temp = c("#E41A1C", "#666666")
-    names(temp) = c('2x4motif', 'null')
+    if (isTRUE(with_params)){
+        names(temp) = c('2x4motif (18 params)', 'null (0 params)')
+    } else {
+        names(temp) = c('2x4motif', 'null')
+    }
     colors = c(colors, temp)
     return(colors)
 }
@@ -191,6 +199,38 @@ plot_melting_coefficient_heatmap_single_group <- function(model_coef_matrix, fil
     }
 }
 
+plot_lindistance_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
+    model_coef_matrix = model_coef_matrix[parameter %like% 'trim_length']
+    # convert to log_10
+    model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
+    model_coef_matrix$parameter = 'Trimming distance\n(linear)'
+
+    if (is.null(limits)){
+        max_val = max(abs(model_coef_matrix$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+     
+    plot = ggplot(model_coef_matrix, aes(x=parameter, y=base, fill=log_10_pdel)) +
+        geom_tile() +
+        geom_vline(xintercept = 0.5, size = 3.5, color = 'black') +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('') +
+        ylab('') +
+        theme(text = element_text(size = 35), axis.text.x = element_text(size = 22), axis.text.y = element_blank(), axis.line = element_blank(), axis.ticks = element_blank()) +
+        guides(fill = guide_colourbar(barheight =12)) +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+    
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = model_coef_matrix, aes(x = parameter, y = base, label = round(log_10_pdel, 2)), size = 10)
+    }
+
+    if (isTRUE(write_plot)){
+        ggsave(file_name, plot = plot, width = 3, height = 4, units = 'in', dpi = 750, device = cairo_pdf)
+    } else {
+        return(plot)
+    }
+}
 
 plot_distance_coefficient_heatmap_single_group <- function(model_coef_matrix, file_name, with_values = FALSE, limits = NULL, write_plot = TRUE){
     model_coef_matrix = model_coef_matrix[parameter %like% 'trim_length']
