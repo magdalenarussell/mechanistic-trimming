@@ -12,7 +12,6 @@ library(RhpcBLASctl)
 omp_set_num_threads(1)
 blas_set_num_threads(1)
 
-
 args = commandArgs(trailingOnly=TRUE)
 
 ANNOTATION_TYPE <<- args[1]
