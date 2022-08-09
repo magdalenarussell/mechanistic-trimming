@@ -6,6 +6,8 @@ TCR_REPERTOIRE_DATA_igor = '_ignore/emerson_igor_stats/'
 
 WHOLE_NUCSEQS_parsimony = '_ignore/tcrb_processed_geneseq.tsv' 
 WHOLE_NUCSEQS_igor = '_ignore/igor_imgt_genes.tsv' 
+WHOLE_NUCSEQS_alpha = '_ignore/imgt_tcra_sequences.tsv' 
+WHOLE_NUCSEQS_gamma = '_ignore/imgt_tcrg_sequences.tsv' 
 CONFUSIBILITY_DATA = '_ignore/emerson_stats_ties/'
 
 # SNP genotype file (download https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs001918.v1.p1)
