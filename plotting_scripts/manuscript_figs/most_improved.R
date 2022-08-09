@@ -111,21 +111,19 @@ if (TRIM_TYPE == 'v_trim'){
     no_outliers = together[!(slope %in% outlier_slope_values)]
 }
 
-plot_data = together
-plot_data$model = mapvalues(plot_data$model, from = MODEL_TYPE, to = '1x2 motif \n two-side-base-count-beyond')
-
+wide$diff = wide[['motif_two-side-base-count-beyond']] - wide[['two-side-base-count']]
+plot_data = wide
 plot = ggplot(plot_data) +
-    geom_line(aes(x = model, y = rmse, group = gene, color = slope), size = 4, alpha = 0.8) +
-    geom_point(aes(x = model, y = rmse, color = slope), size =6, alpha = 0.8) +
-    scale_color_gradient2() +
-    xlab('\nModel Type') +
-    ylab('Per-gene RMSE\n') +
+    stat_ecdf(aes(x = diff), size = 4) +
+    geom_vline(xintercept = -0.12, size = 5, color = 'gray') +
+    geom_text(x = -0.14, y = 0.95, label = 'improved\ngenes', color = 'gray', size = 12)+
+    ylab('Density\n') +
+    xlab('\nPer-gene RMSE difference') +
     theme_cowplot(font_family = 'Arial') + 
     labs(color = 'Difference') +
-    theme(legend.key.height = unit(2.5, 'cm'), text = element_text(size = 30), axis.text.x=element_text(size = 30), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    theme(text = element_text(size = 30), axis.text.x=element_text(size = 30), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
     background_grid(major = 'xy') + 
-    panel_border(color = 'gray60', size = 1.5) +
-    scale_x_discrete(expand=c(0.3,0))
+    panel_border(color = 'gray60', size = 1.5) 
 
 path = get_manuscript_path()
 file_name = paste0(path, '/most_improved.pdf')
@@ -202,7 +200,7 @@ for (gene_name in genes){
 
 all = align_plots(TRBV9, TRBV13, plot, align = 'v', axis = 'l')
 
-first_row = plot_grid(all[[3]], NULL, nrow = 1, rel_widths = c(1, 0.4))
+first_row = plot_grid(all[[3]], NULL, nrow = 1, rel_widths = c(1, 0))
 
 all_tog = plot_grid(first_row, NULL, all[[1]], NULL, all[[2]], NULL, nrow = 6, rel_heights = c(0.8, 0.05, 0.5, 0.05, 0.5, 0.05), labels = c('A', '', 'B', '', 'C', ''), label_size = 35)
 

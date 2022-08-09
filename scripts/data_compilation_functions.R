@@ -125,8 +125,12 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id){
     #get motifs
     motif_dataframe = tcr_dataframe[,c('left_nucs', 'right_nucs'):=get_nuc_context(whole_seq, trim_length)]
     motif_dataframe$observed = TRUE
-    unobserved = get_unobserved_nuc_context(motif_dataframe)
-    together = rbind(motif_dataframe[,-c(1,2)], unobserved)
+    if (nrow(motif_dataframe) < length(unique(motif_dataframe$gene))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)){
+        unobserved = get_unobserved_nuc_context(motif_dataframe)
+        together = rbind(motif_dataframe[,-c(1,2)], unobserved)
+    } else {
+        together = motif_dataframe[,-c(1,2)]
+    }
     # condense observations by group
     recondensed = sum_trim_observations(together)
     recondensed[count == 0, observed := FALSE]
@@ -137,7 +141,7 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id){
     return(recondensed)
 }
 
-compile_data_for_subject <- function(file_path){
+compile_data_for_subject <- function(file_path, write = TRUE){
     temp_data = fread(file_path)
     if (GENE_NAME == 'd_gene'){
         temp_data = temp_data[d_gene != '-']
@@ -148,8 +152,11 @@ compile_data_for_subject <- function(file_path){
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     together = get_oriented_full_sequences(temp_data)
     motif_data = get_all_nuc_contexts(together, subject_id)
-
-    fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
+    if (isTRUE(write)){
+        fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
+    } else {
+        return(motif_data)
+    }
 }
 
 compile_all_data <- function(directory){

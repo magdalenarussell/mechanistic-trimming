@@ -7,6 +7,11 @@ extract_subject_ID <- function(tcr_repertoire_file_path){
 
 get_raw_cdr3_seqs <- function(tcr_repertoire_file){
     data = fread(tcr_repertoire_file)
+    if (!('rearrangement' %in% colnames(data))){
+        if ('cdr3_nucseq' %in% colnames(data)){
+            setnames(data, 'cdr3_nucseq', 'rearrangement')
+        }
+    }
     stopifnot('rearrangement' %in% colnames(data))
     cdr3s = data$rearrangement
     return(cdr3s)
