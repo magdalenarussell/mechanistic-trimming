@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source $HOME/miniconda3/etc/profile.d/conda.sh
-conda activate mechanistic-trimming 
+conda activate mechanistic-trimming_py 
 
 set -eu
 

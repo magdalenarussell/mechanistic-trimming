@@ -33,8 +33,9 @@ order_losses <- function(loss_list){
                           loss_list[loss_list %like% 'Expected'],
                           loss_list[(loss_list %like% 'V-gene family' & !(loss_list %like% 'full seq.')) | (loss_list %like% 'terminal')],
                           loss_list[loss_list %like% 'full seq.'], 
+                          loss_list[loss_list %like% 'testing'],
                           loss_list[loss_list %like% 'J-gene'])
-    return(loss_list_ordered)
+    return(unique(loss_list_ordered))
 }
  
 make_model_names_neat <- function(model_names){

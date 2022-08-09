@@ -653,7 +653,7 @@ plot_model_evaluation_hairpin_nick_paracoord <- function(all_eval_data, model_ty
 }
 
 
-plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, pre_filter = FALSE, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL, same_motif_type = TRUE, plot_size = NULL, write_plot = TRUE, expand_var = 4) {
+plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list, pre_filter = FALSE, left_motif_size_filter, right_motif_size_filter, terminal_melting_5_end_length_filter, custom_name = NULL, loss_bound = NULL, color_palette = NULL, same_motif_type = TRUE, plot_size = NULL, write_plot = TRUE, expand_var = 4, loss_order = NULL) {
     if (isFALSE(pre_filter)){
         # process evaluation file and combine with Murugan 2x4 motif evaluation losses
         eval_data_murugan = process_model_evaluation_file(all_eval_data, 'motif', 2, 4, NA)
@@ -684,7 +684,11 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
     eval_data$nice_loss_type = mapvalues(eval_data$loss_type, from = unique(eval_data$loss_type), to = nice_loss_names)
     
     # create label dataset
-    ordered_losses = order_losses(nice_loss_names)
+    if (is.null(loss_order)){
+        ordered_losses = order_losses(nice_loss_names)
+    } else {
+        ordered_losses = loss_order
+    }
     eval_data$nice_loss_type = factor(eval_data$nice_loss_type, levels = ordered_losses)
     last_loss = ordered_losses[length(ordered_losses)]
     label_data = eval_data[nice_loss_type == last_loss] 

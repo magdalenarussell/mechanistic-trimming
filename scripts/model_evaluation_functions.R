@@ -50,6 +50,30 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     }
 }
 
+aggregate_validation_data <- function(directory){
+    files = fs::dir_ls(path = directory)
+    registerDoParallel(cores=NCPU)
+    together = foreach(file = files, .combine=rbind) %dopar% {
+        print(paste(file))
+        compile_data_for_subject(file, write = FALSE)
+    }
+    
+    if (MODEL_TYPE %like% 'dna_shape') {
+        together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
+        processed_motif_data = process_data_for_model_fit(together)
+        motif_data = convert_data_to_motifs(processed_motif_data)
+    } else {
+        together = convert_data_to_motifs(together)
+        motif_data = process_data_for_model_fit(together)
+    }
+
+    motif_data = motif_data[, -c('left_nucs', 'right_nucs', 'left_motif', 'right_motif')]
+    together_pos = split_motif_column_by_motif_position(motif_data) 
+    weighted_together = calculate_subject_gene_weight(together_pos)
+    stopImplicitCluster()
+    return(weighted_together)
+}
+
 calculate_cond_expected_log_loss <- function(model, sample_data){
     #TODO switch this function to mclogit.predict (if typo is fixed..."contasts")
     if (MODEL_TYPE != 'null') {
