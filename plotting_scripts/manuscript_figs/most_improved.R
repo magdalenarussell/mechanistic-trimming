@@ -100,28 +100,25 @@ together = merge(together, slopes)
 
 together = together[order(abs(slope))]
 
-# get outliers
-if (TRIM_TYPE == 'v_trim'){
-    out_slope = -0.12
-    outliers = together[slope < out_slope]
-    no_outliers = together[slope >= out_slope]
-} else {
-    outlier_slope_values = boxplot.stats(together[model %like% 'motif']$slope)$out
-    outliers = together[slope %in% outlier_slope_values]
-    no_outliers = together[!(slope %in% outlier_slope_values)]
+outlier_count = ceiling(nrow(together)*0.1)
+if ((outlier_count %% 2) != 0){
+    outlier_count = outlier_count + 1
 }
+outliers = together[(nrow(together)-outlier_count + 1):nrow(together)]
+no_outliers = together[1:(nrow(together)-outlier_count)]
+
+cutoff = mean(c(min(no_outliers$slope), max(outliers$slope)))
 
 wide$diff = wide[['motif_two-side-base-count-beyond']] - wide[['two-side-base-count']]
 plot_data = wide
 plot = ggplot(plot_data) +
-    stat_ecdf(aes(x = diff), size = 4) +
-    geom_vline(xintercept = -0.12, size = 5, color = 'gray') +
-    geom_text(x = -0.14, y = 0.95, label = 'improved\ngenes', color = 'gray', size = 12)+
-    ylab('Density\n') +
+    geom_histogram(aes(x = diff), binwidth= 0.01) +
+    geom_vline(xintercept = cutoff, size = 5, color = 'gray') +
+    geom_text(x = -0.15, y = 6, label = 'improved\ngenes', color = 'gray', size = 12, lineheight = 0.8, check_overlap = TRUE)+
+    ylab('Gene count\n') +
     xlab('\nPer-gene RMSE difference') +
-    theme_cowplot(font_family = 'Arial') + 
-    labs(color = 'Difference') +
-    theme(text = element_text(size = 30), axis.text.x=element_text(size = 30), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+    theme_cowplot(font_family = 'Arial') +
+    theme(text = element_text(size = 30), axis.text.x=element_text(size = 30), axis.text.y = element_text(size = 30), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
     background_grid(major = 'xy') + 
     panel_border(color = 'gray60', size = 1.5) 
 

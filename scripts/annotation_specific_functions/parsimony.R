@@ -7,8 +7,8 @@ extract_subject_ID <- function(tcr_repertoire_file_path){
 
 get_whole_nucseqs <- function(){
     whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
-    setnames(whole_nucseqs, 'gene_names', 'gene')
-    setnames(whole_nucseqs, 'sequences', 'sequence')
+    setnames(whole_nucseq, 'gene_names', 'gene')
+    setnames(whole_nucseq, 'sequences', 'sequence')
     return(whole_nucseq)
 }
 

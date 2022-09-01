@@ -70,8 +70,7 @@ get_nuc_context <- function(whole_gene_seqs, trim_lengths){
     return(list(left_nucs = left_nuc_list, right_nucs = right_nuc_list))
 }
 
-get_oriented_full_sequences <- function(subject_data){
-    whole_nucseq = get_oriented_whole_nucseqs()
+get_oriented_full_sequences <- function(subject_data, whole_nucseq = get_oriented_whole_nucseqs()){
     temp_data = merge(subject_data, whole_nucseq, by.x = GENE_NAME, by.y = 'gene')
     gene_seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
     setnames(gene_seqs, 'gene', GENE_NAME)
@@ -133,25 +132,118 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id){
     }
     # condense observations by group
     recondensed = sum_trim_observations(together)
+
     recondensed[count == 0, observed := FALSE]
     recondensed[count != 0, observed := TRUE]
 
     recondensed$gene_type = GENE_NAME
-    recondensed$subject = subject_id
+    if (!is.null(subject_id)){
+        recondensed$subject = subject_id
+    }
     return(recondensed)
 }
 
+process_partis <- function(file_data){
+    cols = c('subjects', 'v_gene', 'd_gene', 'j_gene', 'v_3p_del', 'd_5p_del', 'd_3p_del', 'j_5p_del', 'vd_insertion', 'dj_insertion', 'in_frames', 'stops')
+    file_data = file_data[,..cols]
+    new_names = c('subject', 'v_gene', 'd_gene', 'j_gene', 'v_trim', 'd0_trim', 'd1_trim', 'j_trim', 'vd_insert', 'dj_insert', 'in_frames', 'stops')
+    colnames(file_data) = new_names
+    file_data[in_frames == TRUE & stops == FALSE, productive := TRUE]
+    file_data[in_frames != TRUE | stops != FALSE, productive := FALSE]
+    file_data = file_data[v_gene != '']
+    return(file_data[, -c('in_frames')])
+}
+
+get_colnames <- function(){
+    names = list(v_call="v_call", d_call="d_call", j_call="j_call", v_germline_start="v_germ_start_vdj", d_germline_start="d_germ_start", j_germline_start="j_germ_start", np1_length="np1_length", np2_length="np2_length", junction="junction", junction_length="junction_length", sequence_alignment="sequence_alignment")
+    return(names)
+}
+
+count_deletions_changeo <- function(row, type){
+    stopifnot(type %in% c('v', 'j'))
+    gene_type = paste0(substring(type, 1, 1), '_call')
+    allele = str_split(row[[gene_type]], ',')[[1]][1]
+    deleted = c(NA, NA)
+    if (is.na(allele)) { 
+        return(deleted) 
+    }
+
+    germline_seqs = get_whole_nucseqs() 
+    germline = germline_seqs[gene == allele]$sequence
+
+    names = get_colnames()
+    allele_germline_start = as.numeric(row[[as.character(names[paste0(type, '_germline_start')])]])
+    allele_germline_end = allele_germline_start + row[[paste0(type, '_seq_length')]] - 1
+        
+    germline_head = stringi::stri_sub(germline, 1, allele_germline_start - 1)
+    deleted_head = nchar(gsub("\\.", "", germline_head))
+    germline_tail = stringi::stri_sub(germline, allele_germline_end+1, nchar(germline))
+    deleted_tail = nchar(gsub("\\.", "", germline_tail))
+                
+    deleted[1] = deleted_head
+    deleted[2] = deleted_tail
+    return(deleted)
+}
+
+sample_by_family <- function(data){
+    counts = data[, .N, by = family]
+    singles = counts[N == 1]$family
+    not_single = counts[N != 1]$family
+    single_data = data[family %in% singles]
+    for (fam in not_single){
+        max = data[family == fam, max(conscount)]
+        selected = data[family == fam & conscount == max]
+        single_data = rbind(single_data, selected)
+    }
+    return(single_data)
+}
+
+process_changeo <- function(file_path){
+    file_data = fread(file_path)
+    colnames(file_data) = tolower(colnames(file_data))
+    for (i in 1:nrow(file_data)){
+        row = file_data[i]
+        v_dels = count_deletions_changeo(row, type = 'v') 
+        j_dels = count_deletions_changeo(row, type = 'j')
+        file_data[['v_trim']][i] = v_dels[2]
+        file_data[['j_trim']][i] = j_dels[1]
+        file_data[['v_gene']][i] = str_split(row[['v_call']], ',')[[1]][1]
+        file_data[['j_gene']][i] = str_split(row[['j_call']], ',')[[1]][1]
+    }
+    file_data = sample_by_family(file_data)
+    cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim')
+    subset = file_data[, ..cols]
+    subset$productive = FALSE
+    return(subset)
+}
+
 compile_data_for_subject <- function(file_path, write = TRUE){
-    temp_data = fread(file_path)
+    if (file_path %like% 'tab'){
+        temp_data = process_changeo(file_path)
+    } else {
+        temp_data = fread(file_path)
+    }
     if (GENE_NAME == 'd_gene'){
         temp_data = temp_data[d_gene != '-']
     }
-    subject_id = extract_subject_ID(file_path)
+    if (!('subject' %in% colnames(temp_data))){
+        subject_id = extract_subject_ID(file_path)
+    }else {
+        subject_id = NULL
+    }
     temp_data = filter_by_productivity(temp_data)    
     output_location = get_subject_motif_output_location() 
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     together = get_oriented_full_sequences(temp_data)
-    motif_data = get_all_nuc_contexts(together, subject_id)
+    if ('subject' %in% colnames(together)){
+        motif_data = data.table()
+        for (subject_i in unique(together$subject)){
+            temp = get_all_nuc_contexts(together[subject == subject_i], subject_id = subject_i)
+            motif_data = rbind(motif_data, temp)
+        }
+    } else {
+        motif_data = get_all_nuc_contexts(together, subject_id)
+    }
     if (isTRUE(write)){
         fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
     } else {

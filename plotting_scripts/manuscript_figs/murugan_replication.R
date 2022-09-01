@@ -53,14 +53,13 @@ source('plotting_scripts/plotting_functions.R')
 
 # get motif data
 motif_data = aggregate_all_subject_data()
-ordered_genes = motif_data[, .N, by = .(gene, p_gene)][order(-p_gene)]
-top_genes = ordered_genes[1:6]$gene
+m_genes = c('TRBV2', 'TRBV7-2*01', 'TRBV10-3')
 
 # Read in dist data
 predicted_trims = get_predicted_distribution_data() 
 
-for (gene in unique(top_genes)){
-    index = which(top_genes == gene)
+for (gene in unique(m_genes)){
+    index = which(m_genes == gene)
     temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75)
     temp_plot = temp_plot + 
         ggtitle(gene) +
@@ -71,24 +70,50 @@ for (gene in unique(top_genes)){
 }
 
 # Read in model coefficient data 
-pwm = get_model_coefficient_data() 
+model_coef_matrix = get_model_coefficient_data() 
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
-heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE)
-heatmap = heatmap + 
+# Replicate Murugan figure S11
+model_coef_matrix = model_coef_matrix[parameter %like% 'motif']
+
+position_values = map_positions_to_values(unique(model_coef_matrix$parameter))
+together = merge(model_coef_matrix, position_values, by.x = 'parameter', by.y = 'positions')
+
+# convert to log_10
+together$log_10_pdel = together$coefficient/log(10)
+# order variables
+together$base = factor(together$base, levels = c('T', 'G', 'C', 'A'))
+together$values = factor(together$values, levels = c(seq(4, 1), -1, -2))
+
+limits = c(-0.516, 0.516)
+motif_length = RIGHT_NUC_MOTIF_COUNT + LEFT_NUC_MOTIF_COUNT
+
+plot = ggplot(together, aes(x=values, y=base, fill=log_10_pdel)) +
+    geom_tile() +
+    theme_cowplot(font_family = 'Arial') + 
+    xlab('Position') +
+    ylab ('Base') +
+    theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
+    geom_vline(xintercept = RIGHT_NUC_MOTIF_COUNT + 0.5, size = 3.5, color = 'black') +
+    guides(fill = guide_colourbar(barheight = 14)) +
+    scale_fill_gradientn(colours = c("#000090", "#0000E7", "#0050FF", "#00B0FF", "#01FFFF", "#7FFF7F", "#FFFF02", "#FFA001", "#FF2F00", "#CF0000", "#800000"), name = 'log10(probability of deletion)', limits = limits) +
+    annotate("text", x = motif_length + 0.65, y = 0.25, label = "5\'", size = 8) +  
+    annotate("text", x = 0.35, y = 0.25, label = "3\'", size = 8) +  
+    coord_cartesian(ylim = c(1, 4), clip = "off")
+ 
+heatmap = plot + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
 
 
-all = align_plots(gene1, gene2, gene3, gene4, gene5, gene6, heatmap, align = 'v', axis = 'l')
-first_grid = plot_grid(all[[1]], all[[2]], all[[3]], all[[4]], all[[5]], all[[6]], nrow = 2) +
+all = align_plots(gene1, gene2, gene3, heatmap, align = 'v', axis = 'l')
+first_grid = plot_grid(all[[1]], all[[2]], all[[3]], nrow = 1) +
     draw_label("Number of trimmed nucleotides", x=0.5, y=  0, vjust=0 , angle= 0, size = 30, fontfamily = 'Arial') +
     draw_label("Probability", x=  0, y=0.5, vjust= 0.5, angle=90, size = 30, fontfamily = 'Arial')
 
 temp_grid = plot_grid(NULL, first_grid, ncol = 2, rel_widths = c(0.017, 1))
-second_grid = plot_grid(temp_grid, NULL, all[[7]], nrow = 3, labels = c("A", "", "B"), label_size = 35, rel_heights = c(1, 0.05, 0.6), align = 'v')
+second_grid = plot_grid(temp_grid, NULL, all[[4]], nrow = 3, labels = c("A", "", "B"), label_size = 35, rel_heights = c(1, 0.05, 1.2), align = 'v')
 
 path = get_manuscript_path()
 file_name = paste0(path, '/murugan_compare.pdf')
-ggsave(file_name, plot = second_grid, width = 20, height = 15, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = second_grid, width = 20, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
 

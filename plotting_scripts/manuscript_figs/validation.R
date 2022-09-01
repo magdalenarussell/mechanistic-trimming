@@ -63,7 +63,8 @@ all_eval_results = all_eval_results[motif_type == MOTIF_TYPE]
 setnames(all_eval_results, 'log_loss', 'loss')
 
 # annotation_types = c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma')
-annotation_types = c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma')
+annotation_types = c('validation_data_alpha', 'validation_data_beta', 'validation_data_igh')
+
 trim_types = c('j_trim', 'v_trim')
 
 for (trim_type in trim_types){
@@ -86,7 +87,7 @@ for (trim_type in trim_types){
 
 # get model types
 orig_model_types = c("motif_two-side-base-count-beyond", "motif", 'null')
-new_model_types = c('1x2motif + two-side-base-count-beyond (12 params)', '2x4motif (18 params)', 'null (0 params)')
+new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', '2x4motif (18 params)', 'null (0 params)')
 
 all_eval_results$model_type = mapvalues(all_eval_results$model_type, from = orig_model_types, to = new_model_types) 
 
@@ -95,16 +96,24 @@ colors = set_color_palette(c(neat_names, '2x4motif (18 params)'), with_params = 
 
 all_eval_results$loss_type = paste0(all_eval_results$loss_type, '_', all_eval_results$trim_type)
 loss_types = unique(all_eval_results$loss_type)
-nice_loss_types = c('full TCRB V-gene\ntraining dataset', 'TCRA J-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRG J-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRB V-gene\ntesting dataset', 'TCRG V-gene\ntesting dataset')
-loss_order = c('full TCRB V-gene\ntraining dataset', 'TCRB V-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRG V-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRA J-gene\ntesting dataset', 'TCRG J-gene\ntesting dataset')
+# nice_loss_types = c('full TCRB V-gene\ntraining dataset', 'TCRA J-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRG J-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRB V-gene\ntesting dataset', 'TCRG V-gene\ntesting dataset')
+# loss_order = c('full TCRB V-gene\ntraining dataset', 'TCRB V-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRG V-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRA J-gene\ntesting dataset', 'TCRG J-gene\ntesting dataset')
+
+nice_loss_types = c('full TCRB V-gene\ntraining dataset', 'TCRA J-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'IGH J-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRB V-gene\ntesting dataset', 'IGH V-gene\ntesting dataset')
+loss_order = c('full TCRB V-gene\ntraining dataset', 'TCRB V-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'IGH V-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRA J-gene\ntesting dataset', 'IGH J-gene\ntesting dataset')
 all_eval_results$loss_type = mapvalues(all_eval_results$loss_type, from = loss_types, to=nice_loss_types)
 
-plot = plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(2.04, 3.01), color_palette = colors, write_plot = FALSE, expand_var = 3.1, loss_order = loss_order) +
+# bound = c(2.04, 3.01)
+bound = c(2.05, 2.728)
+
+plot = plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = bound, color_palette = colors, write_plot = FALSE, expand_var = 1.5, loss_order = loss_order) +
     ylab('Expected per-sequence log loss\n')
 
 ANNOTATION_TYPE <<- 'igor'
 path = get_manuscript_path()
 file_name = paste0(path, '/loss_compare_validation.pdf')
-ggsave(file_name, plot = plot, width = 40, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+# ggsave(file_name, plot = plot, width = 40, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = plot, width = 35, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+
 
 
