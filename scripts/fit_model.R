@@ -62,3 +62,5 @@ motif_data = aggregate_all_subject_data()
 
 # Fit model, write predicted distribution and pwm files
 fit_model_by_group(motif_data)
+model = fit_model(motif_data, formula = get_model_formula())
+save_model(model)

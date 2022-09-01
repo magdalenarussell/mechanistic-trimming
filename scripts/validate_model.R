@@ -44,6 +44,7 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
 
 UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
+LOWER_TRIM_BOUND <<- 2
 
 MODEL_TYPE <<- args[11]
 
@@ -56,18 +57,14 @@ if (!(grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-c
 VALIDATION_DATA_DIR <<- args[13]
 VALIDATION_TYPE <<- args[14]
 VALIDATION_TRIM_TYPE <<- args[15]
+VALIDATION_PRODUCTIVITY <<- args[16]
 VALIDATION_GENE_NAME <<- paste0(substring(VALIDATION_TRIM_TYPE, 1, 1), '_gene')
-stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma'))
+stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_igh', 'validation_data_igk', 'validation_data_igl'))
 
-source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 
-# Compile data for all subjects
-motif_data = aggregate_all_subject_data()
-
-# Fit model using original V-gene training data
 if (MODEL_TYPE != 'null') {
-    model = fit_model(motif_data)
+    model = load_model()
 } else {
     model = 'null'
 } 
@@ -76,6 +73,7 @@ ANNOTATION_TYPE <<- VALIDATION_TYPE
 TYPE <<- 'validation_data' 
 TRIM_TYPE <<- VALIDATION_TRIM_TYPE
 GENE_NAME <<- VALIDATION_GENE_NAME
+PRODUCTIVITY <<- VALIDATION_PRODUCTIVITY
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')

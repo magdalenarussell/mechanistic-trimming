@@ -3,7 +3,7 @@ REPETITIONS <<- NA
 WRITE_INTERMEDIATE_LOSS <<- NA 
 
 evaluate_loss <- function(validation_data, model) {
-    if (model == 'null'){
+    if (MODEL_TYPE == 'null'){
         parameter_count = 0
     } else {
         parameter_count = length(model$coefficients) 
