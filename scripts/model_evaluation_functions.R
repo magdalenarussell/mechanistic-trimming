@@ -67,6 +67,10 @@ aggregate_validation_data <- function(directory){
         motif_data = process_data_for_model_fit(together)
     }
 
+    #remove genes with ambiguous bases
+    amb = unique(motif_data[motif %like% 'N']$gene)
+    motif_data = motif_data[!(gene %in% amb)]
+
     motif_data = motif_data[, -c('left_nucs', 'right_nucs', 'left_motif', 'right_motif')]
     together_pos = split_motif_column_by_motif_position(motif_data) 
     weighted_together = calculate_subject_gene_weight(together_pos)

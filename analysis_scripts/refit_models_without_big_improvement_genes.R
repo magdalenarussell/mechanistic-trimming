@@ -49,11 +49,7 @@ UPPER_TRIM_BOUND <<- as.numeric(args[10])
 
 MODEL_TYPE <<- args[11]
 
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)| grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
-} else {
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
-}
+LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
 TYPE <<- 'full_v_gene_family_loss'
@@ -71,19 +67,13 @@ per_gene_resid1$model = MODEL_TYPE
 
 MODEL_TYPE1 = MODEL_TYPE
 LEFT_SIDE1 = LEFT_SIDE_TERMINAL_MELT_LENGTH
-MODEL_TYPE <<- args[12]
+MODEL_TYPE <<- args[13]
 stopifnot(MODEL_TYPE %like% 'motif')
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[13])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[14])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[14])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[15])
 
-
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)| grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[15])
-} else {
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
-}
 
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
@@ -122,16 +112,12 @@ together = merge(together, slopes)
 
 together = together[order(abs(slope))]
 
-# get outliers
-if (TRIM_TYPE == 'v_trim'){
-    out_slope = -0.12
-    outliers = together[slope < out_slope]
-    no_outliers = together[slope > out_slope]
-} else {
-    outlier_slope_values = boxplot.stats(together[model %like% 'motif']$slope)$out
-    outliers = together[slope %in% outlier_slope_values]
-    no_outliers = together[!(slope %in% outlier_slope_values)]
+outlier_count = ceiling(nrow(together)*0.1)
+if ((outlier_count %% 2) != 0){
+    outlier_count = outlier_count + 1
 }
+outliers = together[(nrow(together)-outlier_count + 1):nrow(together)]
+no_outliers = together[1:(nrow(together)-outlier_count)]
 
 # re-fit_model without outliers
 motif_data = aggregate_all_subject_data()

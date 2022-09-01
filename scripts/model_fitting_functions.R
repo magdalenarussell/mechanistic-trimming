@@ -275,4 +275,18 @@ get_model_bootstrap_file_name <- function(){
     return(name)
 }
 
+get_model_name <- function(){
+    file = file.path(PROJECT_PATH, 'models', paste0(MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.rds'))
+    return(file)
+}
 
+save_model <- function(model){
+    file = get_model_name()
+    saveRDS(model, file)
+}
+
+load_model <- function(){
+    file = get_model_name()
+    model = readRDS(file)
+    return(model)
+}

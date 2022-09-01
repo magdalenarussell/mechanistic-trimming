@@ -698,7 +698,7 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
     plot = ggplot(eval_data) +
         geom_point(aes(y = loss, x = nice_loss_type, color = nice_model_type), size = 14)+
         geom_line(aes(y = loss, x = nice_loss_type, group = nice_model_type, color = nice_model_type), size = 9, alpha = 0.8)+
-        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 12, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf) +
+        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 12, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf, lineheight = 0.8) +
         theme_cowplot(font_family = 'Arial') + 
         xlab(' ') +
         ylab('Log loss\n') +

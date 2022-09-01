@@ -71,7 +71,7 @@ all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss
 
 # get model types
 orig_model_types = c("motif_two-side-base-count-beyond", "null", "motif", "two-side-base-count", 'dna_shape-std', 'linear-distance', 'motif_linear-distance')
-new_model_types = c('1x2motif + two-side-base-count-beyond (12 params)', 'null (0 params)', "1x2motif (9 params)", 'two-side-base-count (3 params)', '1x2DNA-shape (13 params)', 'linear-distance (1 param)', '1x2motif + linear-distance (10 params)')
+new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', 'null (0 params)', "1x2motif (9 params)", 'two-side base-count\n(3 params)', '1x2DNA-shape\n(13 params)', 'distance (1 param)', '1x2motif + distance\n(10 params)')
 
 # pre-filter data
 subset_eval_data = process_model_evaluation_file(all_eval_results, orig_model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH))
@@ -97,11 +97,11 @@ nice_loss_types = c('full V-gene\ntraining\ndataset', 'many held-out\nsubsets of
 
 eval_tog$loss_type = mapvalues(eval_tog$loss_type, from = loss_types, to=nice_loss_types)
 
-plot = plot_model_evaluation_loss_paracoord(eval_tog, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.97, 2.7), color_palette = colors, write_plot = FALSE, expand_var = 3.1) +
+plot = plot_model_evaluation_loss_paracoord(eval_tog, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.98, 2.69), color_palette = colors, write_plot = FALSE, expand_var = 1.2) +
     ylab('Expected per-sequence log loss\n')
 
 path = get_manuscript_path()
 file_name = paste0(path, '/loss_compare.pdf')
-ggsave(file_name, plot = plot, width = 32, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = plot, width = 32, height = 21, units = 'in', dpi = 750, device = cairo_pdf)
 
 
