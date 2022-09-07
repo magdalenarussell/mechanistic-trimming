@@ -95,7 +95,8 @@ plot = ggplot(together, aes(x=values, y=base, fill=log_10_pdel)) +
     theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
     geom_vline(xintercept = RIGHT_NUC_MOTIF_COUNT + 0.5, size = 3.5, color = 'black') +
     guides(fill = guide_colourbar(barheight = 14)) +
-    scale_fill_gradientn(colours = c("#000090", "#0000E7", "#0050FF", "#00B0FF", "#01FFFF", "#7FFF7F", "#FFFF02", "#FFA001", "#FF2F00", "#CF0000", "#800000"), name = 'log10(probability of deletion)', limits = limits) +
+    scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) +
+    # scale_fill_gradientn(colours = c("#000090", "#0000E7", "#0050FF", "#00B0FF", "#01FFFF", "#7FFF7F", "#FFFF02", "#FFA001", "#FF2F00", "#CF0000", "#800000"), name = 'log10(probability of deletion)', limits = limits) +
     annotate("text", x = motif_length + 0.65, y = 0.25, label = "5\'", size = 8) +  
     annotate("text", x = 0.35, y = 0.25, label = "3\'", size = 8) +  
     coord_cartesian(ylim = c(1, 4), clip = "off")
