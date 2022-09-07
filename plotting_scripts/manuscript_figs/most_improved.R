@@ -114,7 +114,7 @@ plot_data = wide
 plot = ggplot(plot_data) +
     geom_histogram(aes(x = diff), binwidth= 0.01) +
     geom_vline(xintercept = cutoff, size = 5, color = 'gray') +
-    geom_text(x = -0.15, y = 6, label = 'improved\ngenes', color = 'gray', size = 12, lineheight = 0.8, check_overlap = TRUE)+
+    geom_text(x = -0.15, y = 6, label = '\"improved\ngenes\"', color = 'gray', size = 12, lineheight = 0.8, check_overlap = TRUE)+
     ylab('Gene count\n') +
     xlab('\nPer-gene RMSE difference') +
     theme_cowplot(font_family = 'Arial') +
@@ -136,7 +136,7 @@ outlier_motif_data = motif_data[gene %in% outliers$gene]
 outlier_motif_data = process_data_for_model_fit(outlier_motif_data)
 outlier_motif_data$predicted_prob = temp_predict(model, newdata = outlier_motif_data)
 outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
-outlier_motif_data$model = paste0('+ 1x2motif,\nremoving improved genes')
+outlier_motif_data$model = paste0('+ 1x2motif,\nremoving \"improved genes\"')
 
 predictions = rbind(predictions, outlier_motif_data, fill = TRUE)
 
@@ -154,11 +154,11 @@ outlier_motif_data = process_data_for_model_fit(outlier_motif_data)
 outlier_motif_data$predicted_prob = temp_predict(model, newdata = outlier_motif_data)
 outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
 
-outlier_motif_data$model = paste0('+ 1x2motif,\nremoving improved genes + similar')
+outlier_motif_data$model = paste0('+ 1x2motif,\nremoving \"improved genes\" + similar')
 
 predictions = rbind(predictions, outlier_motif_data, fill = TRUE)
 
-model_types = c('two-side-base-count model,\nall training data', '+ 1x2 motif,\nall training data', '+ 1x2motif,\nremoving improved genes', '+ 1x2motif,\nremoving improved genes + similar')
+model_types = c('two-side-base-count model,\nall training data', '+ 1x2 motif,\nall training data', '+ 1x2motif,\nremoving \"improved genes\"', '+ 1x2motif,\nremoving \"improved genes\" + similar')
 
 predictions$model = factor(predictions$model, levels = model_types) 
 
