@@ -118,29 +118,33 @@ filter_by_productivity <- function(data){
 general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id){
     #filter data by trim bounds
     tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= LOWER_TRIM_BOUND & get(TRIM_TYPE) <= UPPER_TRIM_BOUND]
-    #condense data by gene, trim, etc.
-    tcr_dataframe[, trimmed_seq := substring(sequence, 1, nchar(sequence) - get(TRIM_TYPE))]
-    tcr_dataframe = condense_tcr_data(tcr_dataframe)
-    #get motifs
-    motif_dataframe = tcr_dataframe[,c('left_nucs', 'right_nucs'):=get_nuc_context(whole_seq, trim_length)]
-    motif_dataframe$observed = TRUE
-    if (nrow(motif_dataframe) < length(unique(motif_dataframe$gene))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)){
-        unobserved = get_unobserved_nuc_context(motif_dataframe)
-        together = rbind(motif_dataframe[,-c(1,2)], unobserved)
+    if (nrow(tcr_dataframe) == 0){
+        return(tcr_dataframe)
     } else {
-        together = motif_dataframe[,-c(1,2)]
-    }
-    # condense observations by group
-    recondensed = sum_trim_observations(together)
+        #condense data by gene, trim, etc.
+        tcr_dataframe[, trimmed_seq := substring(sequence, 1, nchar(sequence) - get(TRIM_TYPE))]
+        tcr_dataframe = condense_tcr_data(tcr_dataframe)
+        #get motifs
+        motif_dataframe = tcr_dataframe[,c('left_nucs', 'right_nucs'):=get_nuc_context(whole_seq, trim_length)]
+        motif_dataframe$observed = TRUE
+        if (nrow(motif_dataframe) < length(unique(motif_dataframe$gene))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)){
+            unobserved = get_unobserved_nuc_context(motif_dataframe)
+            together = rbind(motif_dataframe[,-c(1,2)], unobserved)
+        } else {
+            together = motif_dataframe[,-c(1,2)]
+        }
+        # condense observations by group
+        recondensed = sum_trim_observations(together)
 
-    recondensed[count == 0, observed := FALSE]
-    recondensed[count != 0, observed := TRUE]
+        recondensed[count == 0, observed := FALSE]
+        recondensed[count != 0, observed := TRUE]
 
-    recondensed$gene_type = GENE_NAME
-    if (!is.null(subject_id)){
-        recondensed$subject = subject_id
+        recondensed$gene_type = GENE_NAME
+        if (!is.null(subject_id)){
+            recondensed$subject = subject_id
+        }
+        return(recondensed)
     }
-    return(recondensed)
 }
 
 process_partis <- function(file_data){
