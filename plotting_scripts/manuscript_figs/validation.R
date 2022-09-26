@@ -47,6 +47,8 @@ LOWER_TRIM_BOUND <<- 2
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(10)
 
 TYPE <<- 'log_loss'
+LOSS_GENE_WEIGHT <<- args[17]
+stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs'))
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
