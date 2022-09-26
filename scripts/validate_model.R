@@ -59,7 +59,10 @@ VALIDATION_TYPE <<- args[14]
 VALIDATION_TRIM_TYPE <<- args[15]
 VALIDATION_PRODUCTIVITY <<- args[16]
 VALIDATION_GENE_NAME <<- paste0(substring(VALIDATION_TRIM_TYPE, 1, 1), '_gene')
-stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_igh', 'validation_data_igk', 'validation_data_igl'))
+stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_delta', 'validation_data_igh', 'validation_data_igk', 'validation_data_igl', 'igor'))
+
+LOSS_GENE_WEIGHT <<- args[17]
+stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs', 'p_gene_given_subject_all_seqs'))
 
 source('scripts/model_fitting_functions.R')
 
@@ -85,4 +88,4 @@ validation_data = aggregate_validation_data(directory = VALIDATION_DATA_DIR)
 loss = evaluate_loss(validation_data, model)
 
 # Append results to the end of a file
-write_result_dt(loss$loss, rep(VALIDATION_TYPE, length(loss$loss)), loss$model_parameter_count, loss$held_out_cluster_number, loss$held_out_genes)
+write_result_dt(loss$loss, rep(VALIDATION_TYPE, length(loss$loss)), loss$model_parameter_count, loss$held_out_cluster_number, loss$held_out_genes, validation_gene_weighting = LOSS_GENE_WEIGHT)

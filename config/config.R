@@ -8,7 +8,9 @@ WHOLE_NUCSEQS_parsimony = '_ignore/tcrb_processed_geneseq.tsv'
 WHOLE_NUCSEQS_igor = '_ignore/igor_imgt_genes.tsv' 
 WHOLE_NUCSEQS_alpha = '_ignore/imgt_tcra_sequences.tsv' 
 WHOLE_NUCSEQS_gamma = '_ignore/imgt_tcrg_sequences.tsv' 
+WHOLE_NUCSEQS_delta = '_ignore/imgt_tcrd_sequences.tsv' 
 WHOLE_NUCSEQS_igh = '_ignore/imgt_igh_sequences.tsv'
+ALIGNED_NUCSEQS = '_ignore/combo_xcr.tsv'
 CONFUSIBILITY_DATA = '_ignore/emerson_stats_ties/'
 
 # SNP genotype file (download https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs001918.v1.p1)

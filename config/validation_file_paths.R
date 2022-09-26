@@ -1,0 +1,6 @@
+VALIDATION_DATA_BETA = '/fh/fast/matsen_e/shared/tcr-gwas/nicaragua_beta_parsimony'
+VALIDATION_DATA_ALPHA = '/fh/fast/matsen_e/shared/tcr-gwas/nicaragua_alpha_parsimony'
+VALIDATION_DATA_DELTA = '/fh/fast/matsen_e/shared/tcr-gwas/processed_nicaragua_flu_gamma_deltas/delta'
+VALIDATION_DATA_GAMMA = '/fh/fast/matsen_e/shared/tcr-gwas/processed_nicaragua_flu_gamma_deltas/gamma'
+VALIDATION_DATA_IGH_productive = '/fh/fast/matsen_e/shared/tcr-gwas/10x_igh_partis'
+VALIDATION_DATA_IGH_nonproductive = '_ignore/igh_nonprods'
