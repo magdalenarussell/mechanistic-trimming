@@ -57,6 +57,8 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
 
+LOSS_GENE_WEIGHT <<- 'p_gene_given_subject'
+
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('scripts/model_evaluation_functions.R')
