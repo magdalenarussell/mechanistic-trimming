@@ -38,8 +38,9 @@ compile_rel_importance_result <- function(model_coefs){
     return(data.table(t(result)))
 }
  
-write_rel_importance_result_dt <- function(model_coefs, file_name){
+write_rel_importance_result_dt <- function(model_coefs, loss_results, file_name){
     result = compile_rel_importance_result(model_coefs)
+    result$loss = loss_results$loss
     fwrite(result, file_name, sep = '\t')
     return(result)
 }
