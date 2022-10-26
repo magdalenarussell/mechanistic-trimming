@@ -47,43 +47,39 @@ LOWER_TRIM_BOUND <<- 2
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(10)
 
 TYPE <<- 'log_loss'
-LOSS_GENE_WEIGHT <<- args[17]
+LOSS_GENE_WEIGHT <<- 'p_gene_given_subject' 
 stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs'))
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
-all_eval_results= compile_evaluation_results(TYPE)
-# get model types
-orig_model_types = c("motif_two-side-base-count-beyond", 'null')
-# pre-filter data
-all_eval_results1 = process_model_evaluation_file(all_eval_results, orig_model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH))
-eval_data_murugan = process_model_evaluation_file(all_eval_results, 'motif', 2, 4, NA)
-all_eval_results = rbind(all_eval_results1, eval_data_murugan)
-all_eval_results = all_eval_results[motif_type == MOTIF_TYPE]
-setnames(all_eval_results, 'log_loss', 'loss')
+all_eval_results = data.table()
 
-# annotation_types = c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma')
-annotation_types = c('validation_data_alpha', 'validation_data_beta', 'validation_data_igh')
+annotation_types = c('igor', 'validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_igh')
 
 trim_types = c('j_trim', 'v_trim')
+prods = c('productive', 'nonproductive')
 
 for (trim_type in trim_types){
     for (type in annotation_types) {
-        ANNOTATION_TYPE <<- type
-        TRIM_TYPE <<- trim_type
-        GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
+        for (prod in prods){
+            ANNOTATION_TYPE <<- type
+            TRIM_TYPE <<- trim_type
+            GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
+            PRODUCTIVITY <<- prod
+            
+            source('scripts/model_evaluation_functions.R')
+            source('plotting_scripts/plotting_functions.R')
+            source('plotting_scripts/model_evaluation_functions.R')
 
-        source('scripts/model_evaluation_functions.R')
-        source('plotting_scripts/plotting_functions.R')
-        source('plotting_scripts/model_evaluation_functions.R')
-
-        temp_eval_results = compile_evaluation_results(type)
-        setnames(temp_eval_results, type, 'loss')
-        temp_eval_results$loss_type = type
-        temp_eval_results$trim_type = trim_type
-        all_eval_results = rbind(all_eval_results, temp_eval_results, fill = TRUE)
+            temp_eval_results = compile_evaluation_results(type)
+            setnames(temp_eval_results, type, 'loss', skip_absent = TRUE)
+            temp_eval_results$loss_type = type
+            temp_eval_results$trim_type = trim_type
+            temp_eval_results$productivity = prod
+            all_eval_results = rbind(all_eval_results, temp_eval_results, fill = TRUE)
+        }
     }
 }
 
@@ -91,31 +87,70 @@ for (trim_type in trim_types){
 orig_model_types = c("motif_two-side-base-count-beyond", "motif", 'null')
 new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', '2x4motif (18 params)', 'null (0 params)')
 
+all_eval_results = all_eval_results[model_type %in% orig_model_types]
 all_eval_results$model_type = mapvalues(all_eval_results$model_type, from = orig_model_types, to = new_model_types) 
-
+all_eval_results[loss_type == 'igor', loss_type := paste0(loss_type, '_', trim_type, '_', productivity)]
 neat_names = make_model_names_neat(new_model_types)
 colors = set_color_palette(c(neat_names, '2x4motif (18 params)'), with_params = TRUE)
 
-all_eval_results$loss_type = paste0(all_eval_results$loss_type, '_', all_eval_results$trim_type)
-loss_types = unique(all_eval_results$loss_type)
-# nice_loss_types = c('full TCRB V-gene\ntraining dataset', 'TCRA J-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRG J-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRB V-gene\ntesting dataset', 'TCRG V-gene\ntesting dataset')
-# loss_order = c('full TCRB V-gene\ntraining dataset', 'TCRB V-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRG V-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRA J-gene\ntesting dataset', 'TCRG J-gene\ntesting dataset')
+loss_types = c('igor_j_trim_productive', 'igor_v_trim_nonproductive', 'validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_igh', 'igor_j_trim_nonproductive', 'igor_v_trim_productive') 
 
-nice_loss_types = c('full TCRB V-gene\ntraining dataset', 'TCRA J-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'IGH J-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'TCRB V-gene\ntesting dataset', 'IGH V-gene\ntesting dataset')
-loss_order = c('full TCRB V-gene\ntraining dataset', 'TCRB V-gene\ntesting dataset', 'TCRA V-gene\ntesting dataset', 'IGH V-gene\ntesting dataset', 'TCRB J-gene\ntesting dataset', 'TCRA J-gene\ntesting dataset', 'IGH J-gene\ntesting dataset')
-all_eval_results$loss_type = mapvalues(all_eval_results$loss_type, from = loss_types, to=nice_loss_types)
+nice_loss_types = c('TCRB training\ndataset J-genes\n(not included during\nmodel training)', 'full TCRB V-gene\ntraining dataset', 'TCRA testing\ndataset', 'TCRB testing\ndataset', 'TCRG testing\ndataset', 'IGH testing\ndataset', 'TCRB training\ndataset J-genes\n(not included during\nmodel training)', 'TCRB training\ndataset V-genes\n(not included during\nmodel training)')
+loss_order = c('TCRB training\ndataset J-genes\n(not included during\nmodel training)', 'full TCRB V-gene\ntraining dataset', 'TCRB training\ndataset V-genes\n(not included during\nmodel training)', 'TCRB testing\ndataset', 'TCRA testing\ndataset', 'TCRG testing\ndataset', 'IGH testing\ndataset')
+all_eval_results$nice_loss_type = mapvalues(all_eval_results$loss_type, from = loss_types, to=nice_loss_types)
+all_eval_results[nice_loss_type == 'full TCRB V-gene\ntraining dataset', trim_type := 'v_trim']
+all_eval_results$trim_type = mapvalues(all_eval_results$trim_type, from = unique(all_eval_results$trim_type), to=c('J-gene trimming', 'V-gene trimming'))
+all_eval_results$trim_type = factor(all_eval_results$trim_type, levels = c('V-gene trimming', 'J-gene trimming'))
 
-# bound = c(2.04, 3.01)
-bound = c(2.05, 2.728)
+# reformat model names to be nice
+all_eval_results = all_eval_results[motif_type == MOTIF_TYPE]
+nice_names = make_model_names_neat(unique(all_eval_results$model_type)) 
+all_eval_results$nice_model_type = mapvalues(all_eval_results$model_type, from = unique(all_eval_results$model_type), to = nice_names)
 
-plot = plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = c(new_model_types, '2x4motif'), pre_filter = TRUE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = bound, color_palette = colors, write_plot = FALSE, expand_var = 1.5, loss_order = loss_order) +
-    ylab('Expected per-sequence log loss\n')
+ordered_losses = loss_order
+all_eval_results$nice_loss_type = factor(all_eval_results$nice_loss_type, levels = ordered_losses)
+last_loss = ordered_losses[length(ordered_losses)]
+label_data = all_eval_results[nice_loss_type == last_loss] 
 
-ANNOTATION_TYPE <<- 'igor'
-path = get_manuscript_path()
-file_name = paste0(path, '/loss_compare_validation.pdf')
-# ggsave(file_name, plot = plot, width = 40, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
-ggsave(file_name, plot = plot, width = 35, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+motif_base_count_training_loss = all_eval_results[nice_loss_type == 'full TCRB V-gene\ntraining dataset' & nice_model_type == '1x2motif + two-side\nbase-count beyond\n(12 params)']$loss
+motif_base_count_color = colors[['1x2motif + two-side\nbase-count beyond\n(12 params)']]
 
+for (prod in c('productive', 'nonproductive')) {
+    subset = all_eval_results[productivity == prod]
+    label_data_subset = label_data[productivity == prod]
+
+    if (prod == 'productive'){
+        bound = c(1.7, 2.71) 
+    } else {
+        bound = c(2, 2.73) 
+    }
+
+    # create plot
+    require(ggrepel)
+    plot = ggplot(subset) +
+        geom_segment(x = 'full TCRB V-gene\ntraining dataset', y = motif_base_count_training_loss, xend = 'IGH testing\ndataset', yend = motif_base_count_training_loss, color = motif_base_count_color, linetype = 'dashed', size = 2) +
+        geom_segment(x = 'TCRB training\ndataset J-genes\n(not included during\nmodel training)', y = motif_base_count_training_loss, xend = 'IGH testing\ndataset', yend = motif_base_count_training_loss, color = motif_base_count_color, linetype = 'dashed', size = 2) +
+        geom_segment(x = 'TCRB training\ndataset V-genes\n(not included during\nmodel training)', y = motif_base_count_training_loss, xend = 'IGH testing\ndataset', yend = motif_base_count_training_loss, color = motif_base_count_color, linetype = 'dashed', size = 2) +
+        geom_point(aes(y = loss, x = nice_loss_type, color = nice_model_type), size = 6)+
+        geom_line(aes(y = loss, x = nice_loss_type, group = nice_model_type, color = nice_model_type), size = 4, alpha = 0.8)+
+        geom_text_repel(data = label_data_subset, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 6, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf, lineheight = 0.8) +
+        facet_wrap(~trim_type, nrow = 2, scales = 'free_x')+
+        theme_cowplot(font_family = 'Arial') + 
+        xlab(' ') +
+        ylab('Expected per-sequence log loss\n')+
+        background_grid(major = 'xy') + 
+        panel_border(color = 'gray60', size = 1.1) +
+        theme(legend.position = 'none', text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"), strip.text = element_text(size = 20), panel.spacing = unit(3, "lines"))  +
+        scale_x_discrete(expand = expansion(add = c(0.2, 1.2)))+
+        ylim(bound) +
+        scale_color_manual(values = colors)
+
+
+    ANNOTATION_TYPE <<- 'igor'
+    path = get_manuscript_path()
+    file_name = paste0(path, '/loss_compare_validation_', prod, '.pdf')
+    w = 16 
+    ggsave(file_name, plot = plot, width = w, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
+}
 
 
