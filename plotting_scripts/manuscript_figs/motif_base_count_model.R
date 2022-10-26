@@ -11,6 +11,7 @@ library(cowplot)
 library(mclogit)
 library(matrixcalc)
 library(RhpcBLASctl)
+library(ggseqlogo)
 omp_set_num_threads(1)
 blas_set_num_threads(1)
 
@@ -59,7 +60,7 @@ predicted_trims = get_predicted_distribution_data()
 
 for (gene in unique(top_genes)){
     index = which(top_genes == gene)
-    temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75)
+    temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75, color = '#01665e', motif_highlight_color = '#E79737', motif_highlight = c('CTT'))
     temp_plot = temp_plot + 
         ggtitle(gene) +
         xlab('') +
@@ -78,22 +79,50 @@ heatmap = heatmap +
 
 heatmap2 = plot_base_count_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))
 heatmap2 = heatmap2 + 
-    theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
+    theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20), legend.position = 'bottom', legend.direction = 'horizontal', legend.justification="center") +
+    guides(fill = guide_colourbar(barwidth = 27.5, barheight = 2))
 
+legend = get_legend(heatmap2) 
+heatmap2 = heatmap2 + theme(legend.position = 'none')
 
-all = align_plots(gene1, gene2, gene3, gene4, gene5, gene6, heatmap, heatmap2, align = 'vh', axis = 'lb')
+# make logo
+source('plotting_scripts/logo_functions.R')
+
+ppm = convert_pwm_to_ppm(pwm)
+ppm_matrix = convert_ppm_to_matrix(ppm)
+position_values = map_positions_to_values(unique(ppm$parameter))
+
+logo = ggplot() + 
+    # geom_logo(ppm_matrix, col_scheme='base_pairing') + 
+    geom_logo(ppm_matrix) + 
+    theme_logo() +    
+    geom_vline(xintercept = 1.5, size = 4, color = 'black')+
+    annotate("text", x = 0.5, y = 0, label = "5\'", size = 8) +  
+    annotate("text", x = 3.6, y = 0, label = "3\'", size = 8) +  
+    theme_cowplot(font_family = 'Arial') + 
+    xlab('Position') +
+    ylab ('Bits') +
+    theme(text = element_text(size = 30), legend.position = 'none', axis.text = element_text(size = 20), axis.line = element_line(color = 'gray60', size = 1.5), axis.ticks = element_line(color = 'gray60', size = 0.75)) +
+    coord_cartesian(ylim = c(0, 0.02), clip = "off")
+
+    # panel_border(color = 'gray60', size = 1.5) 
+
+logo$scales$scales[[1]] <- scale_x_continuous(breaks= c(1, 2, 3),labels=c("-1", "1", "2"))
+
+all = align_plots(gene1, gene2, gene3, gene4, gene5, gene6, heatmap, heatmap2, logo, legend, align = 'vh', axis = 'lbr')
 
 first_grid = plot_grid(all[[1]], all[[2]], all[[3]], all[[4]], all[[5]], all[[6]], nrow = 2) +
     draw_label("Number of trimmed nucleotides", x=0.5, y=  0, vjust=0 , angle= 0, size = 30, fontfamily = 'Arial') +
     draw_label("Probability", x=  0, y=0.5, vjust= 0.5, angle=90, size = 30, fontfamily = 'Arial')
 
 temp_grid = plot_grid(NULL, first_grid, ncol = 2, rel_widths = c(0.017, 1))
-second_grid = plot_grid(all[[7]], all[[8]], nrow = 1, labels = c("B", "C"), label_size = 35, rel_widths = c(0.55, 1), align = 'h')
+second_grid = plot_grid(all[[7]], all[[8]], nrow = 1, labels = c("C", "D"), label_size = 35, rel_widths = c(1, 1), align = 'h')
+second_grid = plot_grid(second_grid, NULL, legend, nrow = 3, rel_heights = c(1, 0.05,0.2)) 
+all_logo = plot_grid(all[[9]], NULL, nrow = 2, rel_heights = c(1, 0.25))
+tog = plot_grid(NULL, all_logo, NULL, second_grid, labels = c('B', '', '', ''), rel_widths = c(0.015,0.3, 0.005,0.6), label_size = 35, nrow = 1)
 
-together = plot_grid(temp_grid, NULL, second_grid, nrow = 3, labels = c("A", "", ""), label_size = 35, rel_heights = c(1, 0.05, 0.6), align = 'v')
+together = plot_grid(temp_grid, NULL, tog, nrow = 3, labels = c("A", "", ""), label_size = 35, rel_heights = c(0.8, 0.05, 0.6), align = 'v')
 
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_two-side-base-count.pdf')
 ggsave(file_name, plot = together, width = 20, height = 15, units = 'in', dpi = 750, device = cairo_pdf)
-
-
