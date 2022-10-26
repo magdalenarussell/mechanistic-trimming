@@ -123,7 +123,7 @@ write_result_dt <- function(log_loss, type, parameter_count, held_out_clusters, 
 }
 
 compile_evaluation_results <- function(type){
-    files = fs::dir_ls(path = get_per_run_model_evaluation_path(type))
+    files = fs::dir_ls(path = get_per_run_model_evaluation_path(type), glob = '*.tsv')
     require(parallel)
     cluster = makeCluster(NCPU)
     files_dt = parLapply(cluster, files, function(x){
