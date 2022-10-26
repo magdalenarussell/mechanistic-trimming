@@ -61,7 +61,7 @@ per_gene_resid1 = calculate_rmse_by_gene(predicted_trims1)
 per_gene_resid1$model = MODEL_TYPE
 per_gene_trim_resid1 = calculate_rmse_by_gene_trim(predicted_trims1)
 per_gene_trim_resid1$model = MODEL_TYPE
-predicted_trims1$model = 'two-side-base-count model,\nall training data' 
+predicted_trims1$model = 'two-side-base-count model,\t\nall training data' 
 
 MODEL_TYPE1 = MODEL_TYPE
 LEFT_SIDE1 = LEFT_SIDE_TERMINAL_MELT_LENGTH
@@ -84,7 +84,7 @@ per_gene_resid2 = calculate_rmse_by_gene(predicted_trims2)
 per_gene_resid2$model = MODEL_TYPE
 per_gene_trim_resid2 = calculate_rmse_by_gene_trim(predicted_trims2)
 per_gene_trim_resid2$model = MODEL_TYPE
-predicted_trims2$model = '+ 1x2 motif,\nall training data' 
+predicted_trims2$model = '+ 1x2 motif,\nall training data\t' 
 
 #merge two predictions
 together = rbind(per_gene_resid1, per_gene_resid2)
@@ -136,7 +136,7 @@ outlier_motif_data = motif_data[gene %in% outliers$gene]
 outlier_motif_data = process_data_for_model_fit(outlier_motif_data)
 outlier_motif_data$predicted_prob = temp_predict(model, newdata = outlier_motif_data)
 outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
-outlier_motif_data$model = paste0('+ 1x2motif,\nremoving \"improved genes\"')
+outlier_motif_data$model = paste0('+ 1x2motif,\nremoving \"improved genes\"\t')
 
 predictions = rbind(predictions, outlier_motif_data, fill = TRUE)
 
@@ -158,9 +158,12 @@ outlier_motif_data$model = paste0('+ 1x2motif,\nremoving \"improved genes\" + si
 
 predictions = rbind(predictions, outlier_motif_data, fill = TRUE)
 
-model_types = c('two-side-base-count model,\nall training data', '+ 1x2 motif,\nall training data', '+ 1x2motif,\nremoving \"improved genes\"', '+ 1x2motif,\nremoving \"improved genes\" + similar')
+model_types = c('two-side-base-count model,\t\nall training data', '+ 1x2motif,\nremoving \"improved genes\" + similar', '+ 1x2motif,\nremoving \"improved genes\"\t', '+ 1x2 motif,\nall training data\t')
 
 predictions$model = factor(predictions$model, levels = model_types) 
+
+colors = c('#8c510a','#80cdc1', '#35978f', '#01665e')
+names(colors) = model_types
 
 for (gene_name in genes){
     important_cols = c('trim_length', 'predicted_prob', 'gene', 'model')
@@ -172,37 +175,47 @@ for (gene_name in genes){
     # get gene sequence
     gene_seq = get_gene_sequence(gene_name, max(predictions$trim_length))
     gene_seq_with_positions = get_plot_positions_for_gene_sequence(gene_seq)
-    
+    gene_seq_with_positions =get_motif_colors(gene_seq_with_positions, c('CTT', 'CGT'), 'motif')
+   
     max_prob = max(max(empirical_data$empirical_prob), max(predicted_data$predicted_prob))
 
     labels = data.table(model = model_types, yvar = max_prob, leftx = -2.1, rightx = UPPER_TRIM_BOUND + 0.1) 
     temp_plot = ggplot() +
-        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.5, color = 'grey') +
-        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 2, alpha = 0.7, color = 'blue') +
-        facet_grid(cols = vars(factor(model, levels = model_types))) +
+        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1.6, alpha = 0.3, color = 'gray60') +
+        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob, group = model, color = model), size = 2.75, alpha = 0.9) +
+        # facet_grid(cols = vars(factor(model, levels = model_types))) +
         geom_vline(xintercept = 0, color = 'black', size = 3) +
-        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base), size = 7) +
+        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base, color = color), size = 10) +
         geom_text(data = labels, aes(y = yvar, x = leftx), label = '3\'- ', size = 6) +
         geom_text(data = labels, aes(y = yvar, x = rightx), label = ' -5\'', size = 6) +
         ggtitle(title) +
         xlab('Number of trimmed nucleotides') +
         ylab('Probability\n') +
         theme_cowplot(font_family = 'Arial') + 
-        theme(legend.position = "none", text = element_text(size = 30), axis.text.x=element_text(size = 25), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
+        theme(text = element_text(size = 30), axis.text.x=element_text(size = 25), axis.text.y = element_text(size = 25), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5), legend.direction = 'horizontal', legend.position = 'bottom') + 
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
-        ylim(c(0, max_prob + 0.02))
+        ylim(c(0, max_prob + 0.02))+
+        scale_color_manual(values = c(colors, motif = '#E79737', black = 'black'), breaks = c('two-side-base-count model,\t\nall training data', '+ 1x2 motif,\nall training data\t', '+ 1x2motif,\nremoving \"improved genes\"\t', '+ 1x2motif,\nremoving \"improved genes\" + similar')) +
+        labs(color = 'Model,\ntraining data set\t')+
+        guides(color = guide_legend(override.aes = list(size = 8))) 
     assign(gene_name, temp_plot)
 } 
 
-all = align_plots(TRBV9, TRBV13, plot, align = 'v', axis = 'l')
+legend = get_legend(TRBV9)
+TRBV9 = TRBV9 + theme(legend.position = 'none')
+TRBV13 = TRBV13 + theme(legend.position = 'none')
 
-first_row = plot_grid(all[[3]], NULL, nrow = 1, rel_widths = c(1, 0))
+all = align_plots(TRBV9, TRBV13, plot, align = 'h', axis = 'lrtb')
 
-all_tog = plot_grid(first_row, NULL, all[[1]], NULL, all[[2]], NULL, nrow = 6, rel_heights = c(0.8, 0.05, 0.5, 0.05, 0.5, 0.05), labels = c('A', '', 'B', '', 'C', ''), label_size = 35)
+first_row = plot_grid(all[[3]], nrow = 1, labels = c('A', ''), label_size = 40)
+second_row = plot_grid(all[[1]], NULL, all[[2]], nrow = 1, rel_widths = c(1, 0.02, 1), labels = c('B', '', 'C'), label_size = 40)
+second_row2 = plot_grid(second_row, NULL, legend, NULL, nrow = 4, rel_heights = c(1, 0.02, 0.1, 0.02), align = 'v', axis = 'rl')
+
+all_tog = plot_grid(first_row, NULL, second_row2, nrow = 3, rel_heights = c(0.6, 0.02, 0.75))
 
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_exploration.pdf')
-ggsave(file_name, plot = all_tog, width = 27, height = 23, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = all_tog, width = 27, height = 15, units = 'in', dpi = 750, device = cairo_pdf)
 
 
