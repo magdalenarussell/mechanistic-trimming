@@ -55,6 +55,8 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(10)
 TYPE <<- 'log_loss'
 all_types = c('log_loss', 'expected_log_loss', 'v_gene_family_loss', 'log_loss_j_gene', 'full_v_gene_family_loss')
 
+LOSS_GENE_WEIGHT <<- 'p_gene_given_subject'
+
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
@@ -102,6 +104,6 @@ plot = plot_model_evaluation_loss_paracoord(eval_tog, model_type_list = c(new_mo
 
 path = get_manuscript_path()
 file_name = paste0(path, '/loss_compare.pdf')
-ggsave(file_name, plot = plot, width = 32, height = 21, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = plot, width = 32, height = 17, units = 'in', dpi = 750, device = cairo_pdf)
 
 

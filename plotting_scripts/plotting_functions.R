@@ -11,7 +11,7 @@ set_color_palette <- function(model_type_list, with_params = FALSE){
     colors = c(brewer.pal(7, 'Dark2'), brewer.pal(8, 'Set1'), brewer.pal(7, 'Set2'))
     colors = colors[!(colors %in% c("#E41A1C", "#FFFF33", "#FFD92F"))]
     names(colors) = model_types
-    temp = c("#E41A1C", "#666666")
+    temp = c("#E41A1C", "#666666", "")
     if (isTRUE(with_params)){
         names(temp) = c('2x4motif (18 params)', 'null (0 params)')
     } else {
@@ -46,7 +46,21 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
     return(together)
 }
 
-plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name = NULL, ylim = NULL, write_plot = TRUE){
+get_motif_colors <- function(gene_seq_positions, motif, highlight_color){
+    stopifnot(nchar(motif) == 3)
+    gene_seq_positions$index = seq(1, nrow(gene_seq_positions))
+    gene_seq_positions[index < 15, start_motif := base]
+    gene_seq_positions[index < 15, start_motif := paste0(start_motif, gene_seq_positions$base[index + 1], gene_seq_positions$base[index + 2])] 
+    for (mot in motif){
+        gene_seq_positions[start_motif == mot, color := highlight_color]
+        start_index = gene_seq_positions[start_motif == mot]$index
+        gene_seq_positions[index == start_index + 1 | index == start_index + 2, color := highlight_color]
+    }
+    gene_seq_positions[color != highlight_color | is.na(color), color := 'black']
+    return(gene_seq_positions)
+}
+
+plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name = NULL, ylim = NULL, write_plot = TRUE, color = 'blue', motif_highlight_color = 'black', motif_highlight = c('CTT', 'CGT'), seq_text = 7){
     important_cols = c('trim_length', 'predicted_prob', 'gene')
     predicted_data = data[gene == gene_name, ..important_cols]
     empirical_data = data[gene == gene_name][order(subject, trim_length)]
@@ -55,7 +69,8 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
     # get gene sequence
     gene_seq = get_gene_sequence(gene_name, max(data$trim_length))
     gene_seq_with_positions = get_plot_positions_for_gene_sequence(gene_seq)
-    
+    gene_seq_with_positions =get_motif_colors(gene_seq_with_positions, motif_highlight, 'motif')
+        
     if (!is.null(ylim)){
         max_prob = ylim
     } else {
@@ -63,19 +78,20 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
     }
 
     plot = ggplot() +
-        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.5, color = 'grey') +
-        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 2, alpha = 0.7, color = 'blue') +
-        geom_vline(xintercept = 0, color = 'black', size = 3) +
-        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base), size = 7) +
-        geom_text(y = max_prob, aes(x = -2.1), label = '3\'- ', size = 6) +
-        geom_text(y = max_prob, aes(x = UPPER_TRIM_BOUND + 0.1), label = ' -5\'', size = 6) +
+        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.3, color = "gray60") +
+        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 1.75, color = color) +
+        geom_vline(xintercept = 0, color = 'black', size = 2) +
+        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base, color = color), size = seq_text) +
+        geom_text(y = max_prob, aes(x = -2.1), label = '3\'- ', size = seq_text - 1) +
+        geom_text(y = max_prob, aes(x = UPPER_TRIM_BOUND + 0.1), label = ' -5\'', size = seq_text - 1) +
         ggtitle(title) +
         xlab('Number of trimmed nucleotides') +
         ylab('Probability') +
         theme_cowplot(font_family = 'Arial') + 
         theme(legend.position = "none", text = element_text(size = 25), axis.text.x=element_text(size = 20), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5)) + 
         background_grid(major = 'xy') + 
-        panel_border(color = 'gray60', size = 1.5) 
+        panel_border(color = 'gray60', size = 1.5) +
+        scale_color_manual(values = c(motif = motif_highlight_color, black = 'black'))
     
     if (isTRUE(write_plot)){
         stopifnot(!is.null(file_name))
@@ -698,13 +714,13 @@ plot_model_evaluation_loss_paracoord <- function(all_eval_data, model_type_list,
     plot = ggplot(eval_data) +
         geom_point(aes(y = loss, x = nice_loss_type, color = nice_model_type), size = 14)+
         geom_line(aes(y = loss, x = nice_loss_type, group = nice_model_type, color = nice_model_type), size = 9, alpha = 0.8)+
-        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 12, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf, lineheight = 0.8) +
+        geom_text_repel(data = label_data, aes(y = loss, x = nice_loss_type, label = nice_model_type, color = nice_model_type), nudge_x = 0.2, fontface = "bold", size = 13, direction = 'y', hjust = 0, point.padding = 1, max.overlaps = Inf, lineheight = 0.8) +
         theme_cowplot(font_family = 'Arial') + 
         xlab(' ') +
         ylab('Log loss\n') +
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
-        theme(legend.position = 'none', text = element_text(size = 36), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 35), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
+        theme(legend.position = 'none', text = element_text(size = 44), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 44), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))  +
         scale_x_discrete(expand = expansion(add = c(0.2, expand_var)))
 
     if (!is.null(loss_bound)){

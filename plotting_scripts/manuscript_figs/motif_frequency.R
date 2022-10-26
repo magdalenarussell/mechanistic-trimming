@@ -195,4 +195,28 @@ plot5 = ggplot(together2, aes(y = total_weight, x = base_counts, fill = pwm_scor
 
 ggsave(file.path(path, 'total_weight_barplot_base_counts.pdf'), plot = plot5, width = 16, height = 45, units = 'in', dpi = 750, device = cairo_pdf)
 
+freqs = together[, .N, by = .(motif, type, pwm_score)]
+freqs[, total := sum(N), by = type]
+freqs[, freq := N/total]
+ordered_freqs = unique(freqs[order(freqs$pwm_score)]$motif) 
+spacing = data.table(motif = c('', ''), type = c('TRB', 'IGH'), pwm_score = c(NA, NA), freq = c(0.09, 0.09))
+freqs2 = rbind(freqs, spacing, fill = TRUE)
+freqs2$motif = factor(freqs2$motif, levels = ordered_freqs)
+freqs2[is.na(pwm_score), motif := '']
+freqs2[type == 'IGH', freq := -1*freq]
+plot6 = ggplot(freqs2, aes(y = freq, x = motif, fill = pwm_score)) +
+    geom_bar(position = position_dodge(width=1), stat='identity') + 
+    facet_share(~type, dir = "h", scales = "free", reverse_num = TRUE) +
+    coord_flip() +
+    xlab('') +
+    ylab('Germline motif frequency') +
+    scale_fill_distiller(palette = 'PuOr', name = 'PWM motif score', limits = c(-1.24, 1.24), na.value="transparent") +
+    theme_cowplot(font_family = 'Arial') + 
+    theme(text = element_text(size = 25), axis.text.y = element_text(size = 20), axis.line = element_blank(),axis.ticks = element_line(color = 'gray60', size = 1.5), axis.text.x = element_text(size = 20)) + 
+    guides(fill = guide_colourbar(barwidth = 2, barheight = 15))+
+    background_grid(major = 'xy') + 
+    panel_border(color = 'gray60', size = 1.5) 
+
+ggsave(file.path(path, 'germline_motif_freq.pdf'), plot = plot6, width = 16, height = 45, units = 'in', dpi = 750, device = cairo_pdf)
+
 
