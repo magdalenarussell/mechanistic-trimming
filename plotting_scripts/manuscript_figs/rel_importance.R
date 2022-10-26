@@ -58,7 +58,7 @@ source('analysis_scripts/rel_importance_functions.R')
 all_eval_results = data.table()
 rel_import_results = data.table()
 # annotation_types = c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma')
-annotation_types = c('validation_data_alpha', 'validation_data_beta', 'igor', 'validation_data_gamma', 'validation_data_delta', 'validation_data_igh')
+annotation_types = c('validation_data_alpha', 'validation_data_beta', 'igor', 'validation_data_gamma', 'validation_data_igh')
 
 trim_types = c('j_trim', 'v_trim')
 prods = c('productive', 'nonproductive')
@@ -66,12 +66,6 @@ prods = c('productive', 'nonproductive')
 for (trim_type in trim_types){
     for (type in annotation_types) {
         for (prod in prods){
-            if (prod == 'nonproductive' & type %in% c('validation_data_gamma', 'validation_data_delta')) {
-                next
-            }
-            if (prod == 'productive' & type == 'validation_data_igh'){
-                next
-            }
             VALIDATION_TYPE <<- type
             VALIDATION_PRODUCTIVITY <<- prod
             VALIDATION_TRIM_TYPE <<- trim_type
@@ -86,17 +80,12 @@ for (trim_type in trim_types){
         }
     }
 }
-
+setnames(rel_import_results, 'loss', 'new_model_loss')
 
 for (trim_type in trim_types){
     for (type in annotation_types) {
         for (prod in prods){
-            if (prod == 'nonproductive' & type %in% c('validation_data_gamma', 'validation_data_delta')) {
-                next
-            }
-            if (prod == 'productive' & type == 'validation_data_igh'){
-                next
-            }
+            
             ANNOTATION_TYPE <<- type
             TRIM_TYPE <<- trim_type
             GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
@@ -118,40 +107,28 @@ for (trim_type in trim_types){
 together = merge(all_eval_results[model_type == 'motif_two-side-base-count-beyond'], rel_import_results, by = c('loss_type', 'trim_type', 'productivity'))
 # load relative importance data
 
-plot = ggplot(together) +
-    geom_abline(intercept = 0, size = 3, color = 'black')+ 
-    geom_point(aes(x = base_count_score, y = motif_score, color = loss), size = 7) +
-    facet_grid(rows = vars(trim_type), cols = vars(productivity))+
-    theme_cowplot(font_family = 'Arial') + 
-    xlab('\nBase-count-beyond feature scale') +
-    ylab('Motif feature scale\n')+ 
-    background_grid(major = 'xy') + 
-    panel_border(color = 'gray60', size = 1.1) +
-    theme(text = element_text(size = 38), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 38), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"), strip.text = element_text(size = 38), panel.spacing = unit(3, "lines"), legend.key.height = unit(4, 'cm'), legend.key.width = unit(1.5, 'cm'))  +
-    scale_color_viridis_c(name = 'Expected\nper-sequence\nlog loss') 
+together[, long_loss_type := paste0(loss_type, '_', productivity, '_', trim_type)]
+loss_types = unique(together$long_loss_type)
+nice_loss_types = c(rep('TCRB training dataset genes\n(not included during model training)', 2), 'TCRB training dataset', 'TCRB training dataset genes\n(not included during model training)', rep('TCRA testing dataset', 4), rep('TCRB testing dataset', 4), rep('TCRG testing dataset', 4), rep('IGH testing dataset', 4))
+loss_order = c('TCRB training dataset', 'TCRB training dataset genes\n(not included during model training)', 'TCRB testing dataset', 'TCRA testing dataset', 'TCRG testing dataset', 'IGH testing dataset')
+together$nice_loss_type = mapvalues(together$long_loss_type, from = loss_types, to=nice_loss_types)
+together$nice_loss_type = factor(together$nice_loss_type, levels = loss_order)
+together$trim_type = mapvalues(together$trim_type, from = unique(together$trim_type), to=c('J-gene trimming', 'V-gene trimming'))
+together$trim_type = factor(together$trim_type, levels = c('V-gene trimming', 'J-gene trimming'))
 
 ANNOTATION_TYPE <<- 'igor'
 path = get_manuscript_path()
-file_name = paste0(path, '/feature_scale_comparison.pdf')
-ggsave(file_name, plot = plot, width = 25, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
 
 together[, ratio := base_count_score/motif_score]
-plot2 = ggplot(together) + 
-    geom_point(aes(x = ratio, y = loss, shape = trim_type, color = loss_type), size = 6)+
-    facet_grid(cols = vars(productivity))+
-    theme_cowplot(font_family = 'Arial') + 
-    xlab('\nFeature scale ratio (base count/motif)') +
-    ylab('Expected per-sequence log loss\n')+ 
-    background_grid(major = 'xy') + 
-    panel_border(color = 'gray60', size = 1.1) +
-    theme(text = element_text(size = 38), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 38), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"), strip.text = element_text(size = 38), panel.spacing = unit(3, "lines"))
 
-file_name2 = paste0(path, '/feature_scale_scatter.pdf')
-ggsave(file_name2, plot = plot2, width = 20, height = 9, units = 'in', dpi = 750, device = cairo_pdf)
+require(RColorBrewer)
+colors = brewer.pal(8, 'Set1')
+colors = colors[!(colors %in% c("#FFFF33"))]
+names(colors) = unique(nice_loss_types) 
 
 plot3 = ggplot(together) +
     geom_abline(intercept = 0, size = 3, color = 'black')+ 
-    geom_point(aes(x = base_count_score, y = motif_score, color = loss_type), size = 7) +
+    geom_point(aes(x = base_count_score, y = motif_score, color = nice_loss_type), size = 7) +
     facet_grid(rows = vars(trim_type), cols = vars(productivity))+
     theme_cowplot(font_family = 'Arial') + 
     xlab('\nBase-count-beyond feature scale') +
@@ -162,3 +139,54 @@ plot3 = ggplot(together) +
 
 file_name3 = paste0(path, '/feature_scale_comparison_types.pdf')
 ggsave(file_name3, plot = plot3, width = 25, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
+
+plot4 = ggplot(together) +
+    geom_hline(yintercept = 1, size = 3, color = 'gray60', linetype = 'dashed') +
+    geom_vline(xintercept = 1, size = 3, color = 'gray60', linetype = 'dashed') +
+    geom_point(aes(x = base_count_score, y = motif_score, color = nice_loss_type, shape = productivity), size = 10) +
+    facet_grid(cols = vars(trim_type))+
+    theme_cowplot(font_family = 'Arial') + 
+    xlab('\nScale coefficient for base-count-beyond terms') +
+    ylab('Scale coefficient for motif terms\n')+ 
+    labs(color = 'Dataset', shape = 'Productivity') +
+    background_grid(major = 'xy') + 
+    scale_color_manual(values = colors, breaks = unique(nice_loss_types))+
+    panel_border(color = 'gray60', size = 1.1) +
+    theme(text = element_text(size = 38), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 38), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"), strip.text = element_text(size = 38), panel.spacing = unit(3, "lines"), legend.key.height = unit(2, 'cm'), legend.key.width = unit(1.5, 'cm'))  
+
+file_name4 = paste0(path, '/feature_scale_comparison.pdf')
+ggsave(file_name4, plot = plot4, width = 30, height = 13, units = 'in', dpi = 750, device = cairo_pdf)
+
+training_loss = together[loss_type == 'igor' & productivity == 'nonproductive' & trim_type == 'V-gene trimming']$loss
+
+plot5 = ggplot(together) +
+    geom_hline(yintercept = training_loss, size = 3, color = 'gray60', linetype = 'dashed') +
+    geom_vline(xintercept = training_loss, size = 3, color = 'gray60', linetype = 'dashed') +
+    geom_abline(intercept = 0, size = 4, color = 'black')+
+    geom_point(aes(x = loss, y = new_model_loss, color = nice_loss_type, shape = productivity), size = 10) +
+    facet_grid(cols = vars(trim_type))+
+    theme_cowplot(font_family = 'Arial') + 
+    xlab('\nExpected per-sequence log loss (original model)') +
+    ylab('Expected per-sequence log loss (scaled model)\n')+ 
+    labs(color = 'Dataset', shape = 'Productivity') +
+    background_grid(major = 'xy') + 
+    scale_color_manual(values = colors, breaks = unique(nice_loss_types))+
+    panel_border(color = 'gray60', size = 1.1) +
+    theme(text = element_text(size = 38), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 38), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"), strip.text = element_text(size = 38), panel.spacing = unit(3, "lines"), legend.key.height = unit(2, 'cm'), legend.key.width = unit(1.5, 'cm'))  
+
+file_name5 = paste0(path, '/feature_scale_loss_comparison.pdf')
+ggsave(file_name5, plot = plot5, width = 30, height = 13, units = 'in', dpi = 750, device = cairo_pdf)
+
+legend = get_legend(plot4)
+plot4f = plot4 + theme(legend.position = 'none')
+plot5f = plot5 + theme(legend.position = 'none')
+
+all = align_plots(plot4f, plot5f, align = 'vh', axis = 'lb')
+
+first_grid = plot_grid(all[[1]], NULL, all[[2]], nrow = 3, labels = c('A', '', 'B'), label_size = 45, rel_heights = c(1, 0.03, 1)) 
+
+tog = plot_grid(first_grid, NULL, legend, ncol = 3, rel_widths = c(1, 0.03, 0.4))
+
+file_name = paste0(path, '/feature_scale_together.pdf')
+ggsave(file_name, plot = tog, width = 30, height = 27, units = 'in', dpi = 750, device = cairo_pdf)
+
