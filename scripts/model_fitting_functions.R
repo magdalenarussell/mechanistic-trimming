@@ -276,7 +276,9 @@ get_model_bootstrap_file_name <- function(){
 }
 
 get_model_name <- function(){
-    file = file.path(PROJECT_PATH, 'models', paste0(MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.rds'))
+    dir = file.path(PROJECT_PATH, 'models', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY) 
+    dir.create(dir)
+    file = file.path(dir, paste0(MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.rds'))
     return(file)
 }
 
