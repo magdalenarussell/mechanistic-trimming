@@ -61,6 +61,8 @@ VALIDATION_PRODUCTIVITY <<- args[15]
 VALIDATION_GENE_NAME <<- paste0(substring(VALIDATION_TRIM_TYPE, 1, 1), '_gene')
 stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_delta', 'validation_data_igh', 'validation_data_igk', 'validation_data_igl', 'igor'))
 
+LOSS_GENE_WEIGHT <<- 'p_gene_given_subject' 
+
 source('scripts/model_fitting_functions.R')
 source('analysis_scripts/rel_importance_functions.R')
 
@@ -83,4 +85,5 @@ validation_data = aggregate_validation_data(directory = VALIDATION_DATA_DIR)
 validation_data = get_model_feature_scores(validation_data, pwm)
 
 rel_importance_model = fit_rel_importance_model(validation_data)
-write_rel_importance_result_dt(coef(rel_importance_model), output_file_name)
+loss = evaluate_loss(validation_data, rel_importance_model)
+write_rel_importance_result_dt(coef(rel_importance_model), loss, output_file_name)
