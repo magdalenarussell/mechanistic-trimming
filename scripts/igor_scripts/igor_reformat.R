@@ -7,7 +7,7 @@ output_directory = args[1]
 final_output_directory = args[2]
 
 source('config/config.R')
-source('igor_scripts/igor_processing_functions.R')
+source('scripts/igor_scripts/igor_processing_functions.R')
 
 output = fread(file.path(output_directory, 'foo_output/parsed_sampled_output.csv'))
 alignments = fread(file.path(output_directory, 'aligns/foo_indexed_CDR3s.csv'))
