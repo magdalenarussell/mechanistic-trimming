@@ -53,7 +53,7 @@ stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'ra
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
-source('analysis_scripts/rel_importance_functions.R')
+source('scripts/analysis_scripts/rel_importance_functions.R')
 
 all_eval_results = data.table()
 rel_import_results = data.table()
@@ -70,7 +70,7 @@ for (trim_type in trim_types){
             VALIDATION_PRODUCTIVITY <<- prod
             VALIDATION_TRIM_TYPE <<- trim_type
 
-            source('analysis_scripts/rel_importance_functions.R')
+            source('scripts/analysis_scripts/rel_importance_functions.R')
 
             temp_rel_results = compile_rel_importance_results()
             temp_rel_results$loss_type = type

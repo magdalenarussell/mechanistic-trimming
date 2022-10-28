@@ -12,7 +12,7 @@ mkdir -p $TEMP_DIR
 mkdir -p $OUTPUT_DIR
 
 for RAW_FILE in $RAW_FILE_PATH/*.tsv; do
-    COMMAND="sbatch -c $NCPU igor_scripts/run_igor_all.sh $RAW_FILE $TEMP_DIR $OUTPUT_DIR $ANNOTATION_COUNT $NCPU"
+    COMMAND="sbatch -c $NCPU scripts/igor_scripts/run_igor_all.sh $RAW_FILE $TEMP_DIR $OUTPUT_DIR $ANNOTATION_COUNT $NCPU"
     echo $COMMAND
     $COMMAND
 done  

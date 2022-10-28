@@ -9,7 +9,7 @@ output_directory = args[1]
 NCPU <<- args[2]
 
 source('config/config.R')
-source('igor_scripts/igor_processing_functions.R')
+source('scripts/igor_scripts/igor_processing_functions.R')
 
 output = fread(file.path(output_directory, 'foo_output/best_scenarios_counts.csv'))
 
