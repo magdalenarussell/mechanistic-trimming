@@ -57,7 +57,7 @@ source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/residual_comparison_functions.R')
-source('analysis_scripts/pwm_profile_functions.R')
+source('scripts/analysis_scripts/pwm_profile_functions.R')
 source('scripts/model_evaluation_functions.R')
 
 # Read in dist data
@@ -78,7 +78,7 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[15])
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
-source('analysis_scripts/pwm_profile_functions.R')
+source('scripts/analysis_scripts/pwm_profile_functions.R')
 
 # Read in dist data
 predicted_trims2 = get_predicted_distribution_data() 

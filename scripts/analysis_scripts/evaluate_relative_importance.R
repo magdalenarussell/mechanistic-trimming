@@ -64,7 +64,7 @@ stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta'
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject' 
 
 source('scripts/model_fitting_functions.R')
-source('analysis_scripts/rel_importance_functions.R')
+source('scripts/analysis_scripts/rel_importance_functions.R')
 
 model = load_model()
 pwm = get_model_coefficient_data()
@@ -79,7 +79,7 @@ PRODUCTIVITY <<- VALIDATION_PRODUCTIVITY
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
 source('scripts/model_evaluation_functions.R')
-source('analysis_scripts/pwm_profile_functions.R')
+source('scripts/analysis_scripts/pwm_profile_functions.R')
 
 validation_data = aggregate_validation_data(directory = VALIDATION_DATA_DIR)
 validation_data = get_model_feature_scores(validation_data, pwm)
