@@ -136,11 +136,22 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
     left_vars = unique(model_coef_matrix[parameter %like% 'left']$parameter)
     right_vars = unique(model_coef_matrix[parameter %like% 'right']$parameter)
     unique_bases = unique(model_coef_matrix$base)
+    left_bases = unique(model_coef_matrix[parameter %like% 'left']$base)
+    right_bases = unique(model_coef_matrix[parameter %like% 'right']$base)
+
     if (length(left_vars) == 0){
-        fake_row = data.table(coefficient = rep(0, length(unique_bases)), parameter = rep("left_count", length(unique_bases)), base = unique_bases, model_group = rep(MODEL_GROUP,length(unique_bases)), log_10_pdel = rep(0,length(unique_bases)))
+        fake_row = data.table(coefficient = rep(NA, length(unique_bases)), parameter = rep("left_count", length(unique_bases)), base = unique_bases, model_group = rep(MODEL_GROUP,length(unique_bases)), log_10_pdel = rep(NA,length(unique_bases)))
         extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
     } else if (length(right_vars) == 0){
-        fake_row = data.table(coefficient = rep(0, length(unique_bases)), parameter = rep("right_count", length(unique_bases)), base = unique_bases, model_group = rep(MODEL_GROUP,length(unique_bases)), log_10_pdel = rep(0,length(unique_bases)))
+        fake_row = data.table(coefficient = rep(NA, length(unique_bases)), parameter = rep("right_count", length(unique_bases)), base = unique_bases, model_group = rep(MODEL_GROUP,length(unique_bases)), log_10_pdel = rep(NA,length(unique_bases)))
+        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } else if (length(left_bases) < 2){
+        missing = unique_bases[!(unique_bases == left_bases)]
+        fake_row = data.table(coefficient = rep(NA, length(missing)), parameter = rep("left_count", length(missing)), base = missing, model_group = rep(MODEL_GROUP,length(missing)), log_10_pdel = rep(NA,length(missing)))
+        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } else if (length(right_bases) < 2){
+        missing = unique_bases[!(unique_bases == right_bases)]
+        fake_row = data.table(coefficient = rep(NA, length(missing)), parameter = rep("right_count", length(missing)), base = missing, model_group = rep(MODEL_GROUP,length(missing)), log_10_pdel = rep(NA,length(missing)))
         extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
     } else {
         extended_data = model_coef_matrix

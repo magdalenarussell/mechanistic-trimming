@@ -157,6 +157,7 @@ second_grid = plot_grid(all[[7]], all[[8]], nrow = 1, labels = c("B", "C"), labe
 
 together = plot_grid(temp_grid, NULL, second_grid, nrow = 3, labels = c("A", "", ""), label_size = 35, rel_heights = c(1, 0.05, 0.6), align = 'v')
 
+TRIM_TYPE <<- 'v_trim'
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_two-side-base-count_j.pdf')
 ggsave(file_name, plot = together, width = 20, height = 15, units = 'in', dpi = 750, device = cairo_pdf)
