@@ -11,7 +11,6 @@ library(cowplot)
 library(mclogit)
 library(matrixcalc)
 library(RhpcBLASctl)
-library(ggseqlogo)
 omp_set_num_threads(1)
 blas_set_num_threads(1)
 
@@ -66,49 +65,19 @@ heatmap = heatmap +
 heatmap2 = plot_base_count_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.011, 0.011))
 heatmap2 = heatmap2 + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20),legend.position = 'bottom', legend.direction = 'horizontal', legend.justification="center") +
-    guides(fill = guide_colourbar(barwidth = 27.5, barheight = 2)) +
+    guides(fill = guide_colourbar(barwidth = 35, barheight = 2)) +
     labs(fill = 'log10(probability of deletion)\t')
 
 legend = get_legend(heatmap2) 
 heatmap2 = heatmap2 + theme(legend.position = 'none')
 
-path = get_manuscript_path()
-file_name = paste0(path, '/snp_interaction_heatmaps.pdf')
-ggsave(file_name, plot = first_grid, width = 20, height = 5.5, units = 'in', dpi = 750, device = cairo_pdf)
+all = align_plots(heatmap, heatmap2, legend, align = 'vh', axis = 'lbr')
 
-# make logo
-source('plotting_scripts/logo_functions.R')
-
-ppm = convert_pwm_to_ppm(pwm)
-ppm_matrix = convert_ppm_to_matrix(ppm)
-position_values = map_positions_to_values(unique(ppm$parameter))
-
-logo = ggplot() + 
-    # geom_logo(ppm_matrix, col_scheme='base_pairing') + 
-    geom_logo(ppm_matrix) + 
-    theme_logo() +    
-    geom_vline(xintercept = 1.5, size = 4, color = 'black')+
-    annotate("text", x = 0.5, y = 0, label = "5\'", size = 8) +  
-    annotate("text", x = 3.6, y = 0, label = "3\'", size = 8) +  
-    theme_cowplot(font_family = 'Arial') + 
-    xlab('Position') +
-    ylab ('Bits') +
-    theme(text = element_text(size = 30), legend.position = 'none', axis.text = element_text(size = 20), axis.line = element_line(color = 'gray60', size = 1.5), axis.ticks = element_line(color = 'gray60', size = 0.75)) +
-    coord_cartesian(ylim = c(0, 1.6e-05), clip = "off")
-
-    # panel_border(color = 'gray60', size = 1.5) 
-
-logo$scales$scales[[1]] <- scale_x_continuous(breaks= c(1, 2, 3),labels=c("-1", "1", "2"))
-
-all = align_plots(heatmap, heatmap2, logo, legend, align = 'vh', axis = 'lbr')
-
-first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, labels = c("B", "C"), label_size = 35, rel_widths = c(1, 1), align = 'h')
-first_grid = plot_grid(first_grid, NULL, legend, nrow = 3, rel_heights = c(1, 0.05,0.2)) 
-all_logo = plot_grid(all[[3]], NULL, nrow = 2, rel_heights = c(1, 0.25))
-tog = plot_grid(NULL, all_logo, NULL, first_grid, labels = c('A', '', '', ''), rel_widths = c(0.015,0.3, 0.005,0.6), label_size = 35, nrow = 1)
+first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, labels = c("A", "B"), label_size = 35, rel_widths = c(1, 1), align = 'h')
+first_grid = plot_grid(first_grid, NULL, all[[3]], nrow = 3, rel_heights = c(1, 0.02,0.2)) 
 
 path = get_manuscript_path()
 file_name = paste0(path, '/snp_interaction_heatmaps.pdf')
-ggsave(file_name, plot = tog, width = 20, height = 6, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = first_grid, width = 18, height = 6, units = 'in', dpi = 750, device = cairo_pdf)
 
 

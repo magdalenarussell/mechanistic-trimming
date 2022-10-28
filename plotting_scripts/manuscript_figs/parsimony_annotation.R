@@ -66,6 +66,7 @@ all = align_plots(heatmap, heatmap2, align = 'vh', axis = 'lb')
 
 second_grid = plot_grid(all[[1]], all[[2]], nrow = 1, labels = c("A", "B"), label_size = 35, rel_widths = c(0.55, 1), align = 'h')
 
+ANNOTATION_TYPE <<- 'igor'
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_two-side-base-count_parsimony.pdf')
 ggsave(file_name, plot = second_grid, width = 20, height = 6, units = 'in', dpi = 750, device = cairo_pdf)
