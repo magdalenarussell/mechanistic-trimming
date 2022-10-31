@@ -38,7 +38,6 @@ VALIDATION_TYPE <<- 'validation_data_igh'
 VALIDATION_TRIM_TYPE <<- args[2]
 VALIDATION_PRODUCTIVITY <<- 'nonproductive'
 VALIDATION_GENE_NAME <<- paste0(substring(VALIDATION_TRIM_TYPE, 1, 1), '_gene')
-RESIDUAL_COMPARE_FEATURE <<- NULL
 
 source('plotting_scripts/plotting_functions.R')
 source('scripts/data_compilation_functions.R')
