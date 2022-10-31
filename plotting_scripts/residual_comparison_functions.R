@@ -1,7 +1,3 @@
-if (!is.null(RESIDUAL_COMPARE_FEATURE)){
-    source(paste0('plotting_scripts/residual_comparison_features/', RESIDUAL_COMPARE_FEATURE, '.R'))
-}
-
 # calculate root mean square error
 calculate_rmse_by_gene <- function(predicted_trims){
     total_trims = unique(predicted_trims$trim_length)

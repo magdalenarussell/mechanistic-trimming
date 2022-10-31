@@ -174,7 +174,7 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
         geom_vline(xintercept = 1 + 0.5, size = 3.5, color = 'black') +
         theme(text = element_text(size = 20), axis.line = element_blank(), axis.ticks = element_blank()) +
         guides(fill = guide_colourbar(barheight = 14)) +
-        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits) 
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits, na.value = 'gray80') 
     
     if (with_values == TRUE){
         plot = plot +
