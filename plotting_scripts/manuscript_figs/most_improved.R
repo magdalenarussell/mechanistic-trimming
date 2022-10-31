@@ -44,7 +44,6 @@ MODEL_TYPE <<- 'two-side-base-count'
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(10)
 
-RESIDUAL_COMPARE_FEATURE <<- NULL
 TYPE <<- 'v_gene_family_loss'
 source('scripts/data_compilation_functions.R')
 source('scripts/model_fitting_functions.R')
