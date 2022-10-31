@@ -26,20 +26,23 @@ __Table of Contents:__
 * [Model validation](##model-validation)
     * [Summary of model validation options](###model-validation-options)
 * [Plot results](##plot-results)
-* [Supplementary analyses]
+* [Supplementary analyses](##supplementary-analyses)
 
 ## Model training
 
 0. Download the training cohort data set using the [link](https://doi.org/10.21417/B7001Z) provided in the original publication
-1. Annotate these sequences using IGoR. You can run the script [annotat_with_igor.sh](submit_phenotype.sh) to do this. As described above, this script is written specifically for a cluster set up to use the Slurm job scheduler. This script takes five arguments:
+1. Annotate these sequences using IGoR. You can run the [annotation script](annotate_with_igor.sh) to do this. As described above, this script is written specifically for a cluster set up to use the Slurm job scheduler. This script takes five arguments:
+
         1. the raw file path (wherever you downloaded the files in step 0 above)
         2. a temporary directory location (wherever you want the intermediate annotation files to be stored)
         3. an output directory location (wherever you want the final annotation files to be stored--you will eventually save this location as `TCR_REPERTOIRE_DATA_igor` within the [config](config/config.R) file in step 3)
         4. the number of possible rearrangment scenarios you want to sample from for each sequence (we used 10 scenarios)
         5. the number of CPUs you want to use
+
 2. Download TRB gene name and germline sequences from IMGT (we downloaded these data in December 2021); save these data to a file--you will eventually save the location of this file as `WHOLE_NUCSEQS_igor` within the [config](config/config.R) file in step 3 
 3. Edit [config](config/config.R) file to be project and/or computer specific
 4. Train model using the [model fitting script](fit_model.sh). This script takes 12 arguments, and can be run locally or on a cluster: 
+
         1. the annotation type--for the general model, this should be `igor`
         2. the trimming type for model fitting (either `v_trim` or `j_trim`)
         3. productivity of sequences (either `productive`, `nonproductive`, or `both`)
@@ -52,6 +55,7 @@ __Table of Contents:__
         10. upper trim bound--the upper bound on trimming lengths; for the general model, we use a bound of 14
         11. model type--see the table below for [model options](###model-types)
         12. (optional) for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
+
     This trained model will be stored in the [models](models/) directory. 
 
 ### Model types
@@ -59,6 +63,7 @@ __Table of Contents:__
 ## Model evaluation
 
 If you would like to evaluate the performance of a model using various subsets of the training data set, you can use the [model evaluation script](evaluate_model.sh). This script also takes 12 arguments which are similar to the model training script:
+
     1. the annotation type--for the general model, this should be `igor`
     2. the trimming type for model fitting (either `v_trim` or `j_trim`)
     3. productivity of sequences (either `productive`, `nonproductive`, or `both`)
@@ -79,10 +84,12 @@ If you would like to evaluate the performance of a model using various subsets o
 ## Model validation
 
 If you would like to use the model to make predictions on a new data set and/or validate the model on a testing data set, you can follow these steps:
+    
     1. Download the processed testing data set, and make sure it contains the same column names as the training data set 
     2. Depending on the locus of the testing data, download the appropriate gene name and germline sequences from IMGT (we downloaded these data in August 2022); save these data to a file--you will save the location of this file in the next step
     3. Edit [config](config/config.R) file to be project and/or computer specific (be sure to add the path to the file from the last step)
     2. Run the [model validation script](validate_model.sh). This script takes 17 arguments which force you to specify model parameters and validation data set specifics:
+
         1. the annotation type--for the general model, this should be `igor`
         2. the trimming type used in model fitting (either `v_trim` or `j_trim`)
         3. productivity of sequences used in model fitting (either `productive`, `nonproductive`, or `both`)
@@ -108,6 +115,7 @@ If you would like to use the model to make predictions on a new data set and/or 
 ## Plot results
 
 Plot [figures](plotting_scripts/final_plots) from the manuscript.
+
     * Also, have a look at the plotting [README](plotting_scripts/README.md) for more details.
 
 ## Supplementary analyses
