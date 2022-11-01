@@ -19,14 +19,14 @@ This sequence annotation script is written specifically for a cluster set up to 
 
 __Table of Contents:__
 
-* [Model training](##model-training)
-    * [Summary of model types](###model-types)
-* [Model evaluation](##model-evaluation)
-    * [Summary of model evaluation options](###model-evaluation-options)
-* [Model validation](##model-validation)
-    * [Summary of model validation options](###model-validation-options)
-* [Plot results](##plot-results)
-* [Supplementary analyses](##supplementary-analyses)
+* [Model training](#model-training)
+    * [Summary of model types](#model-types)
+* [Model evaluation](#model-evaluation)
+    * [Summary of model evaluation options](#model-evaluation-options)
+* [Model validation](#model-validation)
+    * [Summary of model validation options](#model-validation-options)
+* [Plot results](#plot-results)
+* [Supplementary analyses](#supplementary-analyses)
 
 ## Model training
 
@@ -53,7 +53,7 @@ __Table of Contents:__
         8. left motif count (an integer between 0 and 6)--specifies the number of nucleotides 5' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
         9. right motif count (an integer between 0 and 6)--specifies the number of nucleotides 3' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
         10. upper trim bound--the upper bound on trimming lengths; for the general model, we use a bound of 14
-        11. model type--see the table below for [model options](###model-types)
+        11. model type--see the table below for [model options](#model-types)
         12. (optional) for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
 
     This trained model will be stored in the [models](models/) directory. 
@@ -73,8 +73,8 @@ If you would like to evaluate the performance of a model using various subsets o
     8. left motif count (an integer between 0 and 6)--specifies the number of nucleotides 5' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
     9. right motif count (an integer between 0 and 6)--specifies the number of nucleotides 3' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
     10. upper trim bound--the upper bound on trimming lengths; for the general model, we use a bound of 14
-    11. model type--see the table above for [model options](###model-types)
-    11. model evaluation type--see the table below for [evaluation options](###model-evaluation-options)
+    11. model type--see the table above for [model options](#model-types)
+    11. model evaluation type--see the table below for [evaluation options](#model-evaluation-options)
     12. (optional) for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
 
 **Note: all output files will be located at the indicated `OUTPUT_PATH` as specified in the [config](config) files**
@@ -103,7 +103,7 @@ If you would like to use the model to make predictions on a new data set and/or 
         11. model type--see the table below for model options
         12. for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides (you can specify `NA` otherwise)
         13. the directory storing the validation data set
-        14. the validation type--see the [summary](###model-validation-options) below for details
+        14. the validation type--see the [summary](#model-validation-options) below for details
         15. validation trimming type (either `v_trim` or `j_trim`)--this does not need to be the same as what the model was trained with
         16. productivity of sequences for model validation (either `productive`, `nonproductive`, or `both`)
         17. gene weight type used for loss calculation (either `p_gene_marginal` or `p_gene_given_subject`); for the general use `p_gene_given_subject`
