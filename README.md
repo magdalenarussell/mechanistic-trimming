@@ -21,12 +21,15 @@ __Table of Contents:__
 
 * [Model training](#model-training)
     * [Summary of model types](#model-types)
+* [Quantifying coefficient significance](#quantifying-coefficient-significance)
 * [Model evaluation](#model-evaluation)
     * [Summary of model evaluation options](#model-evaluation-options)
 * [Model validation](#model-validation)
     * [Summary of model validation options](#model-validation-options)
 * [Plot results](#plot-results)
 * [Supplementary analyses](#supplementary-analyses)
+    * [Meaures the relative weights of parameters across different testing data sets](#parameter-relative-weight-analysis)
+    * [Artemis SNP analysis](#artemis-snp-analysis)
 
 ## Model training
 
@@ -57,7 +60,7 @@ This trained model will be stored in the [models](models/) directory.
 
 ### Model types
 
-Here is a summary of some of the model options. You can find a description of additional model type options [here](scripts/model_formula_specific_functions/README.md)
+Here is a summary of some of the model options. You can find a description of additional model type options [here](scripts/model_formula_functions/README.md)
 
 | Long model name (same as manuscript) | Code argument                      | Features parameterized                                                                                                                        | Other notes                                                                                                                                                                                                                    |
 |--------------------------------------|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -68,6 +71,25 @@ Here is a summary of some of the model options. You can find a description of ad
 | _two-side base-count_                | `two-side-base-count`              | count of AT and GC nucleotides on either side of the trimming site                                                                            | the total number of nucleotides included in the 5' AT and GC counts is specified by the 12th argument of the model training script                                                                                             |
 | _motif + distance_                   | `motif_linear-distance`            | a sequence motif and sequence-independent distance from the end of the gene (integer-valued)                                                  | the motif size is specified by the `left_motif_count` and `right_motif_count` arguments                                                                                                                                        |
 | _motif + two-side base-count beyond_ | `motif_two-side-base-count-beyond` | a sequence motif and the count of AT and GC nucleotides on either side of the trimming site (including only nucleotides outside of the motif) | the motif size is specified by the `left_motif_count` and `right_motif_count` arguments and the total number of nucleotides included in the 5' AT and GC counts is specified by the 12th argument of the model training script |
+
+## Quantifying coefficient significance
+
+If you would like to measure the significance of each model coefficient, you can use [this script](evaluate_coef_significance.sh).
+This script takes 11 arguments:
+
+1. the annotation type--for the general model, this should be `igor`
+2. the trimming type for model fitting (either `v_trim` or `j_trim`)
+3. productivity of sequences (either `productive`, `nonproductive`, or `both`)
+4. motif type--for the general model, this should be `unbounded`
+5. the number of CPUs you want to use
+7. gene weight type (either `p_gene_marginal` or `p_gene_given_subject`); for the general model use `p_gene_marginal`--this will ensure that all genes are weighted the same across all subjects in the construction of the likelihood
+8. left motif count (an integer between 0 and 6)--specifies the number of nucleotides 5' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
+9. right motif count (an integer between 0 and 6)--specifies the number of nucleotides 3' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
+10. upper trim bound--the upper bound on trimming lengths; for the general model, we use a bound of 14
+11. model type--see the table below for [model options](#model-types)
+12. (optional) for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
+
+This analysis will save a file containing the results in the indicated `OUTPUT_PATH` as specified in the [config](config) files
 
 ## Model evaluation
 
@@ -89,6 +111,16 @@ If you would like to evaluate the performance of a model using various subsets o
 **Note: all output files will be located at the indicated `OUTPUT_PATH` as specified in the [config](config) files**
 
 ### Model evaluation options
+
+Here is a summary of the model evaluation arguments. More details can be found [here](scripts/model_evaluation_type_functions/README.md)
+
+| Long evaluation name (same as manuscript)                  | Code argument             | Summary of held-out group                                                                                                                         |
+|------------------------------------------------------------|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| _full V-gene training data set_                            | `log_loss`                | Loss computed across the full training data set                                                                                                   |
+| _many held-out subsets of the V-gene training data set_    | `expected_log_loss`       | Expected loss computed across 20 random different held-out subsets of the full training data set                                                  |
+| _"most different" cluster of V-genes (terminal sequences)_ | `v_gene_family_loss`      | Loss computed across the group of V-genes which are most-different according to the hamming distances of the last 25 nucleotides of each sequence |
+| _"most different" cluster of V-genes (full sequences)_     | `full_v_gene_family_loss` | Loss computed across the group of V-genes which are most-different according to the hamming distances of each full sequence                       |
+| _full J-gene data set_                                     | `log_loss_j_gene`         | Loss computed across the full J-gene data set from the training data set                                                                          |
 
 ## Model validation
 
@@ -121,21 +153,53 @@ If you would like to use the model to make predictions on a new data set and/or 
 
 ### Model validation options
 
+Summary of the model validation data sets used in our analysis.
+
+| Locus name  | Code argument           | Data used in the manuscript                                                                                                                                                                                                                                 |
+|-------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| _TRB locus_ | `validation_data_beta`  | TRB testing data set; processed data can be downloaded [here](https://doi.org/10.5281/zenodo.5719516)                                                                                                                                                       |
+| _TRA locus_ | `validation_data_alpha` | TRA testing data set; processed data can be downloaded [here](https://doi.org/10.5281/zenodo.5719516)                                                                                                                                                       |
+| _TRG locus_ | `validation_data_gamma` | TRG testing data set; processed data can be downloaded [here](https://doi.org/10.21417/B7SG6T)                                                                                                                                                              |
+| _TRD locus_ | `validation_data_delta` | TRD not analyzed in the manuscript                                                                                                                                                                                                                          |
+| _IGH locus_ | `validation_data_igh`   | productive IGH testing data set can be downloaded [here](https://figshare.com/articles/preprint/Functional_antibodies_exhibit_light_chain_coherence/19617633); nonproductive IGH testing data set can be downloaded [here](www.github.com/briney/grp_paper) |
+
 ## Plot results
 
-Plot [figures](plotting_scripts/final_plots) from the manuscript.
+Plot [figures](plotting_scripts/manuscript_plots) from the manuscript.
 
 Also, have a look at the plotting [README](plotting_scripts/README.md) for more details.
 
 ## Supplementary analyses
 
-TODO -- rel importance analysis
-TODO - SNP analysis
+### Parameter relative weight analysis
 
+If you would like to measure the relative weights of the motif and base-count-beyond parameters within the _motif + two-side base-count-beyond_ model for a specific validation data set, you can run [this script](evaluate_rel_importance.sh) locally or on a cluster. This script takes 15 arguments:
+
+1. the annotation type--for the general model, this should be `igor`
+2. the trimming type used in model fitting (either `v_trim` or `j_trim`)
+3. productivity of sequences used in model fitting (either `productive`, `nonproductive`, or `both`)
+4. motif type--for the general model, this should be `unbounded`
+5. the number of CPUs you want to use
+6. model group (either `all_subjects` or `individual_subjects` depending on whether the model was trained across all subjects, or uniquely for each individual)
+7. gene weight type used for model training (either `p_gene_marginal` or `p_gene_given_subject`); for the general model use `p_gene_marginal`--this will ensure that all genes are weighted the same across all subjects in the construction of the likelihood
+8. left motif count (an integer between 0 and 6)--specifies the number of nucleotides 5' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
+9. right motif count (an integer between 0 and 6)--specifies the number of nucleotides 3' of the trimming site to be included in the motif parameter (for models without motif parameters, this should be 0)
+10. upper trim bound--the upper bound on trimming lengths; for the general model, we use a bound of 14
+12. the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
+13. the directory storing the validation data set
+14. the validation type--see the [summary](#model-validation-options) for details
+15. validation trimming type (either `v_trim` or `j_trim`)--this does not need to be the same as what the model was trained with
+16. productivity of sequences for model validation (either `productive`, `nonproductive`, or `both`)
+
+This analysis will save a file containing the results in the indicated `OUTPUT_PATH` as specified in the [config](config) files
+
+### Artemis SNP analysis
+
+If you would like to evaluate whether model coefficients vary in the context of an Artemis locus SNP (rs41298872), you can follow the instructions in the [quantifying coefficient significance](#quantifying-coefficient-significance) section using `motif_two-side-base-count-beyond_snp-interaction-20717849` as the model type. 
 
 # About the analysis
 
 With this analysis, we want to quantify the sequence-level determinants of nucleotide trimming during V(D)J recombination.
-See the manuscript for specific model details: 
+See the manuscript for specific model and methods details: 
 
 Russell, Magdalena L., Noah Simon, Philip Bradley, and Frederick A. Matsen IV. 2022. "Statistical inference reveals the role of length, breathing, and nucleotide identity in V(D)J nucleotide trimming." In preparation.
