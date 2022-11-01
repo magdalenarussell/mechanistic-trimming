@@ -9,6 +9,8 @@ conda env create -f environment.yml
 conda activate mechanistic-trimming 
 ```
 
+You will also need to install IGoR if you wish to annotate sequences using IGoR (Marcou et.al Nature Communications 2018)
+
 # Requirements: 
 Most of these analyses can be run on any machine.
 However, some of the data preparation steps, such as sequence annotation using IGoR (Marcou et.al Nature Communications 2018), are computationally intensive and require a cluster to run efficiently.
@@ -41,7 +43,7 @@ __Table of Contents:__
     4. the number of possible rearrangment scenarios you want to sample from for each sequence (we used 10 scenarios)
     5. the number of CPUs you want to use
 2. Download TRB gene name and germline sequences from IMGT (we downloaded these data in December 2021); save these data to a file--you will eventually save the location of this file as `WHOLE_NUCSEQS_igor` within the [config](config/config.R) file in step 3 
-3. Edit [config](config/config.R) file to be project and/or computer specific
+3. Edit [config](config/config.R) file to be project and/or computer specific. See the [README](config/README.md) for more details.
 4. Train model using the [model fitting script](fit_model.sh). This script takes 12 arguments, and can be run locally or on a cluster: 
     1. the annotation type--for the general model, this should be `igor`
     2. the trimming type for model fitting (either `v_trim` or `j_trim`)
