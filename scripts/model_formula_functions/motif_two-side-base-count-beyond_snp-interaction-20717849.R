@@ -30,7 +30,6 @@ process_data_for_model_fit <- function(group_motif_data){
     snp = 20717849
     snp_genotypes = compile_all_genotypes_snp_list(snp)  
     colnames(snp_genotypes) = c('localID', 'snp')
-    #TODO remove this HIP conversion
     gwas_id = fread(ID_MAPPING_FILE)
     snp_genotypes = merge(snp_genotypes, gwas_id)[, -c('scanID', 'localID')]
 
