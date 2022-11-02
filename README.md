@@ -91,7 +91,7 @@ This script takes 11 arguments:
 11. model type--see the table below for [model options](#model-types)
 12. (optional) for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
 
-This analysis will save a file containing the results in the indicated `OUTPUT_PATH` as specified in the [config](config) files
+This analysis will save a file containing the results in a directory called `model_bootstrap` located in the indicated `OUTPUT_PATH` as specified in the [config](config) files
 
 ## Model evaluation
 
@@ -110,7 +110,7 @@ If you would like to evaluate the performance of a model using various subsets o
 11. model evaluation type--see the table below for [evaluation options](#model-evaluation-options)
 12. (optional) for models with base-count terms, specify the number of nucleotides to be included in the base-count 5' of the trimming site; for the general model, we use 10 nucleotides
 
-**Note: all output files will be located at the indicated `OUTPUT_PATH` as specified in the [config](config) files**
+All output files will be located in a directory called `temp_evaluation` within the `OUTPUT_PATH` as specified in the [config](config) file
 
 ### Model evaluation options
 
@@ -151,7 +151,7 @@ If you would like to use the model to make predictions on a new data set and/or 
     16. productivity of sequences for model validation (either `productive`, `nonproductive`, or `both`)
     17. gene weight type used for loss calculation (either `p_gene_marginal` or `p_gene_given_subject`); for the general use `p_gene_given_subject`
 
-**Note: all output files will be located at the indicated `OUTPUT_PATH` as specified in the [config](config) files**
+All output files will be located in a directory called `temp_evaluation` within the `OUTPUT_PATH` as specified in the [config](config) file
 
 ### Model validation options
 
@@ -193,7 +193,7 @@ If you would like to measure the relative weights of the motif and base-count-be
 15. validation trimming type (either `v_trim` or `j_trim`)--this does not need to be the same as what the model was trained with
 16. productivity of sequences for model validation (either `productive`, `nonproductive`, or `both`)
 
-This analysis will save a file containing the results in the indicated `OUTPUT_PATH` as specified in the [config](config) files
+All output files will be located in a directory called `rel_importance` within the `OUTPUT_PATH` as specified in the [config](config) file
 
 ### Artemis SNP analysis
 
