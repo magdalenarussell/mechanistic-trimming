@@ -55,6 +55,7 @@ source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
+# get all model evaluation results (for all held-out groups)
 all_eval_results = data.table()
 for (type in all_types) {
     temp_eval_results = compile_evaluation_results(type)
@@ -63,8 +64,10 @@ for (type in all_types) {
     all_eval_results = rbind(all_eval_results, temp_eval_results, fill = TRUE)
 }
 
+# specify held out cluster for "most different" sequence protocol
 all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
 
+# make names neat and assign color palette colors
 motif_types = list.files(path = 'scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 nice_hairpin_names = make_hairpin_names_neat(motif_types) 
@@ -75,15 +78,15 @@ all_eval_results = all_eval_results[!(loss_type == "v_gene_family_loss, cluster 
 all_eval_results = all_eval_results[!(loss_type == "v_gene_family_loss, cluster 3" | loss_type == "full_v_gene_family_loss, cluster 3")]
 all_eval_results = all_eval_results[!(loss_type == "v_gene_family_loss, cluster 4" | loss_type == "full_v_gene_family_loss, cluster 4")]
 
+# order loss types
 loss_types = unique(all_eval_results$loss_type)
 nice_loss_types = c('full V-gene\ntraining\ndataset', 'many held-out\nsubsets of\nV-gene\ntraining\ndataset', '\"most different\"\ncluster of\nV-genes\n(terminal seqs)', 'full J-gene\ndataset', '\"most different\"\ncluster of\nV-genes\n(full seqs)')
-
 all_eval_results$loss_type = mapvalues(all_eval_results$loss_type, from = loss_types, to=nice_loss_types)
 
+# make plot
 plot = plot_model_evaluation_loss_paracoord(all_eval_results, model_type_list = MODEL_TYPE, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH), loss_bound = c(1.98, 2.26), color_palette = colors, same_motif_type = FALSE, custom_name = paste0(MODEL_TYPE, '_hairpin_nick_analysis'), plot_size = c(40, 25), write_plot = FALSE, expand_var = 2.2)
 
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/hairpin_motif_base_count.pdf')
 ggsave(file_name, plot = plot, width = 30, height = 20, units = 'in', dpi = 750, device = cairo_pdf)
-
-

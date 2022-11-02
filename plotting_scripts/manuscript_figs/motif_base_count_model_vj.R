@@ -15,7 +15,7 @@ omp_set_num_threads(1)
 blas_set_num_threads(1)
 
 ANNOTATION_TYPE<<- 'igor' 
-TRIM_TYPE <<- 'v_trim' 
+TRIM_TYPE <<- 'j_trim' 
 trim_types = list.files(path = 'scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
@@ -50,48 +50,6 @@ source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
 
 # get motif data
-motif_data = aggregate_all_subject_data()
-ordered_genes = motif_data[, .N, by = .(gene, p_gene)][order(-p_gene)]
-top_genes = ordered_genes[1:6]$gene
-
-# Read in dist data
-predicted_trims = get_predicted_distribution_data() 
-
-for (gene in unique(top_genes)){
-    index = which(top_genes == gene)
-    temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75)
-    temp_plot = temp_plot + 
-        ggtitle(gene) +
-        xlab('') +
-        ylab('') +
-        ylim(0, 0.8)
-    assign(paste0('gene', index), temp_plot)
-}
-
-# Read in model coefficient data 
-pwm = get_model_coefficient_data() 
-
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
-heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))
-heatmap = heatmap + 
-    theme(legend.position = 'none', text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
-
-heatmap2 = plot_base_count_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))
-heatmap2 = heatmap2 + 
-    theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
-
-TRIM_TYPE <<- 'j_trim' 
-trim_types = list.files(path = 'scripts/gene_specific_functions/')
-trim_types = str_sub(trim_types, end = -3)
-stopifnot(TRIM_TYPE %in% trim_types)
-
-GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
-
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
-
-# get motif data
 j_motif_data = aggregate_all_subject_data()
 j_ordered_genes = j_motif_data[, .N, by = .(gene, p_gene)][order(-p_gene)]
 j_top_genes = j_ordered_genes[1:6]$gene
@@ -99,6 +57,7 @@ j_top_genes = j_ordered_genes[1:6]$gene
 # Read in dist data
 j_predicted_trims = get_predicted_distribution_data() 
 
+# plot j-gene trimming distributions
 for (gene in unique(j_top_genes)){
     index = which(j_top_genes == gene)
     j_temp_plot = plot_predicted_trimming_dists(j_predicted_trims, gene, ylim = 0.75)
@@ -113,7 +72,7 @@ for (gene in unique(j_top_genes)){
 # Read in model coefficient data 
 j_pwm = get_model_coefficient_data() 
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
+# plot a heatmap for model coefficients
 j_heatmap = plot_model_coefficient_heatmap_single_group(j_pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))
 j_heatmap = j_heatmap + 
     theme(legend.position = 'none', text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
@@ -122,30 +81,7 @@ j_heatmap2 = plot_base_count_coefficient_heatmap_single_group(j_pwm, with_values
 j_heatmap2 = j_heatmap2 + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
 
-# first plot of just Jtrim dists
-
-all = align_plots(jgene1, jgene2, jgene3, jgene4, jgene5, jgene6, align = 'vh', axis = 'lb')
-
-temp_grid = plot_grid(all[[1]], all[[2]], all[[3]], all[[4]], all[[5]], all[[6]], nrow = 2) +
-    draw_label("Number of trimmed nucleotides", x=0.5, y=  0, vjust=0 , angle= 0, size = 30, fontfamily = 'Arial') +
-    draw_label("Probability", x=  0, y=0.5, vjust= 0.5, angle=90, size = 30, fontfamily = 'Arial')
-first_grid = plot_grid(NULL, temp_grid, ncol = 2, rel_widths = c(0.017, 1))
-
-path = get_manuscript_path()
-file_name = paste0(path, '/motif_two-side-base-count_j_dists.pdf')
-ggsave(file_name, plot = first_grid, width = 20, height = 9, units = 'in', dpi = 750, device = cairo_pdf)
-
-all2 = align_plots(heatmap, heatmap2, j_heatmap, j_heatmap2, align = 'vh', axis = 'lb')
-
-second_grid = plot_grid(all2[[1]], all2[[2]], nrow = 1, labels = c("A", ""), label_size = 35, rel_widths = c(0.55, 1), align = 'h')
-third_grid = plot_grid(all2[[3]], all2[[4]], nrow = 1, labels = c("B", ""), label_size = 35, rel_widths = c(0.55, 1), align = 'h')
-
-together = plot_grid(second_grid, NULL, third_grid, nrow = 3, rel_heights = c(1, 0.05, 1), align = 'v')
-
-path = get_manuscript_path()
-file_name = paste0(path, '/motif_two-side-base-count_vj_compare.pdf')
-ggsave(file_name, plot = together, width = 20, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
-
+# align and combine all plots
 all = align_plots(jgene1, jgene2, jgene3, jgene4, jgene5, jgene6, j_heatmap, j_heatmap2, align = 'vh', axis = 'lb')
 
 first_grid = plot_grid(all[[1]], all[[2]], all[[3]], all[[4]], all[[5]], all[[6]], nrow = 2) +
@@ -157,16 +93,8 @@ second_grid = plot_grid(all[[7]], all[[8]], nrow = 1, labels = c("B", "C"), labe
 
 together = plot_grid(temp_grid, NULL, second_grid, nrow = 3, labels = c("A", "", ""), label_size = 35, rel_heights = c(1, 0.05, 0.6), align = 'v')
 
+# save plot
 TRIM_TYPE <<- 'v_trim'
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_two-side-base-count_j.pdf')
 ggsave(file_name, plot = together, width = 20, height = 15, units = 'in', dpi = 750, device = cairo_pdf)
-
-
-# fourth_grid = plot_grid(all2[[3]], all2[[4]], nrow = 1, labels = c("A", "B"), label_size = 35, rel_widths = c(0.55, 1), align = 'h')
-
-# path = get_manuscript_path()
-# file_name = paste0(path, '/motif_two-side-base-count_j.pdf')
-# ggsave(file_name, plot = fourth_grid, width = 20, height = 6, units = 'in', dpi = 750, device = cairo_pdf)
-
-

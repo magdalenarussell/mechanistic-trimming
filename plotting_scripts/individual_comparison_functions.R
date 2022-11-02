@@ -1,16 +1,3 @@
-combine_all_individual_coefficients <- function(directory){
-    files = fs::dir_ls(path = directory, type = 'file')
-    require(parallel)
-    cluster = makeCluster(NCPU)
-    files_dt = parLapply(cluster, files, function(x){data.table::fread(x)})
-    stopCluster(cluster)
-    rbound = rbindlist(files_dt)
-    if (!('base' %in% colnames(rbound))){
-        rbound$base = '' 
-    }
-    return(rbound)
-}
-
 map_scanID_to_localID <- function(scanIDs_to_convert){
     # This function converts subject scanIDs to localIDs
     ID_map_file = fread(ID_MAPPING_FILE)

@@ -52,7 +52,7 @@ source('plotting_scripts/plotting_functions.R')
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
+# plot coefficient heatmap
 heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))
 heatmap = heatmap + 
     theme(legend.position = 'none', text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
@@ -61,14 +61,12 @@ heatmap2 = plot_base_count_coefficient_heatmap_single_group(pwm, with_values = F
 heatmap2 = heatmap2 + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
 
-
+# align and combine plots
 all = align_plots(heatmap, heatmap2, align = 'vh', axis = 'lb')
-
 second_grid = plot_grid(all[[1]], all[[2]], nrow = 1, labels = c("A", "B"), label_size = 35, rel_widths = c(0.55, 1), align = 'h')
 
+# save plot
 ANNOTATION_TYPE <<- 'igor'
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_two-side-base-count_parsimony.pdf')
 ggsave(file_name, plot = second_grid, width = 20, height = 6, units = 'in', dpi = 750, device = cairo_pdf)
-
-
