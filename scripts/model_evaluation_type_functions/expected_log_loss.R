@@ -58,8 +58,6 @@ evaluate_loss <- function(motif_data) {
         sample_prob_vector = c(sample_prob_vector, prob)
     }
 
-    #TODO: should this be just multiplied by the sample_prob_vector or be the mean? 
-    # expected_log_loss = sum(sample_prob_vector * log_loss_vector)
     expected_log_loss = sum((1/REPETITIONS) * log_loss_vector)
 
     return(list(loss = expected_log_loss, model_parameter_count = unique(parameter_count_vector), held_out_cluster_number = NA, held_out_genes = 'averaged'))
