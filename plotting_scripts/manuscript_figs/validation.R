@@ -56,11 +56,12 @@ source('plotting_scripts/model_evaluation_functions.R')
 
 all_eval_results = data.table()
 
+# assign all validation data, trim-type, and productivity variables
 annotation_types = c('igor', 'validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_igh')
-
 trim_types = c('j_trim', 'v_trim')
 prods = c('productive', 'nonproductive')
 
+# get all validation results
 for (trim_type in trim_types){
     for (type in annotation_types) {
         for (prod in prods){
@@ -83,39 +84,49 @@ for (trim_type in trim_types){
     }
 }
 
-# get model types
+# get model types, and make them neat
 orig_model_types = c("motif_two-side-base-count-beyond", "motif", 'null')
 new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', '2x4motif (18 params)', 'null (0 params)')
-
 all_eval_results = all_eval_results[model_type %in% orig_model_types]
 all_eval_results$model_type = mapvalues(all_eval_results$model_type, from = orig_model_types, to = new_model_types) 
 all_eval_results[loss_type == 'igor', loss_type := paste0(loss_type, '_', trim_type, '_', productivity)]
 neat_names = make_model_names_neat(new_model_types)
+
+# set plot colors
 colors = set_color_palette(c(neat_names, '2x4motif (18 params)'), with_params = TRUE)
 
+# make all loss type names neat and ordered
 loss_types = c('igor_j_trim_productive', 'igor_v_trim_nonproductive', 'validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_igh', 'igor_j_trim_nonproductive', 'igor_v_trim_productive') 
 
 nice_loss_types = c('TCRB training\ndataset J-genes\n(not included during\nmodel training)', 'full TCRB V-gene\ntraining dataset', 'TCRA testing\ndataset', 'TCRB testing\ndataset', 'TCRG testing\ndataset', 'IGH testing\ndataset', 'TCRB training\ndataset J-genes\n(not included during\nmodel training)', 'TCRB training\ndataset V-genes\n(not included during\nmodel training)')
+
 loss_order = c('TCRB training\ndataset J-genes\n(not included during\nmodel training)', 'full TCRB V-gene\ntraining dataset', 'TCRB training\ndataset V-genes\n(not included during\nmodel training)', 'TCRB testing\ndataset', 'TCRA testing\ndataset', 'TCRG testing\ndataset', 'IGH testing\ndataset')
+
 all_eval_results$nice_loss_type = mapvalues(all_eval_results$loss_type, from = loss_types, to=nice_loss_types)
 all_eval_results[nice_loss_type == 'full TCRB V-gene\ntraining dataset', trim_type := 'v_trim']
+
+# make trimming types neat and ordered
 all_eval_results$trim_type = mapvalues(all_eval_results$trim_type, from = unique(all_eval_results$trim_type), to=c('J-gene trimming', 'V-gene trimming'))
 all_eval_results$trim_type = factor(all_eval_results$trim_type, levels = c('V-gene trimming', 'J-gene trimming'))
 
-# reformat model names to be nice
+# reformat model names to be nicer
 all_eval_results = all_eval_results[motif_type == MOTIF_TYPE]
 nice_names = make_model_names_neat(unique(all_eval_results$model_type)) 
 all_eval_results$nice_model_type = mapvalues(all_eval_results$model_type, from = unique(all_eval_results$model_type), to = nice_names)
 
+# order losses
 ordered_losses = loss_order
 all_eval_results$nice_loss_type = factor(all_eval_results$nice_loss_type, levels = ordered_losses)
 last_loss = ordered_losses[length(ordered_losses)]
 label_data = all_eval_results[nice_loss_type == last_loss] 
 
+# save data for training data only (for reference)
 motif_base_count_training_loss = all_eval_results[nice_loss_type == 'full TCRB V-gene\ntraining dataset' & nice_model_type == '1x2motif + two-side\nbase-count beyond\n(12 params)']$loss
 motif_base_count_color = colors[['1x2motif + two-side\nbase-count beyond\n(12 params)']]
 
+# create a plot for each productivity type
 for (prod in c('productive', 'nonproductive')) {
+    # subset data to productivity type
     subset = all_eval_results[productivity == prod]
     label_data_subset = label_data[productivity == prod]
 
@@ -145,12 +156,11 @@ for (prod in c('productive', 'nonproductive')) {
         ylim(bound) +
         scale_color_manual(values = colors)
 
-
+    # save plot
     ANNOTATION_TYPE <<- 'igor'
     path = get_manuscript_path()
     file_name = paste0(path, '/loss_compare_validation_', prod, '.pdf')
-    w = 16 
-    ggsave(file_name, plot = plot, width = w, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
+    ggsave(file_name, plot = plot, width = 16, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
 }
 
 

@@ -50,14 +50,17 @@ source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/individual_comparison_functions.R')
 
+# get coefficient bootsrap results
 filename =  get_model_bootstrap_file_name() 
 pwm = fread(filename)
 pwm = pwm[parameter %like% 'snp']
 pwm$parameter = str_replace(pwm$parameter, ':snp', '')
 pwm$parameter = str_replace(pwm$parameter, '_prop', '')
+
+# SNP genotype is opposite of convention, so switch sign of coefficient
 pwm$coefficient = -1*(pwm$coefficient)
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
+# plot coefficient heatmaps
 heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.011, 0.011))
 heatmap = heatmap + 
     theme(legend.position = 'none', text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
@@ -68,14 +71,17 @@ heatmap2 = heatmap2 +
     guides(fill = guide_colourbar(barwidth = 35, barheight = 2)) +
     labs(fill = 'log10(probability of deletion)\t')
 
+# extract legend
 legend = get_legend(heatmap2) 
 heatmap2 = heatmap2 + theme(legend.position = 'none')
 
+# align and combine plots
 all = align_plots(heatmap, heatmap2, legend, align = 'vh', axis = 'lbr')
 
 first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, labels = c("A", "B"), label_size = 35, rel_widths = c(1, 1), align = 'h')
 first_grid = plot_grid(first_grid, NULL, all[[3]], nrow = 3, rel_heights = c(1, 0.02,0.2)) 
 
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/snp_interaction_heatmaps.pdf')
 ggsave(file_name, plot = first_grid, width = 18, height = 6, units = 'in', dpi = 750, device = cairo_pdf)

@@ -57,6 +57,7 @@ top_genes = ordered_genes$gene
 # Read in dist data
 predicted_trims = get_predicted_distribution_data() 
 
+# Create a trimming distribution plot for each gene
 all_plots = c()
 for (gene in unique(top_genes)){
     index = which(top_genes == gene)
@@ -70,8 +71,10 @@ for (gene in unique(top_genes)){
     assign(paste0('gene', index), temp_plot)
 }
 
+# combine all distributions
 all = plot_grid(plotlist=mget(paste0("gene", seq(1, length(top_genes)))), ncol = 5)
 
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/trb_gallery.pdf')
 ggsave(file_name, plot = all, width = 30, height = 38, units = 'in', dpi = 750, device = cairo_pdf, limitsize = FALSE)

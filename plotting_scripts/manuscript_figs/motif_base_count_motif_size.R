@@ -49,32 +49,37 @@ source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
+# compile loss results for training data set
 eval_results = compile_evaluation_results(TYPE)
 
+# assign result for two-side-base-count to be 0-0 motif-base-count model 
 model_type = 'motif_two-side-base-count-beyond' 
 base_model = 'two-side-base-count'
 eval_results[model_type == base_model & motif_type == MOTIF_TYPE, model_type := 'motif_two-side-base-count-beyond']
 
+# plot loss heatmap
 plot = plot_model_evaluation_heatmap(eval_results, TYPE, model_type = model_type, terminal_melting_5_end_length_filter= 10, write_plot = FALSE)
 
+# get loss results for J-genes from training data set
 TYPE <<- 'log_loss_j_gene' 
 
 source('scripts/model_evaluation_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/model_evaluation_functions.R')
 
+# compile J-gene loss results
 eval_results2 = compile_evaluation_results(TYPE)
+
+# assign result for two-side-base-count to be 0-0 motif-base-count model 
 eval_results2[model_type == base_model & motif_type == MOTIF_TYPE, model_type := 'motif_two-side-base-count-beyond']
 
+# plot loss heatmap
 plot2 = plot_model_evaluation_heatmap(eval_results2, TYPE, model_type = model_type, terminal_melting_5_end_length_filter= 10, write_plot = FALSE)
 
+# combine heatmaps
 final = plot_grid(plot, NULL, plot2, ncol = 3, labels = c("A", "", "B"), label_size = 35, rel_widths = c(1, 0.05, 0.96), align = 'h')
 
-
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_base_count_size.pdf')
 ggsave(file_name, plot = final, width = 20, height = 7, units = 'in', dpi = 750, device = cairo_pdf)
-
-
-
-

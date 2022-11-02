@@ -57,6 +57,7 @@ top_genes = ordered_genes[1:6]$gene
 # Read in dist data
 predicted_trims = get_predicted_distribution_data() 
 
+# plot a distribution for each gene
 for (gene in unique(top_genes)){
     index = which(top_genes == gene)
     temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75, color = '#01665e', motif_highlight_color = '#E79737', motif_highlight = c('CTT'))
@@ -71,7 +72,7 @@ for (gene in unique(top_genes)){
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
+# plot heatmap of coefficients
 heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))
 heatmap = heatmap + 
     theme(legend.position = 'none', text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
@@ -81,21 +82,21 @@ heatmap2 = heatmap2 +
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20), legend.position = 'bottom', legend.direction = 'horizontal', legend.justification="center") +
     guides(fill = guide_colourbar(barwidth = 35, barheight = 2))
 
+# isolate legend
 legend = get_legend(heatmap2) 
 heatmap2 = heatmap2 + theme(legend.position = 'none')
 
+# align and combine all plots
 all = align_plots(gene1, gene2, gene3, gene4, gene5, gene6, heatmap, heatmap2, legend, align = 'vh', axis = 'lbr')
-
 first_grid = plot_grid(all[[1]], all[[2]], all[[3]], all[[4]], all[[5]], all[[6]], nrow = 2) +
     draw_label("Number of trimmed nucleotides", x=0.5, y=  0, vjust=0 , angle= 0, size = 30, fontfamily = 'Arial') +
     draw_label("Probability", x=  0, y=0.5, vjust= 0.5, angle=90, size = 30, fontfamily = 'Arial')
-
 temp_grid = plot_grid(NULL, first_grid, ncol = 2, rel_widths = c(0.017, 1))
 second_grid = plot_grid(all[[7]], all[[8]], nrow = 1, labels = c("B", "C"), label_size = 35, rel_widths = c(1, 1), align = 'h')
 second_grid = plot_grid(second_grid, NULL, legend, nrow = 3, rel_heights = c(1, 0.02,0.2)) 
-
 together = plot_grid(temp_grid, NULL, second_grid, nrow = 3, labels = c("A", "", ""), label_size = 35, rel_heights = c(0.7, 0.05, 0.6), align = 'v')
 
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/motif_two-side-base-count.pdf')
 ggsave(file_name, plot = together, width = 18, height = 13, units = 'in', dpi = 750, device = cairo_pdf)

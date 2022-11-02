@@ -50,14 +50,17 @@ source('scripts/model_fitting_functions.R')
 source('plotting_scripts/plotting_functions.R')
 source('plotting_scripts/individual_comparison_functions.R')
 
+# get pwm from coefficient bootstrap
 filename =  get_model_bootstrap_file_name() 
 pwm = fread(filename)
 pwm = pwm[parameter %like% 'snp']
 pwm$parameter = str_replace(pwm$parameter, ':snp', '')
 pwm$parameter = str_replace(pwm$parameter, '_prop', '')
+
+# SNP genotype is opposite of convention, so switch sign of coefficient
 pwm$coefficient = -1*(pwm$coefficient)
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
+# plot coefficient heatmap
 heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.007, 0.007))
 heatmap = heatmap + 
     theme(legend.position = 'none', text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20)) 
@@ -70,6 +73,7 @@ heatmap3 = plot_lindistance_coefficient_heatmap_single_group(pwm, with_values = 
 heatmap3 = heatmap3 + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 18)) 
 
+# align and combine plots
 all = align_plots(heatmap, heatmap2, heatmap3, align = 'vh', axis = 'lb')
 
 first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, labels = c("A", "B"), label_size = 35, rel_widths = c(1, 1), align = 'h')
@@ -77,8 +81,7 @@ second_grid = plot_grid(all[[3]], NULL, ncol = 2, labels = c('C', ''), label_siz
 
 together = plot_grid(first_grid, second_grid, nrow = 2, align = 'h')
 
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/snp_interaction_heatmaps_motif_linear-distance_two-side-base-count-beyond.pdf')
 ggsave(file_name, plot = together, width = 14, height = 12, units = 'in', dpi = 750, device = cairo_pdf)
-
-
