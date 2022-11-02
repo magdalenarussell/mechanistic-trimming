@@ -62,23 +62,6 @@ make_hairpin_names_neat <- function(motif_types){
     return(pnucs)
 }
 
-filter_model_types <- function(remove_types_with_string = NA){
-    model_type_files = list.files(path = 'scripts/model_formula_functions/')
-    model_types = str_sub(model_type_files[model_type_files != '_ignore' & model_type_files != "model_formula_specific_functions"], end = -3)
-    model_types_neat = model_types
-    if (!(is.na(remove_types_with_string))){
-        for (string in remove_types_with_string){
-            if (string == 'terminal_melting'){
-                model_types_neat = model_types_neat[!grepl(string, model_types_neat) | grepl('two_side_terminal_melting', model_types_neat)]
-            } else {
-                model_types_neat = model_types_neat[!grepl(string, model_types_neat)]
-            }
-        }
-    }
-    model_types_neat = model_types_neat[order(model_types_neat)]
-    return(model_types_neat)
-}
-
 process_model_evaluation_file <- function(eval_data, model_types_neat, left_motif_size_filter = NA, right_motif_size_filter = NA, terminal_melting_5_end_length_filter = NA, lower_trim_bound = LOWER_TRIM_BOUND, upper_trim_bound = UPPER_TRIM_BOUND){
     if (length(model_types_neat) == 1){ 
         if ((model_types_neat %like% 'motif') | (model_types_neat %like% 'shape')){
@@ -117,23 +100,4 @@ process_model_evaluation_file <- function(eval_data, model_types_neat, left_moti
     eval_data = eval_data[upper_bound %in% upper_trim_bound]
     eval_data[loss_type == 'v_gene_family_loss', loss_type := paste0(loss_type, ', cluster ', held_out_clusters)]
     return(eval_data)
-}
-
-get_terminal_melting_calculation_type <- function(processed_eval_data){
-    processed_eval_data[model_type %like% 'terminal_melting_', melting_type := sapply(model_type, function(x) tail(str_split(x, '_')[[1]], 1))]
-    processed_eval_data[model_type %like% 'terminal_melting' & is.na(melting_type), melting_type := 'simple']
-    processed_eval_data[is.na(melting_type), melting_type := 'NA']
-
-    processed_eval_data[model_type %like% 'terminal_melting_NN', model_type := substring(model_type, 1, nchar(model_type)- 3)]
-    processed_eval_data[model_type %like% 'terminal_melting_combo', model_type := substring(model_type, 1, nchar(model_type)- 6)]
-    return(processed_eval_data)
-}
-
-get_pnuc_count <- function(processed_eval_data){
-    processed_eval_data[motif_type != 'unbounded' & motif_type != 'unbounded_no_pnuc', pnuc_count := as.numeric(sapply(motif_type, function(x) str_split(x, '_')[[1]][2]))]
-    processed_eval_data[motif_type != 'unbounded' & motif_type != 'unbounded_no_pnuc' & pnuc_count > 0, nick_position := paste0('+', pnuc_count)]
-    processed_eval_data[motif_type != 'unbounded' & motif_type != 'unbounded_no_pnuc' & pnuc_count < 0, nick_position := paste0('-', pnuc_count)]
-    processed_eval_data[motif_type == 'unbounded_no_pnuc', c("pnuc_count", "nick_position"):= list(0, '0')]
-    processed_eval_data[motif_type == 'unbounded', c("pnuc_count", "nick_position") := list(2, '+2')]
-    return(processed_eval_data)
 }

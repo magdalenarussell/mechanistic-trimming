@@ -54,13 +54,12 @@ source('plotting_scripts/plotting_functions.R')
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
 
-# plot_model_coefficient_heatmap(pwm, with_values = TRUE, limits = c(-0.4, 0.4))
+# plot coefficient heatmap
 heatmap = plot_base_count_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE)
 heatmap = heatmap + 
     theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 25)) 
 
+# save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/single_param_coefs.pdf')
 ggsave(file_name, plot = heatmap, width = 16, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
-
-
