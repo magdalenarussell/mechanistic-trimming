@@ -205,3 +205,14 @@ With this analysis, we want to quantify the sequence-level determinants of nucle
 See the manuscript for specific model and methods details: 
 
 Russell, Magdalena L., Noah Simon, Philip Bradley, and Frederick A. Matsen IV. 2022. "Statistical inference reveals the role of length, breathing, and nucleotide identity in V(D)J nucleotide trimming." In preparation.
+
+The following packages were especially helpful in our analyses:
+
+- data.table (Dowle and Srinivasan, 2021)
+- tidyverse (Wickham et. al, 2019) 
+- doParallel (Corporation and Steve Weston, 2020)
+- cowplot (Wilke, 2020)
+- mclogit (Elff, 2021)
+- Biostrings (Pagès et. al, 2021)
+- DECIPHER (Wright, 2016)
+- ape (Paradis and Schliep, 2019)
