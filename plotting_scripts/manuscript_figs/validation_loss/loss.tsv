@@ -1,0 +1,87 @@
+model_type	trim_type	productivity	loss_type	log_loss
+"1x2motif + two-side
+base-count beyond
+(12 params)"	J-gene trimming	nonproductive	"TCRB training
+dataset J-genes
+(not included during
+model training)"	2.12984768161205
+2x4motif (18 params)	J-gene trimming	nonproductive	"TCRB training
+dataset J-genes
+(not included during
+model training)"	2.50977479161363
+null (0 params)	J-gene trimming	nonproductive	"TCRB training
+dataset J-genes
+(not included during
+model training)"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	J-gene trimming	nonproductive	"TCRA testing
+dataset"	2.31473079205969
+2x4motif (18 params)	J-gene trimming	nonproductive	"TCRA testing
+dataset"	2.4941619554616
+null (0 params)	J-gene trimming	nonproductive	"TCRA testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	J-gene trimming	nonproductive	"TCRB testing
+dataset"	2.19357809930202
+2x4motif (18 params)	J-gene trimming	nonproductive	"TCRB testing
+dataset"	2.57315439715756
+null (0 params)	J-gene trimming	nonproductive	"TCRB testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	J-gene trimming	nonproductive	"TCRG testing
+dataset"	2.32916164269244
+2x4motif (18 params)	J-gene trimming	nonproductive	"TCRG testing
+dataset"	2.4567128950114
+null (0 params)	J-gene trimming	nonproductive	"TCRG testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	J-gene trimming	nonproductive	"IGH testing
+dataset"	2.59371561462906
+2x4motif (18 params)	J-gene trimming	nonproductive	"IGH testing
+dataset"	2.57380160713221
+null (0 params)	J-gene trimming	nonproductive	"IGH testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	V-gene trimming	nonproductive	"full TCRB V-gene
+training dataset"	2.05376431337042
+2x4motif (18 params)	V-gene trimming	nonproductive	"full TCRB V-gene
+training dataset"	2.1653342821287
+null (0 params)	V-gene trimming	nonproductive	"full TCRB V-gene
+training dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	V-gene trimming	nonproductive	"TCRA testing
+dataset"	2.16109144654857
+2x4motif (18 params)	V-gene trimming	nonproductive	"TCRA testing
+dataset"	2.6028283449521
+null (0 params)	V-gene trimming	nonproductive	"TCRA testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	V-gene trimming	nonproductive	"TCRB testing
+dataset"	2.24727432095681
+2x4motif (18 params)	V-gene trimming	nonproductive	"TCRB testing
+dataset"	2.32175500669491
+null (0 params)	V-gene trimming	nonproductive	"TCRB testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	V-gene trimming	nonproductive	"TCRG testing
+dataset"	2.18144218604323
+2x4motif (18 params)	V-gene trimming	nonproductive	"TCRG testing
+dataset"	2.67278124137401
+null (0 params)	V-gene trimming	nonproductive	"TCRG testing
+dataset"	2.56494935746154
+"1x2motif + two-side
+base-count beyond
+(12 params)"	V-gene trimming	nonproductive	"IGH testing
+dataset"	2.08676527645029
+2x4motif (18 params)	V-gene trimming	nonproductive	"IGH testing
+dataset"	2.72584862400469
+null (0 params)	V-gene trimming	nonproductive	"IGH testing
+dataset"	2.56494935746154
