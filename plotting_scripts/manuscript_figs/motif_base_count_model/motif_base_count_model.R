@@ -59,7 +59,7 @@ predicted_trims = get_predicted_distribution_data()
 
 cols = c('subject', 'gene', 'trim_length', 'empirical_prob', 'predicted_prob')
 plot_data = unique(predicted_trims[gene %in% top_genes][, ..cols])
-fwrite(plot_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_model/dists.tsv', sep = '\t'))
+fwrite(plot_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_model/dists.tsv'), sep = '\t')
 
 # plot a distribution for each gene
 for (gene in unique(top_genes)){
@@ -75,9 +75,12 @@ for (gene in unique(top_genes)){
 
 # Read in model coefficient data 
 pwm = get_model_coefficient_data() 
-cols = colnames(pwm)[colnames(pwm) != 'model_group']
-heatmap_data = pwm[, ..cols]
-fwrite(heatmap_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_model/coefs.tsv', sep = '\t'))
+filename =  get_model_bootstrap_file_name() 
+bpwm = fread(filename)
+
+cols = colnames(bpwm)[!(colnames(bpwm) %in% c('snp_interaction', 'original_model_fit', 'zstat', 'iterations'))]
+heatmap_data = bpwm[, ..cols]
+fwrite(heatmap_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_model/coefs.tsv'), sep = '\t')
 
 # plot heatmap of coefficients
 heatmap = plot_model_coefficient_heatmap_single_group(pwm, with_values = FALSE, write_plot = FALSE, limits = c(-0.24, 0.24))

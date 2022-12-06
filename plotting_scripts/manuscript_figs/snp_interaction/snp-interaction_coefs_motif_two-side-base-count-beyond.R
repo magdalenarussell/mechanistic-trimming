@@ -62,7 +62,7 @@ pwm$coefficient = -1*(pwm$coefficient)
 
 cols = colnames(pwm)[!(colnames(pwm) %in% c('snp_interaction', 'original_model_fit', 'zstat', 'iterations'))]
 heatmap_data = pwm[, ..cols]
-fwrite(heatmap_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/snp_interaction/coefs.tsv', sep = '\t'))
+fwrite(heatmap_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/snp_interaction/coefs.tsv'), sep = '\t')
 
 
 
