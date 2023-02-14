@@ -26,43 +26,43 @@ dataset"	2.56494935746154
 training
 dataset"	2.11837331840458
 "1x2DNA-shape
-(13 params)"	"many held-out
-subsets of
-V-gene
+(13 params)"	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.28465260793571
-distance (1 param)	"many held-out
-subsets of
-V-gene
+distance (1 param)	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.26446506867081
 "1x2motif + distance
-(10 params)"	"many held-out
-subsets of
-V-gene
+(10 params)"	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.1298405537317
 "1x2motif + two-side
 base-count beyond
-(12 params)"	"many held-out
-subsets of
-V-gene
+(12 params)"	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.07979475247025
-1x2motif (9 params)	"many held-out
-subsets of
-V-gene
+1x2motif (9 params)	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.28260347581233
-null (0 params)	"many held-out
-subsets of
-V-gene
+null (0 params)	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.56494935746154
 "two-side base-count
-(3 params)"	"many held-out
-subsets of
-V-gene
+(3 params)"	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.14224348866891
 "1x2DNA-shape
@@ -153,9 +153,9 @@ V-genes
 2x4motif (18 params)	"full V-gene
 training
 dataset"	2.1653342821287
-2x4motif (18 params)	"many held-out
-subsets of
-V-gene
+2x4motif (18 params)	"many random,
+held-out subsets
+of V-gene
 training
 dataset"	2.22405432304452
 2x4motif (18 params)	"""most different""

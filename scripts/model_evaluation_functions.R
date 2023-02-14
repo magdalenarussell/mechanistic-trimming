@@ -99,6 +99,12 @@ get_per_run_model_evaluation_path <- function(type){
     if (!dir.exists(path)){
         dir.create(path, recursive = TRUE)
     }
+    if (type == 'expected_log_loss'){
+        path2 = paste0(path, '/raw')
+        if (!dir.exists(path2)){
+            dir.create(path2, recursive = TRUE)
+        }
+    }
     return(path)
 }
 
