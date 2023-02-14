@@ -1,5 +1,5 @@
 extract_subject_ID <- function(tcr_repertoire_file_path){
-    file_name = str_split(tcr_repertoire_file_path, "/")[[1]][3]
+    file_name = str_split(tcr_repertoire_file_path, "/")[[1]][7]
     file_root_name = str_split(file_name, ".tsv")[[1]][1]
     localID = str_split(file_root_name, "_")[[1]][3]
     return(localID)
