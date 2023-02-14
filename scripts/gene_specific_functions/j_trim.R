@@ -1,6 +1,11 @@
 JOINING_GENE <<- 'd_gene'
 JOINING_TRIM <<- 'd1_trim'
 
+if (ANNOTATION_TYPE %like% 'alpha'){
+    JOINING_GENE <<- 'v_gene'
+    JOINING_TRIM <<- 'v_trim'
+}
+
 get_oriented_whole_nucseqs <- function(whole_nucseq = get_whole_nucseqs()){
     # reorient sequence so that it is 5 -> 3 on the actual trimmed strand
     whole_nucseq[, sequence := unlist(lapply(sequence, function(x) as.character(reverseComplement(DNAString(x)))))]
