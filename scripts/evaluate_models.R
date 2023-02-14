@@ -74,3 +74,12 @@ loss = evaluate_loss(motif_data)
 
 # Append results to the end of a file
 write_result_dt(loss$loss, rep(TYPE, length(loss$loss)), loss$model_parameter_count, loss$held_out_cluster_number, loss$held_out_genes)
+
+if (TYPE == 'expected_log_loss'){
+    file_name = get_per_run_model_evaluation_file_name(TYPE)
+    file_name = str_replace(file_name, '/expected_log_loss/', '/expected_log_loss/raw/')
+
+    losses = compile_result(loss$vect, TYPE, loss$model_parameter_count, loss$held_out_genes, held_out_clusters = NA, validation_gene_weighting = NA)
+
+    fwrite(losses, file_name, sep = '\t')
+}

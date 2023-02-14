@@ -100,7 +100,7 @@ eval_tog = eval_tog[!(loss_type == "v_gene_family_loss, cluster 4" | loss_type =
 
 # order and reassign loss types (neater version)
 loss_types = unique(eval_tog$loss_type)
-nice_loss_types = c('full V-gene\ntraining\ndataset', 'many held-out\nsubsets of\nV-gene\ntraining\ndataset', '\"most different\"\ncluster of\nV-genes\n(terminal seqs)', 'full J-gene\ndataset', '\"most different\"\ncluster of\nV-genes\n(full seqs)')
+nice_loss_types = c('full V-gene\ntraining\ndataset', 'many random,\nheld-out subsets\nof V-gene\ntraining\ndataset', '\"most different\"\ncluster of\nV-genes\n(terminal seqs)', 'full J-gene\ndataset', '\"most different\"\ncluster of\nV-genes\n(full seqs)')
 eval_tog$loss_type = mapvalues(eval_tog$loss_type, from = loss_types, to=nice_loss_types)
 
 eval_tog = eval_tog[motif_type == MOTIF_TYPE]
@@ -117,4 +117,4 @@ plot = plot_model_evaluation_loss_paracoord(eval_tog, model_type_list = c(new_mo
 # save plot
 path = get_manuscript_path()
 file_name = paste0(path, '/loss_compare.pdf')
-ggsave(file_name, plot = plot, width = 32, height = 17, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = plot, width = 32, height = 18, units = 'in', dpi = 750, device = cairo_pdf)
