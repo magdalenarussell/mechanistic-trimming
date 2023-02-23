@@ -261,6 +261,56 @@ get_coef_pvalues <- function(bootstrap_results, original_model_results){
     together$iterations = max(bootstrap_results$iteration)
     return(together)
 }
+
+subsample <- function(motif_data, prop){
+    stopifnot(MODEL_TYPE == 'motif_two-side-base-count-beyond')
+    motif_data$cluster = interaction(motif_data$subject, motif_data$gene)
+
+    # sample proportion of individuals
+    size = ceiling(prop * length(unique(motif_data$subject)))
+    sample_subj = sample(unique(motif_data$subject), size, replace = FALSE)
+    subj_subset_orig = motif_data[subject %in% sample_subj]
+
+    # sample proportion of sequences for each individual
+    subj_subset_orig[, subsample_total_tcr := ceiling(total_tcr*prop)]
+    cols = c('gene', 'trim_length', 'observed', 'gene_type', 'left_base_count_AT', 'left_base_count_GC', 'right_base_count_AT', 'right_base_count_GC', 'motif', 'motif_5end_pos1', 'motif_3end_pos1', 'motif_3end_pos2', 'subject', 'count', 'subsample_total_tcr', 'cluster')
+    subj_subset_orig[, row := seq(1, .N), by = .(subject)]
+    subj_subset = subj_subset_orig[subj_subset_orig[, sample(.I, subsample_total_tcr, replace = TRUE, prob = count), by = subject]$V1]
+    subj_subset[, count := .N, by = .(subject, row)]
+    subj_subset_final = unique(subj_subset[, ..cols])
+
+    # fill in unobserved seq cases
+    subj_subset_orig_small = subj_subset_orig[, ..cols][, -c('count')]
+    subj_subset_final_small = subj_subset_final[, ..cols][, -c('count')]
+    unsampled = fsetdiff(subj_subset_orig_small, subj_subset_final_small) 
+    unsampled$count = 0
+    subj_subset_final = rbind(subj_subset_final, unsampled)
+
+    # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
+    source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    sample_data = calculate_subject_gene_weight(subj_subset_final)
+    return(sample_data)
+}
+
+subsample_model_fit <- function(motif_data, formula = get_model_formula(), iter, prop){
+    set.seed(66)
+    results = data.table()
+    for (i in seq(iter)){
+        sample_data = subsample(motif_data, prop)
+        result = get_coeffiecient_matrix(sample_data, formula = formula, ref_base = 'A')
+        pwm_matrix = result$result
+        pwm_dt = as.data.table(pwm_matrix)
+        pwm_dt$base = rownames(pwm_matrix)
+        model = result$model
+        coefs = format_model_coefficient_output(model, pwm_dt)
+        coefs$iteration = i
+        results = rbind(results, coefs)
+    }
+    results$prop = prop
+    return(results)
+}
+
+
 get_model_bootstrap_path <- function(){
     path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'model_bootstrap') 
     if (!dir.exists(path)){
@@ -272,6 +322,20 @@ get_model_bootstrap_path <- function(){
 get_model_bootstrap_file_name <- function(){
     path = get_model_bootstrap_path()
     name = file.path(path, paste0('bootstrap_', MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.tsv'))
+    return(name)
+}
+
+get_model_subsample_path <- function(){
+    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'model_subsample') 
+    if (!dir.exists(path)){
+        dir.create(path, recursive = TRUE)
+    }
+    return(path)
+}
+
+get_model_subsample_file_name <- function(prop){
+    path = get_model_subsample_path()
+    name = file.path(path, paste0('subsample_', prop, '_prop_', MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.tsv'))
     return(name)
 }
 
