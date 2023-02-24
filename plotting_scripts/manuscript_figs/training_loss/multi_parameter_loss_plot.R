@@ -74,7 +74,7 @@ all_eval_results[loss_type %like% 'v_gene_family_loss', loss_type := paste0(loss
 
 # get model types, and make them neat
 orig_model_types = c("motif_two-side-base-count-beyond", "null", "motif", "two-side-base-count", 'dna_shape-std', 'linear-distance', 'motif_linear-distance')
-new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', 'null (0 params)', "1x2motif (9 params)", 'two-side base-count\n(3 params)', '1x2DNA-shape\n(13 params)', 'distance (1 param)', '1x2motif + distance\n(10 params)')
+new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', 'null (0 params)', "1x2motif (9 params)", 'two-side base-count\n(3 params)', '1x2DNA-shape\n(13 params)', 'length (1 param)', '1x2motif + length\n(10 params)')
 
 # pre-filter data
 subset_eval_data = process_model_evaluation_file(all_eval_results, orig_model_types, left_motif_size_filter = LEFT_NUC_MOTIF_COUNT, right_motif_size_filter = RIGHT_NUC_MOTIF_COUNT, terminal_melting_5_end_length_filter = c(NA, LEFT_SIDE_TERMINAL_MELT_LENGTH))

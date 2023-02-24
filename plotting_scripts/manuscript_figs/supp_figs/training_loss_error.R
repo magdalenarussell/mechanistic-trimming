@@ -73,7 +73,7 @@ all = all[!(model_type == 'motif' & motif_length_5_end == 2)]
 
 # get model types, and make them neat
 orig_model_types = c("motif_two-side-base-count-beyond", "null", "motif", "two-side-base-count", 'dna_shape-std', 'linear-distance', 'motif_linear-distance')
-new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', 'null (0 params)', "1x2motif (9 params)", 'two-side base-count\n(3 params)', '1x2DNA-shape\n(13 params)', 'distance (1 param)', '1x2motif + distance\n(10 params)')
+new_model_types = c('1x2motif + two-side\nbase-count beyond\n(12 params)', 'null (0 params)', "1x2motif (9 params)", 'two-side base-count\n(3 params)', '1x2DNA-shape\n(13 params)', 'length (1 param)', '1x2motif + length\n(10 params)')
 
 # reassign model names
 all$model_type = mapvalues(all$model_type, from = orig_model_types, to = new_model_types) 

@@ -230,7 +230,7 @@ plot_lindistance_coefficient_heatmap_single_group <- function(model_coef_matrix,
     model_coef_matrix = model_coef_matrix[parameter %like% 'trim_length']
     # convert to log_10
     model_coef_matrix$log_10_pdel = model_coef_matrix$coefficient/log(10)
-    model_coef_matrix$parameter = 'Trimming distance\n(linear)'
+    model_coef_matrix$parameter = 'Trimming length\n(integer-valued)'
 
     if (is.null(limits)){
         max_val = max(abs(model_coef_matrix$log_10_pdel))
