@@ -62,7 +62,7 @@ predicted_trims = get_predicted_distribution_data()
 # plot distribution for each gene
 for (gene in unique(top_genes)){
     index = which(top_genes == gene)
-    temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75)
+    temp_plot = plot_predicted_trimming_dists(predicted_trims, gene, ylim = 0.75, color = '#01665e')
     temp_plot = temp_plot + 
         ggtitle(gene) +
         xlab('') +

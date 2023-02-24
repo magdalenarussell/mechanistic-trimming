@@ -60,7 +60,7 @@ j_predicted_trims = get_predicted_distribution_data()
 # plot j-gene trimming distributions
 for (gene in unique(j_top_genes)){
     index = which(j_top_genes == gene)
-    j_temp_plot = plot_predicted_trimming_dists(j_predicted_trims, gene, ylim = 0.75)
+    j_temp_plot = plot_predicted_trimming_dists(j_predicted_trims, gene, ylim = 0.75, color = '#01665e')
     j_temp_plot = j_temp_plot + 
         ggtitle(gene) +
         xlab('') +

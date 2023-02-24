@@ -3,10 +3,10 @@ model_type	loss_type	log_loss
 (13 params)"	"full V-gene
 training
 dataset"	2.2224157872664
-distance (1 param)	"full V-gene
+length (1 param)	"full V-gene
 training
 dataset"	2.26153915079512
-"1x2motif + distance
+"1x2motif + length
 (10 params)"	"full V-gene
 training
 dataset"	2.09737696652695
@@ -31,12 +31,12 @@ held-out subsets
 of V-gene
 training
 dataset"	2.28465260793571
-distance (1 param)	"many random,
+length (1 param)	"many random,
 held-out subsets
 of V-gene
 training
 dataset"	2.26446506867081
-"1x2motif + distance
+"1x2motif + length
 (10 params)"	"many random,
 held-out subsets
 of V-gene
@@ -70,11 +70,11 @@ dataset"	2.14224348866891
 cluster of
 V-genes
 (terminal seqs)"	2.35746687436266
-distance (1 param)	"""most different""
+length (1 param)	"""most different""
 cluster of
 V-genes
 (terminal seqs)"	2.19802975932054
-"1x2motif + distance
+"1x2motif + length
 (10 params)"	"""most different""
 cluster of
 V-genes
@@ -101,9 +101,9 @@ V-genes
 "1x2DNA-shape
 (13 params)"	"full J-gene
 dataset"	2.68234848487124
-distance (1 param)	"full J-gene
+length (1 param)	"full J-gene
 dataset"	2.22308850708154
-"1x2motif + distance
+"1x2motif + length
 (10 params)"	"full J-gene
 dataset"	2.1895884950794
 "1x2motif + two-side
@@ -122,11 +122,11 @@ dataset"	2.22819977754396
 cluster of
 V-genes
 (full seqs)"	2.41010082878603
-distance (1 param)	"""most different""
+length (1 param)	"""most different""
 cluster of
 V-genes
 (full seqs)"	2.37186590289202
-"1x2motif + distance
+"1x2motif + length
 (10 params)"	"""most different""
 cluster of
 V-genes
