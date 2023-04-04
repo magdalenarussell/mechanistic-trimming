@@ -1,6 +1,7 @@
 # (required) the following paths indicate the location of the project (PROJECT_PATH) and the location of where files should be written (OUTPUT PATH)
-OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/mechanistic-trimming/motif_data'
-PROJECT_PATH = '/home/mrussel2/mechanistic-trimming'
+OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/microhomology/mechanistic-trimming/motif_data'
+PROJECT_PATH = '/home/mrussel2/microhomology/mechanistic-trimming'
+ROOT_PATH ='/home/mrussel2/microhomology' 
 
 # (optional) Parsed TCR repertoire data (data located within the `emerson_parsed_TCRB.tgz` file available at https://doi.org/10.5281/zenodo.5719520)
 TCR_REPERTOIRE_DATA_parsimony = paste0(PROJECT_PATH, '/_ignore/emerson_stats/')
