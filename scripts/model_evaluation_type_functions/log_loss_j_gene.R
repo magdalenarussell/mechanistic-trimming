@@ -12,13 +12,13 @@ evaluate_loss <- function(motif_data) {
         parameter_count = 0
     } 
     # load J motif data, adjust weighting to reflect actual p_gene_given_subject weight for log loss calculation
-    source(paste0('scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH,'scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
     v_motif_path = get_subject_motif_output_location() 
     old_GENE_NAME = GENE_NAME
     old_TRIM_TYPE = TRIM_TYPE
     GENE_NAME <<- 'j_gene'
     TRIM_TYPE <<- 'j_trim'
-    source('scripts/data_compilation_functions.R', local = TRUE)
+    source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'), local = TRUE)
     j_motif_path = str_replace(v_motif_path, 'v_trim', 'j_trim')
     j_motif_data = aggregate_all_subject_data(j_motif_path)
     j_motif_data = calculate_subject_gene_weight(j_motif_data)

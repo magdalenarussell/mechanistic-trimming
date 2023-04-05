@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -59,9 +59,9 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
 
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject'
 
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
 
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data()

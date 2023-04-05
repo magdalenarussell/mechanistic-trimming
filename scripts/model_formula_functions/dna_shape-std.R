@@ -15,7 +15,7 @@ get_start_list <- function(motif_data, shapes = c('MGW', 'HelT', 'Roll', 'EP', '
     return(start_list)
 }
 
-source(paste0(PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/dna_shape.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/dna_shape.R'))
 
 get_model_formula <- function(shapes = c('MGW', 'HelT', 'Roll', 'EP', 'ProT')){
     all_positions = c()

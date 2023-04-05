@@ -95,7 +95,7 @@ calculate_cond_expected_log_loss <- function(model, sample_data){
 }
 
 get_per_run_model_evaluation_path <- function(type){
-    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'temp_evaluation', LOSS_GENE_WEIGHT, type) 
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'temp_evaluation', LOSS_GENE_WEIGHT, type) 
     if (!dir.exists(path)){
         dir.create(path, recursive = TRUE)
     }
@@ -140,4 +140,4 @@ compile_evaluation_results <- function(type){
     return(rbound)
 }
 
-source(paste0(PROJECT_PATH, '/scripts/model_evaluation_type_functions/', TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/model_evaluation_type_functions/', TYPE, '.R'))

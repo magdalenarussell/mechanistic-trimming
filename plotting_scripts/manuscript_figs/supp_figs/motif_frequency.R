@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -39,11 +39,11 @@ VALIDATION_TRIM_TYPE <<- args[2]
 VALIDATION_PRODUCTIVITY <<- 'nonproductive'
 VALIDATION_GENE_NAME <<- paste0(substring(VALIDATION_TRIM_TYPE, 1, 1), '_gene')
 
-source('plotting_scripts/plotting_functions.R')
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/residual_comparison_functions.R')
-source('scripts/analysis_scripts/pwm_profile_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/residual_comparison_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
 
 # load model
 if (MODEL_TYPE != 'null') {

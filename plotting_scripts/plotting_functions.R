@@ -1,5 +1,5 @@
-source(paste0('plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
-source(paste0(PROJECT_PATH, '/plotting_scripts/plot_paths.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
+source(paste0(MOD_PROJECT_PATH, '/plotting_scripts/plot_paths.R'))
 
 set_color_palette <- function(model_type_list, with_params = FALSE){
     require(RColorBrewer)

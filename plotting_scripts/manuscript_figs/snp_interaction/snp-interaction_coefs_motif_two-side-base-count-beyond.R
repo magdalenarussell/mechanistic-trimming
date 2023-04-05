@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -45,10 +45,10 @@ MODEL_TYPE <<- 'motif_two-side-base-count-beyond_snp-interaction-20717772'
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/individual_comparison_functions.R')
+source(paste0(MOD_PROJECT_PATH, 'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/individual_comparison_functions.R'))
 
 # get coefficient bootsrap results
 filename =  get_model_bootstrap_file_name() 
@@ -62,7 +62,7 @@ pwm$coefficient = -1*(pwm$coefficient)
 
 cols = colnames(pwm)[!(colnames(pwm) %in% c('snp_interaction', 'original_model_fit', 'zstat', 'iterations'))]
 heatmap_data = pwm[, ..cols]
-fwrite(heatmap_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/snp_interaction/coefs.tsv'), sep = '\t')
+fwrite(heatmap_data, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/snp_interaction/coefs.tsv'), sep = '\t')
 
 
 

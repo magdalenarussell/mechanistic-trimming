@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -64,7 +64,7 @@ stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta'
 LOSS_GENE_WEIGHT <<- args[17]
 stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs', 'p_gene_given_subject_all_seqs'))
 
-source('scripts/model_fitting_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
 
 if (MODEL_TYPE != 'null') {
     model = load_model()
@@ -78,9 +78,9 @@ TRIM_TYPE <<- VALIDATION_TRIM_TYPE
 GENE_NAME <<- VALIDATION_GENE_NAME
 PRODUCTIVITY <<- VALIDATION_PRODUCTIVITY
 
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
 
 validation_data = aggregate_validation_data(directory = VALIDATION_DATA_DIR)
 

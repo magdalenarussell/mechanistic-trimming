@@ -1,1 +1,1 @@
-source(paste0(PROJECT_PATH, '/scripts/annotation_specific_functions/bcr_seq_functions.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/annotation_specific_functions/bcr_seq_functions.R'))

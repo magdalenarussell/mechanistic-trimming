@@ -19,7 +19,7 @@ fit_rel_importance_model <- function(motif_data, formula = NULL){
 }
 
 get_per_run_rel_importance_model_path <- function(){
-    path = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'rel_importance', VALIDATION_TYPE, VALIDATION_TRIM_TYPE, VALIDATION_PRODUCTIVITY) 
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'rel_importance', VALIDATION_TYPE, VALIDATION_TRIM_TYPE, VALIDATION_PRODUCTIVITY) 
     if (!dir.exists(path)){
         dir.create(path, recursive = TRUE)
     }

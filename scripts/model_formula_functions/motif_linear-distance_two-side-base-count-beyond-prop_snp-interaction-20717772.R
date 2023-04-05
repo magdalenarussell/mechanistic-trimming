@@ -8,7 +8,7 @@ get_start_list <- function(motif_data){
     return(start_list)
 }
 
-source(paste0(PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/two_side_base_count.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/two_side_base_count.R'))
 
 get_model_formula <- function(){
     left_vars = get_all_base_variables('left')

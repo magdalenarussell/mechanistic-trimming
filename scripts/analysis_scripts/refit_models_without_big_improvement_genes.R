@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -53,12 +53,12 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
 TYPE <<- 'full_v_gene_family_loss'
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/residual_comparison_functions.R')
-source('scripts/analysis_scripts/pwm_profile_functions.R')
-source('scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/residual_comparison_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
 
 # Read in dist data
 predicted_trims1 = get_predicted_distribution_data() 
@@ -74,11 +74,10 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[14])
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[15])
 
-
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('scripts/analysis_scripts/pwm_profile_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
 
 # Read in dist data
 predicted_trims2 = get_predicted_distribution_data() 
@@ -101,7 +100,7 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
     model2 = MODEL_TYPE 
 }
 
-path = file.path(PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, MODEL_GROUP, GENE_WEIGHT_TYPE, paste0('compare_', model1, '-', model2) , paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+path = file.path(MOD_PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, MODEL_GROUP, GENE_WEIGHT_TYPE, paste0('compare_', model1, '-', model2) , paste0(TRIM_TYPE, '_', MOTIF_TYPE, '_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
 dir.create(path, recursive = TRUE)
  
 # get difference

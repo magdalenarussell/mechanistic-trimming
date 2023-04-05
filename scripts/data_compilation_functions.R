@@ -1,13 +1,13 @@
-source(paste0('scripts/motif_class_functions/', MOTIF_TYPE, '.R'))
-source(paste0('scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
-source(paste0('scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
-source(paste0('scripts/model_formula_functions/', MODEL_TYPE, '.R'))
-source(paste0('scripts/data_grouping_functions/', DATA_GROUP, '.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/', MOTIF_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_formula_functions/', MODEL_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/data_grouping_functions/', DATA_GROUP, '.R'))
 
 REQUIRED_COMMON_NUCS_5 <<- 10
 
 get_subject_motif_output_location <- function(){
-    output_location = file.path(OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data', DATA_GROUP)
+    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data', DATA_GROUP)
     return(output_location)
 }
 

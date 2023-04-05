@@ -12,7 +12,7 @@ evaluate_loss <- function(motif_data) {
         parameter_count = 0
     } 
     # adjust weighting to reflect actual p_gene_given_subject weight for log loss calculation
-    source(paste0('scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH,'scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
     motif_data = calculate_subject_gene_weight(motif_data)
     # compute conditional logistic loss value for training data 
     log_loss = calculate_cond_expected_log_loss(model, motif_data)

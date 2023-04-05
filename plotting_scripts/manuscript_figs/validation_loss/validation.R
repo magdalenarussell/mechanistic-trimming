@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(cli)
 library(devtools)
@@ -50,9 +50,9 @@ TYPE <<- 'log_loss'
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject' 
 stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs'))
 
-source('scripts/model_evaluation_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_evaluation_functions.R'))
 
 all_eval_results = data.table()
 
@@ -167,6 +167,6 @@ subset = subset[motif_type == MOTIF_TYPE]
 cols = c('nice_model_type', 'trim_type', 'productivity', 'nice_loss_type', 'loss')
 loss_data = subset[, ..cols]
 colnames(loss_data) = c('model_type', 'trim_type', 'productivity', 'loss_type', 'log_loss')
-fwrite(loss_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/validation_loss/loss.tsv'), sep = '\t')
+fwrite(loss_data, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/validation_loss/loss.tsv'), sep = '\t')
 
 
