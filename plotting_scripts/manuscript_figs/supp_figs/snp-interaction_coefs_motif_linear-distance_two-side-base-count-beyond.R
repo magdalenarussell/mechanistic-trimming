@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -45,10 +45,10 @@ MODEL_TYPE <<- 'motif_linear-distance_two-side-base-count-beyond-prop_snp-intera
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/individual_comparison_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/individual_comparison_functions.R'))
 
 # get pwm from coefficient bootstrap
 filename =  get_model_bootstrap_file_name() 

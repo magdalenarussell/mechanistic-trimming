@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -45,9 +45,9 @@ MODEL_TYPE <<- 'motif_two-side-base-count-beyond'
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
 
 # get motif data
 motif_data = aggregate_all_subject_data()
@@ -59,7 +59,7 @@ predicted_trims = get_predicted_distribution_data()
 
 cols = c('subject', 'gene', 'trim_length', 'empirical_prob', 'predicted_prob')
 plot_data = unique(predicted_trims[gene %in% top_genes][, ..cols])
-fwrite(plot_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_model/dists.tsv'), sep = '\t')
+fwrite(plot_data, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_model/dists.tsv'), sep = '\t')
 
 # plot a distribution for each gene
 for (gene in unique(top_genes)){

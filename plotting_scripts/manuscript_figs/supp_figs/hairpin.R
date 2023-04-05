@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(cli)
 library(devtools)
@@ -51,9 +51,9 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 TYPE <<- 'log_loss'
 all_types = c('log_loss', 'expected_log_loss', 'v_gene_family_loss', 'log_loss_j_gene', 'full_v_gene_family_loss')
 
-source('scripts/model_evaluation_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_evaluation_functions.R'))
 
 # get all model evaluation results (for all held-out groups)
 all_eval_results = data.table()

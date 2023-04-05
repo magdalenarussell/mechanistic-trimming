@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(foreach)
 library(doParallel)
@@ -45,12 +45,12 @@ MODEL_TYPE <<- 'two-side-base-count'
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(10)
 
 TYPE <<- 'v_gene_family_loss'
-source('scripts/data_compilation_functions.R')
-source('scripts/model_fitting_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/residual_comparison_functions.R')
-source('scripts/analysis_scripts/pwm_profile_functions.R')
-source('scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH, 'scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/residual_comparison_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
 
 genes = c('TRBV9', 'TRBV13')
 
@@ -112,7 +112,7 @@ cutoff = mean(c(min(no_outliers$slope), max(outliers$slope)))
 # calculate the difference
 wide$diff = wide[['motif_two-side-base-count-beyond']] - wide[['two-side-base-count']]
 
-fwrite(wide, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_exploration/hist.tsv'), sep = '\t')
+fwrite(wide, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_exploration/hist.tsv'), sep = '\t')
 
 # create histogram plot
 plot = ggplot(wide) +
@@ -167,7 +167,7 @@ names(colors) = model_types
 
 cols = c('model', 'subject', 'gene', 'trim_length', 'empirical_prob', 'predicted_prob')
 plot_data = unique(predictions[gene %in% genes][, ..cols])
-fwrite(plot_data, paste0(PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_exploration/dists.tsv'), sep = '\t')
+fwrite(plot_data, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_exploration/dists.tsv'), sep = '\t')
 
 # plot distributions for each gene
 for (gene_name in genes){

@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(cli)
 library(devtools)
@@ -55,9 +55,9 @@ TYPE <<- 'expected_log_loss'
 
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject'
 
-source('scripts/model_evaluation_functions.R')
-source('plotting_scripts/plotting_functions.R')
-source('plotting_scripts/model_evaluation_functions.R')
+source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_evaluation_functions.R'))
 
 # get all loss results
 path_name = get_per_run_model_evaluation_path(TYPE)

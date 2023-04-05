@@ -1,4 +1,4 @@
-source('config/config.R')
+source('mechanistic-trimming/config/config.R')
 
 library(cli)
 library(devtools)
@@ -44,10 +44,10 @@ types = c('v_gene_family_loss', 'full_v_gene_family_loss')
 # create a gene tree for each "most different" sequence protocol
 for (type in types) {
     TYPE <<- type
-    source('scripts/data_compilation_functions.R')
-    source('scripts/model_evaluation_functions.R')
-    source('plotting_scripts/plotting_functions.R')
-    source('plotting_scripts/model_evaluation_functions.R')
+    source(paste0(MOD_PROJECT_PATH, 'scripts/data_compilation_functions.R'))
+    source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+    source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
+    source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
 
     # assign cluster count and "most different" sequence protocol specific parameters
     if (TYPE == 'v_gene_family_loss'){

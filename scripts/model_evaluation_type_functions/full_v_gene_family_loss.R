@@ -2,7 +2,7 @@ HELD_OUT_FRACTION <<- NA
 REPETITIONS <<- NA 
 WRITE_INTERMEDIATE_LOSS <<- NA 
 
-source(paste0(PROJECT_PATH, '/scripts/model_evaluation_type_functions/evaluation_type_classes/gene_family.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/model_evaluation_type_functions/evaluation_type_classes/gene_family.R'))
 
 evaluate_loss <- function(motif_data) {
     gene_families = get_gene_families(cluster_count = 4, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
