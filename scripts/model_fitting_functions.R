@@ -1,5 +1,5 @@
-source(paste0(MOD_PROJECT_PATH,'scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_group_functions/', MODEL_GROUP, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_group_functions/', MODEL_GROUP, '.R'))
 
 get_positions <- function(){
     if (LEFT_NUC_MOTIF_COUNT > 0){
@@ -209,7 +209,7 @@ cluster_sample <- function(motif_data){
     counts = sample_genes_dt[, .N, by = sample_genes]
     motif_data = merge(motif_data, counts, by.x = 'cluster', by.y = 'sample_genes')
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
-    source(paste0(MOD_PROJECT_PATH,'scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
     sample_data = calculate_subject_gene_weight(motif_data)
     return(sample_data)
 }
@@ -287,7 +287,7 @@ subsample <- function(motif_data, prop){
     subj_subset_final = rbind(subj_subset_final, unsampled)
 
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
-    source(paste0(MOD_PROJECT_PATH,'scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
     sample_data = calculate_subject_gene_weight(subj_subset_final)
     return(sample_data)
 }

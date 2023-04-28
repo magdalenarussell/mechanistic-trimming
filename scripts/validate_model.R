@@ -18,14 +18,14 @@ ANNOTATION_TYPE <<- args[1]
 stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
 
 TRIM_TYPE <<- args[2]
-trim_types = list.files(path = 'scripts/gene_specific_functions/')
+trim_types = list.files(path = '/scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
 PRODUCTIVITY <<- args[3]
 
 MOTIF_TYPE <<- args[4] 
-motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = list.files(path = '/scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
@@ -64,7 +64,7 @@ stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta'
 LOSS_GENE_WEIGHT <<- args[17]
 stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs', 'p_gene_given_subject_all_seqs'))
 
-source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 if (MODEL_TYPE != 'null') {
     model = load_model()
@@ -78,9 +78,9 @@ TRIM_TYPE <<- VALIDATION_TRIM_TYPE
 GENE_NAME <<- VALIDATION_GENE_NAME
 PRODUCTIVITY <<- VALIDATION_PRODUCTIVITY
 
-source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_evaluation_functions.R'))
 
 validation_data = aggregate_validation_data(directory = VALIDATION_DATA_DIR)
 

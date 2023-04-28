@@ -18,14 +18,14 @@ ANNOTATION_TYPE <<- args[1]
 stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
 
 TRIM_TYPE <<- args[2]
-trim_types = list.files(path = 'scripts/gene_specific_functions/')
+trim_types = list.files(path = 'mechanistic-trimming/scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
 PRODUCTIVITY <<- args[3]
 
 MOTIF_TYPE <<- args[4] 
-motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = list.files(path = 'mechanistic-trimming/scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
@@ -63,8 +63,8 @@ stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta'
 
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject' 
 
-source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/rel_importance_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/analysis_scripts/rel_importance_functions.R'))
 
 model = load_model()
 pwm = get_model_coefficient_data()
@@ -76,10 +76,10 @@ TRIM_TYPE <<- VALIDATION_TRIM_TYPE
 GENE_NAME <<- VALIDATION_GENE_NAME
 PRODUCTIVITY <<- VALIDATION_PRODUCTIVITY
 
-source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH, 'scripts/model_fitting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/analysis_scripts/pwm_profile_functions.R'))
 
 validation_data = aggregate_validation_data(directory = VALIDATION_DATA_DIR)
 validation_data = get_model_feature_scores(validation_data, pwm)

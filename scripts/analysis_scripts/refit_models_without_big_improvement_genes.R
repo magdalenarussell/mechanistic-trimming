@@ -26,7 +26,7 @@ stopifnot(TRIM_TYPE == 'v_trim')
 PRODUCTIVITY <<- args[3]
 
 MOTIF_TYPE <<- args[4] 
-motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = list.files(path = 'mechanistic-trimming/scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
@@ -53,12 +53,12 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
 TYPE <<- 'full_v_gene_family_loss'
-source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/residual_comparison_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/residual_comparison_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/analysis_scripts/pwm_profile_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_evaluation_functions.R'))
 
 # Read in dist data
 predicted_trims1 = get_predicted_distribution_data() 
@@ -74,10 +74,10 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[14])
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[15])
 
-source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/analysis_scripts/pwm_profile_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/analysis_scripts/pwm_profile_functions.R'))
 
 # Read in dist data
 predicted_trims2 = get_predicted_distribution_data() 
