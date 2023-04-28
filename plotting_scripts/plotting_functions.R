@@ -1,4 +1,4 @@
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/model_group_functions/', MODEL_GROUP, '.R'))
 source(paste0(MOD_PROJECT_PATH, '/plotting_scripts/plot_paths.R'))
 
 set_color_palette <- function(model_type_list, with_params = FALSE){
@@ -42,7 +42,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
     end_position = -1 * pnuc_count + 0.5 
     start_position = nchar(gene_sequence) - pnuc_count - 0.5
     positions = seq(start_position, end_position, by = -1)
-    together = data.table(base = str_split(unlist(gene_sequence), '')[[1]], position = positions)
+    together = data.table(base = str_split(unlist(as.character(gene_sequence)), '')[[1]], position = positions)
     return(together)
 }
 
@@ -78,7 +78,7 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
     }
 
     plot = ggplot() +
-        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.3, color = "gray60") +
+        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.5, color = "gray60") +
         geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 1.75, color = color) +
         geom_vline(xintercept = 0, color = 'black', size = 2) +
         geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base, color = color), size = seq_text) +

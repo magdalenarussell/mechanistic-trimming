@@ -19,14 +19,14 @@ ANNOTATION_TYPE <<- args[1]
 stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
 
 TRIM_TYPE <<- args[2]
-trim_types = list.files(path = 'scripts/gene_specific_functions/')
+trim_types = list.files(path = 'mechanistic-trimming/scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
 PRODUCTIVITY <<- args[3]
 
 MOTIF_TYPE <<- args[4] 
-motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = list.files(path = 'mechanistic-trimming/scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
@@ -57,9 +57,9 @@ if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-cou
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
 
-source(paste0(MOD_PROJECT_PATH,'scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_fitting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/individual_comparison_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/individual_comparison_functions.R'))
 
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data()

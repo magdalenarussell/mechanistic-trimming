@@ -14,9 +14,9 @@ generate_hold_out_sample <- function(motif_data, sample_size){
         motif_data_subset = motif_data_subset[!sample_data, on = cols]
     }
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
-    source(paste0(MOD_PROJECT_PATH, 'scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
     motif_data_subset = calculate_subject_gene_weight(motif_data_subset)
-    source(paste0(MOD_PROJECT_PATH,'scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
     sample_data = calculate_subject_gene_weight(sample_data)
     return(list(sample = sample_data, motif_data_subset = motif_data_subset))
 }

@@ -1,8 +1,8 @@
 source(paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/', MOTIF_TYPE, '.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/model_formula_functions/', MODEL_TYPE, '.R'))
-source(paste0(MOD_PROJECT_PATH,'scripts/data_grouping_functions/', DATA_GROUP, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_formula_functions/', MODEL_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_grouping_functions/', DATA_GROUP, '.R'))
 
 REQUIRED_COMMON_NUCS_5 <<- 10
 
@@ -108,9 +108,17 @@ get_unobserved_nuc_context <- function(tcr_dataframe){
 filter_by_productivity <- function(data){
     stopifnot(PRODUCTIVITY %in% c('productive', 'nonproductive', 'both'))
     if (PRODUCTIVITY == 'productive'){
-        data = data[productive == TRUE]
+        if (all(unique(data$productive) %in% c(TRUE, FALSE))){
+            data = data[productive == TRUE]
+        } else {
+            data = data[productive == 'productive']
+        }
     } else if (PRODUCTIVITY == 'nonproductive'){
-        data = data[productive == FALSE]
+        if (all(unique(data$productive) %in% c(TRUE, FALSE))){
+            data = data[productive == FALSE]
+        } else {
+            data = data[productive == 'nonproductive']
+        }
     }
     return(data)
 }
