@@ -1,8 +1,6 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
 stopifnot(RIGHT_NUC_MOTIF_COUNT < 3)
 
-DATA_GROUP <<- 'ungrouped'
-
 get_start_list <- function(motif_data, shapes = c('MGW', 'HelT', 'Roll', 'EP', 'ProT')){
     start_list = NULL
     return(start_list)

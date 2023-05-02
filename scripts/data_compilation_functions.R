@@ -39,12 +39,6 @@ get_nuc_context <- function(whole_gene_seqs, trim_lengths){
      right_nuc_list = c()
      for (index in seq(1, length(whole_gene_seqs))){
         whole_gene_seq = DNAString(whole_gene_seqs[index])
-        trim_length = trim_lengths[index]
-        trimmed_gene_seq = substring(whole_gene_seq, 1, nchar(whole_gene_seq)-trim_length)
-        trimmed_length = nchar(trimmed_gene_seq)
-        original_trimmed_length = trimmed_length
-
-        left_nucs = substring(trimmed_gene_seq, trimmed_length - (REQUIRED_COMMON_NUCS_5 - 1), trimmed_length) 
         if (PNUC_COUNT > 0){
             possible_pnucs_5_to_3 = substring(reverseComplement(whole_gene_seq),1, PNUC_COUNT)
         } else if (PNUC_COUNT < 0){
@@ -55,6 +49,14 @@ get_nuc_context <- function(whole_gene_seqs, trim_lengths){
         }
 
         whole_gene_and_pnucs = c(unlist(whole_gene_seq), unlist(possible_pnucs_5_to_3))
+
+        trim_length = trim_lengths[index]
+        trimmed_gene_seq = substring(whole_gene_and_pnucs, 1, nchar(whole_gene_seq)-trim_length)
+        trimmed_length = nchar(trimmed_gene_seq)
+        original_trimmed_length = trimmed_length
+
+        left_nucs = substring(trimmed_gene_seq, trimmed_length - (REQUIRED_COMMON_NUCS_5 - 1), trimmed_length) 
+
         seq_right_of_trim = substring(whole_gene_and_pnucs, nchar(whole_gene_and_pnucs)-(trim_length + PNUC_COUNT) + 1, nchar(whole_gene_and_pnucs))
 
         if (nchar(seq_right_of_trim) < REQUIRED_COMMON_NUCS_5){
@@ -256,6 +258,9 @@ compile_data_for_subject <- function(file_path, write = TRUE){
     } else {
         motif_data = get_all_nuc_contexts(together, subject_id)
     }
+
+    motif_data = filter_motif_data_for_possible_sites(motif_data)
+
     if (isTRUE(write)){
         fwrite(motif_data, file = file.path(output_location, paste0(subject_id, '.tsv')), sep = '\t')
     } else {
@@ -298,4 +303,69 @@ get_raw_cdr3_seqs <- function(tcr_repertoire_file){
     data = fread(tcr_repertoire_file)
     cdr3s = data$cdr3_nucseq
     return(cdr3s)
+}
+
+get_frames_for_pair <- function(v_seq, v_frame, v_trim, j_seq, j_frame, j_trim){
+    # get processed V-gene sequence
+    adjusted_v_seq = substring(v_seq, v_frame) 
+    if (v_trim < 0){
+        adjusted_v_seq = paste0(adjusted_v_seq, paste0(rep('X', -1*v_trim), collapse = ''), collapse = '')
+    } else {
+        adjusted_v_seq = substring(adjusted_v_seq, 1, nchar(adjusted_v_seq) - v_trim)
+    }
+
+    # get processed J-gene sequence
+    j_extra = (nchar(j_seq) - (j_frame - 1))%%3
+    adjusted_j_seq = substring(j_seq, 1, nchar(j_seq) - j_extra)
+    if (j_trim < 0){
+        adjusted_j_seq = paste0(paste0(rep('X', -1*j_trim), collapse = ''), adjusted_j_seq, collapse = '')
+    } else {
+        adjusted_j_seq = substring(adjusted_j_seq, j_trim + 1)
+    }
+
+    tog = paste0(adjusted_v_seq, adjusted_j_seq, collapse = '')
+    frame = nchar(tog) %% 3
+    if (frame == 0){
+        frame_type = 'In'
+    } else {
+        frame_type = 'Out'
+    }
+    return(frame_type)
+}
+
+get_all_frames <- function(){
+    frames = fread('https://raw.githubusercontent.com/phbradley/conga/master/conga/tcrdist/db/combo_xcr.tsv')[organism == 'human' & chain == substring(CHAIN_TYPE, 3, 3)]
+
+    v = frames[region == 'V'][, c('id', 'frame', 'nucseq')]
+    colnames(v) = c('v_gene', 'v_frame', 'v_seq')
+    j = frames[region == 'J'][, c('id', 'frame', 'nucseq')]
+    colnames(j) = c('j_gene', 'j_frame', 'j_seq')
+
+    v$dummy = 1
+    j$dummy = 1
+
+    pairs = merge(v, j, by = 'dummy', allow.cartesian = TRUE)
+
+    trims = data.table(v_trim = rep(seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND), each = (UPPER_TRIM_BOUND - LOWER_TRIM_BOUND) + 1), j_trim = rep(seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND), (UPPER_TRIM_BOUND - LOWER_TRIM_BOUND) + 1))
+    trims$dummy = 1
+
+    pairs = merge(pairs, trims, by = 'dummy', allow.cartesian = TRUE)[, -c('dummy')]
+
+    pairs[, frame_type := apply(.SD, 1, function(x) get_frames_for_pair(x[1], as.numeric(x[2]), as.numeric(x[3]), x[4], as.numeric(x[5]), as.numeric(x[6]))), .SDcols = c("v_seq", "v_frame", "v_trim", "j_seq", "j_frame", "j_trim")]
+
+    return(pairs[, -c('v_seq', 'j_seq')])
+}
+
+get_frames_data <- function(){
+    path = file.path(ROOT_PATH, 'data')
+    dir.create(path)
+    file_name = file.path(path, paste0(CHAIN_TYPE, '_paired_frame_data_trims_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '.tsv'))
+
+    if (!file.exists(file_name)) {
+        frame_data = get_all_frames()
+        fwrite(frames_data, file_name, sep = '\t')
+    } else {
+        frame_data = fread(file_name)
+    }
+    return(frame_data)
 }

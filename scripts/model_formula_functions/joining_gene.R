@@ -1,6 +1,6 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT == 0 & RIGHT_NUC_MOTIF_COUNT == 0)
 
-DATA_GROUP <<- 'by_joining_gene'
+stopifnot(DATA_GROUP == 'by_joining_gene')
 
 get_start_list <- function(motif_data){
     genes = length(unique(motif_data$joining_gene)) - 1

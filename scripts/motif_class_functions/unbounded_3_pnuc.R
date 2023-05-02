@@ -1,4 +1,3 @@
-LOWER_TRIM_BOUND <<- 2 
 PNUC_COUNT <<- 3
 
 get_all_nuc_contexts <- function(tcr_dataframe, subject_id){

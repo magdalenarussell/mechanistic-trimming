@@ -16,3 +16,6 @@ sum_trim_observations <- function(condensed_tcr_dataframe){
     return(summed)
 }
 
+filter_motif_data_for_possible_sites <- function(motif_data){
+    return(motif_data)
+}

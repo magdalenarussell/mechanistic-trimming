@@ -1,7 +1,5 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
 
-DATA_GROUP <<- 'ungrouped'
-
 get_start_list <- function(motif_data){
     dists = 1
     positions = length(get_positions())
