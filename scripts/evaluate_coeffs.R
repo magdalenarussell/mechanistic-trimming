@@ -16,41 +16,47 @@ blas_set_num_threads(1)
 args = commandArgs(trailingOnly=TRUE)
 
 ANNOTATION_TYPE <<- args[1]
-stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
+stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony', 'alpha'))
 
-TRIM_TYPE <<- args[2]
-trim_types = list.files(path = 'scripts/gene_specific_functions/')
+DATA_GROUP <<- args[2]
+group_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/data_grouping_functions/'))
+group_types = str_sub(group_types, end = -3)
+stopifnot(DATA_GROUP %in% group_types)
+
+TRIM_TYPE <<- args[3]
+trim_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/gene_specific_functions/'))
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-PRODUCTIVITY <<- args[3]
+PRODUCTIVITY <<- args[4]
 
-MOTIF_TYPE <<- args[4] 
-motif_types = list.files(path = 'scripts/motif_class_functions/')
+MOTIF_TYPE <<- args[5] 
+motif_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/'))
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
-NCPU <<- as.numeric(args[5])
+NCPU <<- as.numeric(args[6])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 
 # NOTE: This method is only applicable for models fit across all subjects!
 MODEL_GROUP <<- 'all_subjects'
 
-GENE_WEIGHT_TYPE <<- args[6]
+GENE_WEIGHT_TYPE <<- args[7]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
+UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
+LOWER_TRIM_BOUND <<- as.numeric(args[11])
 
-MODEL_TYPE <<- args[10]
+MODEL_TYPE <<- args[12]
 
 if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE) | grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[13])
 } else {
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }

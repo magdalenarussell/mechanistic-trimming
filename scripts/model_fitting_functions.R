@@ -79,7 +79,7 @@ get_predicted_dist_file_path <- function(){
     } else {
         model = MODEL_TYPE
     }
-    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_trimming_distributions'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_trimming_distributions'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
     dir.create(path, recursive = TRUE)
     return(path)
 }
@@ -183,7 +183,7 @@ get_pwm_matrix_file_path <- function(){
     } else {
         model = MODEL_TYPE
     }
-    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficient_matrix'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE,DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficient_matrix'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
     dir.create(path, recursive = TRUE)
     
     return(path)
@@ -195,7 +195,7 @@ get_coefficient_output_file_path <- function(){
     } else {
         model = MODEL_TYPE
     }
-    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficients'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE,DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(MODEL_GROUP, '_predicted_coefficients'), GENE_WEIGHT_TYPE, paste0('motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT), model)
     dir.create(path, recursive = TRUE)
     
     return(path)
@@ -312,7 +312,7 @@ subsample_model_fit <- function(motif_data, formula = get_model_formula(), iter,
 
 
 get_model_bootstrap_path <- function(){
-    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'model_bootstrap') 
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE,DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, 'model_bootstrap') 
     if (!dir.exists(path)){
         dir.create(path, recursive = TRUE)
     }
@@ -326,7 +326,7 @@ get_model_bootstrap_file_name <- function(){
 }
 
 get_model_subsample_path <- function(){
-    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, 'model_subsample') 
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE,DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, 'model_subsample') 
     if (!dir.exists(path)){
         dir.create(path, recursive = TRUE)
     }
@@ -340,8 +340,8 @@ get_model_subsample_file_name <- function(prop){
 }
 
 get_model_name <- function(){
-    dir = file.path(MOD_PROJECT_PATH, 'models', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY) 
-    dir.create(dir)
+    dir = file.path(MOD_PROJECT_PATH, 'models', ANNOTATION_TYPE,DATA_GROUP, TRIM_TYPE, PRODUCTIVITY) 
+    dir.create(dir, recursive = TRUE)
     file = file.path(dir, paste0(MODEL_TYPE, '_', MOTIF_TYPE, '_motif_', LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND, '_', GENE_WEIGHT_TYPE, '.rds'))
     return(file)
 }

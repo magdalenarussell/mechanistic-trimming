@@ -17,47 +17,52 @@ args = commandArgs(trailingOnly=TRUE)
 ANNOTATION_TYPE <<- args[1]
 stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
 
-TRIM_TYPE <<- args[2]
+DATA_GROUP <<- args[2]
+group_types = list.files(path = 'scripts/data_grouping_functions/')
+group_types = str_sub(group_types, end = -3)
+stopifnot(DATA_GROUP %in% group_types)
+
+TRIM_TYPE <<- args[3]
 trim_types = list.files(path = 'mechanistic-trimming/scripts/gene_specific_functions/')
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-PRODUCTIVITY <<- args[3]
+PRODUCTIVITY <<- args[4]
 
-MOTIF_TYPE <<- args[4] 
+MOTIF_TYPE <<- args[5] 
 motif_types = list.files(path = 'mechanistic-trimming/scripts/motif_class_functions/')
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
-NCPU <<- as.numeric(args[5])
+NCPU <<- as.numeric(args[6])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 
-MODEL_GROUP <<- args[6]
+MODEL_GROUP <<- args[7]
 
-GENE_WEIGHT_TYPE <<- args[7]
+GENE_WEIGHT_TYPE <<- args[8]
 stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[10])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
-LOWER_TRIM_BOUND <<- 2
+UPPER_TRIM_BOUND <<- as.numeric(args[11]) 
+LOWER_TRIM_BOUND <<- as.numeric(args[12])
 
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond'
 
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
+LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[13])
 
 if (!(grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE)| grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE))){
     LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 }
 
-VALIDATION_DATA_DIR <<- args[12]
-VALIDATION_TYPE <<- args[13]
-VALIDATION_TRIM_TYPE <<- args[14]
-VALIDATION_PRODUCTIVITY <<- args[15]
+VALIDATION_DATA_DIR <<- args[14]
+VALIDATION_TYPE <<- args[15]
+VALIDATION_TRIM_TYPE <<- args[16]
+VALIDATION_PRODUCTIVITY <<- args[17]
 VALIDATION_GENE_NAME <<- paste0(substring(VALIDATION_TRIM_TYPE, 1, 1), '_gene')
 stopifnot(VALIDATION_TYPE %in% c('validation_data_alpha', 'validation_data_beta', 'validation_data_gamma', 'validation_data_delta', 'validation_data_igh', 'validation_data_igk', 'validation_data_igl', 'igor'))
 

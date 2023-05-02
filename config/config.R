@@ -1,13 +1,17 @@
 # (required) the following paths indicate the location of the project
 # (MOD_PROJECT_PATH) and the location of where files should be written (MOD_OUTPUT PATH)
-MOD_OUTPUT_PATH = '/fh/fast/matsen_e/shared/tcr-gwas/microhomology/mechanistic-trimming/motif_data'
-MOD_PROJECT_PATH = '/home/mrussel2/microhomology/mechanistic-trimming'
-ROOT_PATH ='/home/mrussel2/microhomology' 
+MOD_OUTPUT_PATH <<- '/fh/fast/matsen_e/shared/tcr-gwas/microhomology/mechanistic-trimming/motif_data'
+MOD_PROJECT_PATH <<- '/home/mrussel2/microhomology/mechanistic-trimming'
+ROOT_PATH <<- '/home/mrussel2/microhomology' 
+PROJECT_PATH <<- ROOT_PATH
 
 # (optional) Parsed TCR repertoire data (data located within the `emerson_parsed_TCRB.tgz` file available at https://doi.org/10.5281/zenodo.5719520)
 TCR_REPERTOIRE_DATA_parsimony = paste0(MOD_PROJECT_PATH, '/_ignore/emerson_stats/')
 # (required) Training data set; change the path to these data after IGoR processing
 TCR_REPERTOIRE_DATA_igor = paste0(MOD_PROJECT_PATH, '/_ignore/emerson_igor_stats/')
+
+TCR_REPERTOIRE_DATA_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/soto_alpha_vdjserver/')
+
 
 # (required) TRB gene names and germline sequences from IMGT
 WHOLE_NUCSEQS_igor = paste0(MOD_PROJECT_PATH,'/_ignore/igor_imgt_genes.tsv')

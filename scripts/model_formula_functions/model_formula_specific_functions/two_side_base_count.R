@@ -53,16 +53,29 @@ get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMI
         left_position_shift = 0
     }
 
-    if (isFALSE(single_stranded)){
-        together[, right_seq := substring(sequence, nchar(sequence) - trim_length + 1 + right_position_shift, nchar(sequence)-abs(PNUC_COUNT))]
+    require(Biostrings)
+    seq = DNAStringSet(together$sequence)
+    if (PNUC_COUNT > 0){
+        possible_pnucs_5_to_3 = substring(reverseComplement(seq),1, PNUC_COUNT)
+    } else if (PNUC_COUNT < 0){
+        possible_pnucs_5_to_3 = DNAString() 
+        seq = substring(seq, 1, nchar(seq) + PNUC_COUNT)             
     } else {
-        together[, right_seq := substring(sequence, nchar(sequence) - trim_length + 1 + right_position_shift, nchar(sequence))]
+        possible_pnucs_5_to_3 = DNAString() 
+    }
+
+    together$sequence_pnuc = paste(as.character(seq), as.character(possible_pnucs_5_to_3), sep = '')
+
+    if (isFALSE(single_stranded)){
+        together[, right_seq := substring(sequence_pnuc, nchar(sequence_pnuc) - trim_length + 1 + right_position_shift - abs(PNUC_COUNT), nchar(sequence_pnuc)-2*abs(PNUC_COUNT))]
+    } else {
+        together[, right_seq := substring(sequence_pnuc, nchar(sequence_pnuc) - trim_length + 1 + right_position_shift - abs(PNUC_COUNT), nchar(sequence_pnuc))]
     }
 
     if (is.numeric(left_nuc_count)){
-        together[, left_seq := substring(sequence, nchar(sequence) - (trim_length + left_nuc_count) + 1, nchar(sequence)-trim_length - left_position_shift)]
+        together[, left_seq := substring(sequence_pnuc, nchar(sequence_pnuc) - (trim_length + left_nuc_count) + 1 - abs(PNUC_COUNT), nchar(sequence_pnuc)-trim_length - left_position_shift - abs(PNUC_COUNT))]
     } else if (left_nuc_count == 'right_nuc_count') {
-        together[, left_seq := substring(sequence, nchar(sequence) - (trim_length + nchar(right_seq)) + 1, nchar(sequence)-trim_length - left_position_shift)]
+        together[, left_seq := substring(sequence_pnuc, nchar(sequence_pnuc) - (trim_length + nchar(right_seq)) + 1 - abs(PNUC_COUNT), nchar(sequence_pnuc)-trim_length - left_position_shift - abs(PNUC_COUNT))]
     }
    
     motif_data_together = merge(motif_data, unique(together[, -c('sequence')]), by = c('gene', 'trim_length'))
