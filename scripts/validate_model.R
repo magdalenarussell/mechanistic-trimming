@@ -41,7 +41,9 @@ GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 MODEL_GROUP <<- args[7]
 
 GENE_WEIGHT_TYPE <<- args[8]
-stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
+weight_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/'))
+weight_types = str_sub(weight_types, end = -3)
+stopifnot(GENE_WEIGHT_TYPE %in% weight_types)
 
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
