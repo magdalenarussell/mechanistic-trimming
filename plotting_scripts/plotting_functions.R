@@ -42,7 +42,7 @@ get_plot_positions_for_gene_sequence <- function(gene_sequence, pnuc_count = 2){
     end_position = -1 * pnuc_count + 0.5 
     start_position = nchar(gene_sequence) - pnuc_count - 0.5
     positions = seq(start_position, end_position, by = -1)
-    together = data.table(base = str_split(unlist(gene_sequence), '')[[1]], position = positions)
+    together = data.table(base = str_split(as.character(unlist(gene_sequence)), '')[[1]], position = positions)
     return(together)
 }
 
@@ -60,17 +60,22 @@ get_motif_colors <- function(gene_seq_positions, motif, highlight_color){
     return(gene_seq_positions)
 }
 
-plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name = NULL, ylim = NULL, write_plot = TRUE, color = 'blue', motif_highlight_color = 'black', motif_highlight = c('CTT', 'CGT'), seq_text = 7){
+plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_name = NULL, ylim = NULL, write_plot = TRUE, color = 'blue', motif_highlight_color = 'black', motif_highlight = c('CTT', 'CGT'), seq_text = 7, predictions = TRUE){
     important_cols = c('trim_length', 'predicted_prob', 'gene')
-    predicted_data = data[gene == gene_name, ..important_cols]
-    empirical_data = data[gene == gene_name][order(subject, trim_length)]
-    total_tcrs = paste(data[gene == gene_name, sum(count)])
+    if (!is.null(gene_name)){
+        subset = data[gene == gene_name]
+        # get gene sequence
+        gene_seq = get_gene_sequence(gene_name, max(data$trim_length))
+        gene_seq_with_positions = get_plot_positions_for_gene_sequence(gene_seq)
+        gene_seq_with_positions =get_motif_colors(gene_seq_with_positions, motif_highlight, 'motif')
+    } else {
+        subset = data
+    }
+    predicted_data = subset[, ..important_cols]
+    empirical_data = subset[order(subject, trim_length)]
+    total_tcrs = paste(subset[, sum(count)])
     title = paste0(gene_name, ', Total TCR count = ', total_tcrs)
-    # get gene sequence
-    gene_seq = get_gene_sequence(gene_name, max(data$trim_length))
-    gene_seq_with_positions = get_plot_positions_for_gene_sequence(gene_seq)
-    gene_seq_with_positions =get_motif_colors(gene_seq_with_positions, motif_highlight, 'motif')
-        
+       
     if (!is.null(ylim)){
         max_prob = ylim
     } else {
@@ -78,12 +83,14 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
     }
 
     plot = ggplot() +
-        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.3, color = "gray60") +
-        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 1.75, color = color) +
+        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.3, color = "gray60") 
+    
+    if (predictions == TRUE){
+    plot = plot +
+        geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 1.75, color = color) 
+    }
+    plot = plot + 
         geom_vline(xintercept = 0, color = 'black', size = 2) +
-        geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base, color = color), size = seq_text) +
-        geom_text(y = max_prob, aes(x = -2.1), label = '3\'- ', size = seq_text - 1) +
-        geom_text(y = max_prob, aes(x = UPPER_TRIM_BOUND + 0.1), label = ' -5\'', size = seq_text - 1) +
         ggtitle(title) +
         xlab('Number of trimmed nucleotides') +
         ylab('Probability') +
@@ -92,6 +99,13 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
         background_grid(major = 'xy') + 
         panel_border(color = 'gray60', size = 1.5) +
         scale_color_manual(values = c(motif = motif_highlight_color, black = 'black'))
+
+    if (!is.null(gene_name)){
+        plot = plot +
+            geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base, color = color), size = seq_text) +
+            geom_text(y = max_prob, aes(x = -2.1), label = '3\'- ', size = seq_text - 1) +
+            geom_text(y = max_prob, aes(x = UPPER_TRIM_BOUND + 0.1), label = ' -5\'', size = seq_text - 1) 
+    }
     
     if (isTRUE(write_plot)){
         stopifnot(!is.null(file_name))
