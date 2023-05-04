@@ -7,7 +7,7 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/data_grouping_functions/', DATA_GROUP, 
 REQUIRED_COMMON_NUCS_5 <<- 10
 
 get_subject_motif_output_location <- function(){
-    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data', DATA_GROUP)
+    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data')
     return(output_location)
 }
 

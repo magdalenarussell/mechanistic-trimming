@@ -60,7 +60,7 @@ get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_se
     require(RColorBrewer)
     colors = brewer.pal(cluster_count, 'Set2')
 
-    plot(as.phylo(clusters), type = 'unrooted', tip.color = colors[clusters_grouped], no.margin = TRUE)
+    # plot(as.phylo(clusters), type = 'unrooted', tip.color = colors[clusters_grouped], no.margin = TRUE)
 
     together = merge(seqs, as.data.table(clusters_grouped_df), by = gene_var)
     return(list(cluster_data = together, tree = as.phylo(clusters), dists = dist_format))
@@ -70,9 +70,9 @@ generate_hold_out_sample <- function(motif_data, cluster_genes){
     motif_data_subset = motif_data[!(gene %in% cluster_genes)]
     sample_data = motif_data[gene %in% cluster_genes]
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
-    source(paste0('scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
     motif_data_subset = calculate_subject_gene_weight(motif_data_subset)
-    source(paste0('scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
     sample_data = calculate_subject_gene_weight(sample_data)
     return(list(sample = sample_data, motif_data_subset = motif_data_subset))
 }
