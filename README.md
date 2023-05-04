@@ -1,5 +1,5 @@
 # mechanistic-trimming 
-The goal of this project is to use model-based statistical inference to identify the sequence-level determinants of nucleotide trimming during V(D)J recomination of adaptive immune receptor loci.
+The goal of this project is to use model-based statistical inference to identify the sequence-level determinants of nucleotide trimming during V(D)J recombination of adaptive immune receptor loci.
 
 # Install
 Everything R 4.1.3 based. R packages that are required can be installed via [miniconda](https://docs.conda.io/en/latest/miniconda.html): 
@@ -204,7 +204,7 @@ If you would like to evaluate whether model coefficients vary in the context of 
 With this analysis, we want to quantify the sequence-level determinants of nucleotide trimming during V(D)J recombination.
 See the manuscript for specific model and methods details: 
 
-Russell, Magdalena L., Noah Simon, Philip Bradley, and Frederick A. Matsen IV. 2022. "Statistical inference reveals the role of length, breathing, and nucleotide identity in V(D)J nucleotide trimming." In preparation.
+Russell, M. L., Simon, N., Bradley, P., & Matsen, F. A. (2022). Statistical inference reveals the role of length, breathing, and nucleotide identity in V(D)J nucleotide trimming. In bioRxiv (p. 2022.12.08.519635). https://doi.org/10.1101/2022.12.08.519635
 
 The following packages were especially helpful in our analyses:
 
