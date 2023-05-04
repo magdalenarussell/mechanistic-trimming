@@ -21,14 +21,14 @@ blas_set_num_threads(1)
 ANNOTATION_TYPE <<- 'igor' 
 
 TRIM_TYPE <<- 'v_trim' 
-trim_types = list.files(path = 'scripts/gene_specific_functions/')
+trim_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/gene_specific_functions/'))
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
 PRODUCTIVITY <<- 'nonproductive'
 
 MOTIF_TYPE <<- 'unbounded' 
-motif_types = list.files(path = 'scripts/motif_class_functions/')
+motif_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/'))
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
@@ -56,9 +56,9 @@ all_types = c('log_loss', 'expected_log_loss', 'v_gene_family_loss', 'log_loss_j
 
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject'
 
-source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_evaluation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/model_evaluation_functions.R'))
 
 # get all loss results
 all_eval_results = data.table()
