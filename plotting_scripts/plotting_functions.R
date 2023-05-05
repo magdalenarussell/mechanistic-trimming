@@ -78,7 +78,7 @@ plot_predicted_trimming_dists_single_group <- function(data, gene_name, file_nam
     }
 
     plot = ggplot() +
-        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1, alpha = 0.5, color = "gray60") +
+        geom_line(data = empirical_data, aes(x = trim_length, y = empirical_prob, group = subject), size = 1.75, alpha = 0.8, color = "gray60") +
         geom_line(data = predicted_data, aes(x = trim_length, y = predicted_prob), size = 1.75, color = color) +
         geom_vline(xintercept = 0, color = 'black', size = 2) +
         geom_text(data = gene_seq_with_positions, y = max_prob, aes(x = position, label = base, color = color), size = seq_text) +
