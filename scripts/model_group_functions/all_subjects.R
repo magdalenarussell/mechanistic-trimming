@@ -10,12 +10,13 @@ get_coefficient_output_file_name <- function(subgroup){
     return(paste0(MODEL_GROUP, '_weighting_with_', GENE_WEIGHT_TYPE, '.tsv'))
 }
 
-fit_model_by_group <- function(motif_data, formula = get_model_formula(), write_coeffs = TRUE){
-    model = fit_model(motif_data, formula)
+fit_model_by_group <- function(motif_data, formula = get_model_formula(trim_type = TRIM_TYPE, gene_type = GENE_NAME), write_coeffs = TRUE, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    model = fit_model(motif_data, formula, trim_type)
 
     # get predicted probabilities and empirical probabilities
     motif_data$predicted_prob = predict(model, type = 'response')
-    motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
+    cols = c('subject', paste0(gene_type, '_group'))
+    motif_data[, empirical_prob := count/sum(count), by = cols]
     motif_data$model_group = MODEL_GROUP
 
     # save file
@@ -34,7 +35,7 @@ fit_model_by_group <- function(motif_data, formula = get_model_formula(), write_
 
     if (grepl('motif', MODEL_TYPE, fixed = TRUE)){
         # calculate coeffiecients
-        pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')$result
+        pwm_matrix = get_coefficient_matrix(motif_data, ref_base = 'A', trim_type = trim_type)$result
         pwm_dt = as.data.table(pwm_matrix)
         pwm_dt$base = rownames(pwm_matrix)
         pwm_dt$model_group = MODEL_GROUP
@@ -49,9 +50,9 @@ fit_model_by_group <- function(motif_data, formula = get_model_formula(), write_
         }
 
         # get all coefficients
-        coefs = format_model_coefficient_output(model, pwm_dt)
+        coefs = format_model_coefficient_output(model, pwm_dt, trim_type = trim_type)
     } else {
-        coefs = format_model_coefficient_output(model)
+        coefs = format_model_coefficient_output(model, trim_type = trim_type)
     }
     coefs$model_group = MODEL_GROUP
     if (isTRUE(write_coeffs)){

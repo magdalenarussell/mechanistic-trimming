@@ -4,7 +4,7 @@ WRITE_INTERMEDIATE_LOSS <<- NA
 
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_evaluation_type_functions/evaluation_type_classes/gene_family.R'))
 
-evaluate_loss <- function(motif_data) {
+evaluate_loss <- function(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME) {
     gene_families = get_gene_families(cluster_count = 4, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
     cluster_counts = gene_families[, .N, by = clusters_grouped]
     largest_cluster = cluster_counts[N == max(N)]$clusters_grouped
@@ -16,18 +16,18 @@ evaluate_loss <- function(motif_data) {
     genes = c()
     clusters = c()
     for (cluster_group in c(as.list(held_out_clusters), list(held_out_clusters))) {
-        held_out_genes = unique(gene_families[clusters_grouped %in% cluster_group]$gene)
+        held_out_genes = unique(gene_families[clusters_grouped %in% cluster_group][[paste0(gene_type, '_group')]])
         if (length(unique(substring(held_out_genes, 1, 6))) == 1) {
             next
         }
         # Generate a held out sample and motif data subset
-        sample_data = generate_hold_out_sample(motif_data, held_out_genes) 
+        sample_data = generate_hold_out_sample(motif_data, held_out_genes, gene_type = gene_type, trim_type = trim_type) 
         motif_data_subset = sample_data$motif_data_subset
         sample = sample_data$sample
 
         # Fit model to the motif_data_subset
         if (MODEL_TYPE != 'null'){
-            model = fit_model(motif_data_subset)
+            model = fit_model(motif_data_subset, trim_type = trim_type)
             parameter_count_vector = c(parameter_count_vector, length(model$coefficients)) 
         } else {
             model = 'null'
@@ -35,7 +35,7 @@ evaluate_loss <- function(motif_data) {
         }
 
         # Compute conditional logistic loss value for held out sample using model
-        log_loss = calculate_cond_expected_log_loss(model, sample)
+        log_loss = calculate_cond_expected_log_loss(model, sample, trim_type = trim_type, gene_type = gene_type)
         log_loss_vector = c(log_loss_vector, log_loss)
        
         held_out_genes = paste(held_out_genes, collapse = ', ')

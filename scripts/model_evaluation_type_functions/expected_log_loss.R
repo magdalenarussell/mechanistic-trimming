@@ -1,48 +1,49 @@
 HELD_OUT_FRACTION <<- 0.4
 REPETITIONS <<- 20
 
-generate_hold_out_sample <- function(motif_data, sample_size){
-    stopifnot(sample_size < length(unique(motif_data$gene)))
+generate_hold_out_sample <- function(motif_data, sample_size, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    stopifnot(sample_size < length(unique(motif_data[[paste0(gene_type, '_group')]])))
     # sample size is the number of gene, subject combos
-    sample_genes = sample(unique(motif_data$gene), sample_size, replace = FALSE)
+    sample_genes = sample(unique(motif_data[[paste0(gene_type, '_group')]]), sample_size, replace = FALSE)
     sample_data = data.table()
     motif_data_subset = motif_data
+    var = paste0(gene_type, '_group')
     for (sample in sample_genes){
-        temp = motif_data[gene == sample]
+        temp = motif_data[get(var) == sample]
         sample_data = rbind(sample_data, temp)
         cols = colnames(sample_data)
         motif_data_subset = motif_data_subset[!sample_data, on = cols]
     }
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
     source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
-    motif_data_subset = calculate_subject_gene_weight(motif_data_subset)
-    source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
-    sample_data = calculate_subject_gene_weight(sample_data)
+    motif_data_subset = calculate_subject_gene_weight(motif_data_subset, gene_type = gene_type, trim_type = trim_type)
+    source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/p_gene_pooled.R'), local = TRUE)
+    sample_data = calculate_subject_gene_weight(sample_data, gene_type = gene_type, trim_type = trim_type)
     return(list(sample = sample_data, motif_data_subset = motif_data_subset))
 }
 
-get_hold_out_sample_probability <- function(sample_size, motif_data){
-    total_genes = length(unique(motif_data$gene))
+get_hold_out_sample_probability <- function(sample_size, motif_data, gene_type = GENE_NAME){
+    total_genes = length(unique(motif_data[[paste0(gene_type, '_group')]]))
     prob = (1/total_genes)^sample_size
     return(prob)
 }
 
-evaluate_loss <- function(motif_data) {
+evaluate_loss <- function(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME) {
     set.seed(66)
-    gene_count = length(unique(motif_data$gene))
+    gene_count = length(unique(motif_data[[paste0(gene_type, '_group')]]))
     held_out_gene_count = round(HELD_OUT_FRACTION*gene_count)
     log_loss_vector = c()
     sample_prob_vector = c()
     parameter_count_vector = c()
     for (rep in 1:REPETITIONS){
         # Generate a held out sample and motif data subset
-        sample_data = generate_hold_out_sample(motif_data, sample_size = held_out_gene_count) 
+        sample_data = generate_hold_out_sample(motif_data, sample_size = held_out_gene_count, gene_type = gene_type, trim_type = trim_type) 
         motif_data_subset = sample_data$motif_data_subset
         sample = sample_data$sample
 
         # Fit model to the motif_data_subset
         if (MODEL_TYPE != 'null'){
-            model = fit_model(motif_data_subset)
+            model = fit_model(motif_data_subset, trim_type = trim_type)
             parameter_count_vector = c(parameter_count_vector, length(model$coefficients)) 
         } else {
             model = 'null'
@@ -50,7 +51,7 @@ evaluate_loss <- function(motif_data) {
         }
 
         # Compute conditional logistic loss value for held out sample using model
-        log_loss = calculate_cond_expected_log_loss(model, sample)
+        log_loss = calculate_cond_expected_log_loss(model, sample, trim_type = trim_type, gene_type = gene_type)
         log_loss_vector = c(log_loss_vector, log_loss)
 
         # Compute probability of held out sample

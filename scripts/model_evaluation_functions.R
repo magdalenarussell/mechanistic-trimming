@@ -50,39 +50,58 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     }
 }
 
-aggregate_validation_data <- function(directory){
+aggregate_validation_data <- function(directory, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
     files = fs::dir_ls(path = directory)
     registerDoParallel(cores=NCPU)
     together = foreach(file = files, .combine=rbind) %dopar% {
         print(paste(file))
-        temp = compile_data_for_subject(file, write = FALSE)
+        temp = compile_data_for_subject(file, write = FALSE, gene_type = gene_type, trim_type = trim_type)
         if (nrow(temp) > 0) {
             temp
         }
     }
     
+    # TODO make sure all of the following functions work on all motifs
     if (MODEL_TYPE %like% 'dna_shape') {
         together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
-        processed_motif_data = process_data_for_model_fit(together)
+        processed_motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
         motif_data = convert_data_to_motifs(processed_motif_data)
     } else {
         together = convert_data_to_motifs(together)
-        motif_data = process_data_for_model_fit(together)
+        motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
     }
 
-    #remove genes with ambiguous bases
-    amb = unique(motif_data[motif %like% 'N']$gene)
-    motif_data = motif_data[!(gene %in% amb)]
+    cols = colnames(motif_data)[!(colnames(motif_data) %like% 'left_nucs')]
+    cols = cols[!(cols %like% 'right_nucs')]
 
-    motif_data = motif_data[, -c('left_nucs', 'right_nucs', 'left_motif', 'right_motif')]
-    together_pos = split_motif_column_by_motif_position(motif_data) 
-    weighted_together = calculate_subject_gene_weight(together_pos)
+    #remove genes with ambiguous bases
+    motvar = paste0(trim_type, '_motif')
+    genevar = paste0(gene_type, '_group')
+    amb = unique(motif_data[get(motvar) %like% 'N'][[paste0(gene_type, '_group')]])
+    motif_data = motif_data[!(get(genevar) %in% amb)]
+
+    motif_data = motif_data[, ..cols]
+    together_pos = split_motif_column_by_motif_position(motif_data, trim_type) 
+    weighted_together = calculate_subject_gene_weight(together_pos, gene_type = gene_type, trim_type = trim_type)
     stopImplicitCluster()
     return(weighted_together)
 }
 
-calculate_cond_expected_log_loss <- function(model, sample_data){
+calculate_cond_expected_log_loss <- function(model, sample_data, trim_type = TRIM_TYPE, joining_trim = JOINING_TRIM, gene_type = GENE_NAME, joining_gene_type = JOINING_GENE){
     #TODO switch this function to mclogit.predict (if typo is fixed..."contasts")
+    if (any(names(model$coefficients) %like% 'motif')){
+        require(stringr)
+        mot_names = str_sub(names(model$coefficients)[names(model$coefficients) %like% 'motif'], end = -2)
+        temp_model_names = c(names(model$coefficients)[!(names(model$coefficients) %like% 'motif')], mot_names)
+    } else {
+        temp_model_names = names(model$coefficients)
+    }
+
+    if (!all(temp_model_names %in% colnames(sample_data))){
+        colnames(sample_data) = str_replace_all(colnames(sample_data), as.character(trim_type), as.character(joining_trim))
+        colnames(sample_data) = str_replace_all(colnames(sample_data), as.character(gene_type), as.character(joining_gene_type))
+        stopifnot(all(temp_model_names %in% colnames(sample_data)))
+    }
     if (MODEL_TYPE != 'null') {
         sample_data$prediction = temp_predict(model, newdata = sample_data)
     } else {
