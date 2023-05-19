@@ -23,60 +23,43 @@ group_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/data_grouping
 group_types = str_sub(group_types, end = -3)
 stopifnot(DATA_GROUP %in% group_types)
 
-TRIM_TYPE <<- args[3]
-trim_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/gene_specific_functions/'))
-trim_types = str_sub(trim_types, end = -3)
-stopifnot(TRIM_TYPE %in% trim_types)
+PARAM_GROUP <<- args[3]
+param_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/param_groups/'))
+param_types = str_sub(param_types, end = -3)
+stopifnot(PARAM_GROUP %in% param_types)
+source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
 
-PRODUCTIVITY <<- args[4]
-
-MOTIF_TYPE <<- args[5] 
-motif_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/'))
-motif_types = str_sub(motif_types, end = -3)
-stopifnot(MOTIF_TYPE %in% motif_types)
-
-NCPU <<- as.numeric(args[6])
-
-GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
+NCPU <<- as.numeric(args[4])
 
 # NOTE: This method is only applicable for models fit across all subjects!
 MODEL_GROUP <<- 'all_subjects'
 
-GENE_WEIGHT_TYPE <<- args[7]
+GENE_WEIGHT_TYPE <<- args[5]
 weight_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/'))
 weight_types = str_sub(weight_types, end = -3)
 stopifnot(GENE_WEIGHT_TYPE %in% weight_types)
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
-LOWER_TRIM_BOUND <<- as.numeric(args[11])
-
-MODEL_TYPE <<- args[12]
-
-if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE) | grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE)){
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[13])
-} else {
-    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
-}
+MODEL_TYPE <<- args[8]
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/individual_comparison_functions.R'))
 
 # Compile data for all subjects
-motif_data = aggregate_all_subject_data()
+motif_data = aggregate_all_subject_data(trim_type = TRIM_TYPE)
 
 # bootstrap model fit
-bootstrap_result = cluster_bootstrap_model_fit(motif_data, iter = 1000)
+bootstrap_result = cluster_bootstrap_model_fit(motif_data, iter = 1000, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 bootstrap_result$original_model_fit = FALSE
 
 # fit model with original dataset
 if (MODEL_TYPE %like% 'motif'){
-    pwm_matrix = get_coeffiecient_matrix(motif_data, ref_base = 'A')
+    pwm_matrix = get_coefficient_matrix(motif_data, ref_base = 'A', trim_type = TRIM_TYPE)
     pwm_dt = as.data.table(pwm_matrix$result)
     pwm_dt$base = rownames(pwm_matrix$result)
     pwm_dt$snp_interaction = FALSE
@@ -89,10 +72,10 @@ if (MODEL_TYPE %like% 'motif'){
     model = pwm_matrix$model
 } else {
     pwm_dt = NULL
-    model = fit_model(motif_data)
+    model = fit_model(motif_data, trim_type = TRIM_TYPE)
 }
 
-coefs = format_model_coefficient_output(model, pwm_dt)
+coefs = format_model_coefficient_output(model, pwm_dt, trim_type = TRIM_TYPE)
 if (!('snp_interaction' %in% colnames(coefs))){
     coefs$snp_interaction = FALSE
 }

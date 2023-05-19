@@ -1,33 +1,31 @@
-get_terminal_sequences <- function(combine_by_terminal){
+get_terminal_sequences <- function(combine_by_terminal, gene_type = GENE_NAME){
     # get genes and sequences
     whole_nucseq = get_oriented_whole_nucseqs()
-    seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(GENE_NAME, 1, 1))]
+    seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(gene_type, 1, 1))]
     
-    # group genes by common terminal sequence
-    setnames(seqs, 'gene', GENE_NAME)
     map = get_common_genes_from_seqs(seqs)
-    together = merge(seqs, map, by = GENE_NAME)
+    together = merge(seqs, map, by = gene_type)
 
     # get terminal sequences
     terminal_length = UPPER_TRIM_BOUND + REQUIRED_COMMON_NUCS_5 
-    together[, terminal_seq := substring(sequence, nchar(sequence)- (terminal_length - 1), nchar(sequence))]
+    together[, paste0(gene_type, '_terminal_seq') := substring(get(paste0(gene_type, '_sequence')), nchar(get(paste0(gene_type, '_sequence')))- (terminal_length - 1), nchar(get(paste0(gene_type, '_sequence'))))]
     if (isTRUE(combine_by_terminal)){
-        cols = c('terminal_seq', 'gene')
+        cols = c(paste0(gene_type, '_terminal_seq'), paste0(gene_type, '_group'))
         together = unique(together[, ..cols])
     }
     return(together)
 }
 
-get_distances <- function(sequences, gene_var, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE){
+get_distances <- function(sequences, gene_var, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE, gene_type = GENE_NAME){
     require(ape)
     require(DECIPHER)
     if (isTRUE(full_sequence)){
-        seq_list = DNAStringSet(sequences$sequence)
+        seq_list = DNAStringSet(sequences[[paste0(gene_type, '_sequence')]])
         stopifnot(isFALSE(combine_by_terminal))
         stopifnot(isTRUE(align))
         seq_list = AlignSeqs(seq_list)
     } else {
-        seq_list = DNAStringSet(sequences$terminal_seq)
+        seq_list = DNAStringSet(sequences[[paste0(gene_type, '_terminal_seq')]])
         stopifnot(isFALSE(align))
     }
 
@@ -38,14 +36,14 @@ get_distances <- function(sequences, gene_var, combine_by_terminal = TRUE, full_
     return(dists)
 }
 
-get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE){
+get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE, gene_type = GENE_NAME){
     require(ape)
     require(DECIPHER)
 
     if (isTRUE(combine_by_terminal)){
-        gene_var = 'gene'
+        gene_var =paste0(gene_type, '_group')  
     } else {
-        gene_var = GENE_NAME
+        gene_var = gene_type 
     }
  
     seqs = get_terminal_sequences(combine_by_terminal)
@@ -66,13 +64,14 @@ get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_se
     return(list(cluster_data = together, tree = as.phylo(clusters), dists = dist_format))
 }
 
-generate_hold_out_sample <- function(motif_data, cluster_genes){
-    motif_data_subset = motif_data[!(gene %in% cluster_genes)]
-    sample_data = motif_data[gene %in% cluster_genes]
+generate_hold_out_sample <- function(motif_data, cluster_genes, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    var = paste0(gene_type, '_group')
+    motif_data_subset = motif_data[!(get(var) %in% cluster_genes)]
+    sample_data = motif_data[get(var) %in% cluster_genes]
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
     source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
     motif_data_subset = calculate_subject_gene_weight(motif_data_subset)
-    source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/p_gene_given_subject.R'), local = TRUE)
+    source(paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/p_gene_pooled.R'), local = TRUE)
     sample_data = calculate_subject_gene_weight(sample_data)
     return(list(sample = sample_data, motif_data_subset = motif_data_subset))
 }

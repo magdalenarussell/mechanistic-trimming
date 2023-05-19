@@ -21,17 +21,17 @@ set_color_palette <- function(model_type_list, with_params = FALSE){
     return(colors)
 }
 
-get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2){
+get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2, gene_type = GENE_NAME){
     whole_nucseq = get_oriented_whole_nucseqs()
-    temp_data = whole_nucseq[toupper(substring(gene, 4, 4)) == toupper(substring(GENE_NAME, 1,1))]
-    setnames(whole_nucseq, 'gene', GENE_NAME)
-    colnames(temp_data) = c(GENE_NAME, 'sequence')
-    gene_groups = get_common_genes_from_seqs(temp_data)
-    together = unique(merge(temp_data, gene_groups)[, c('gene', 'sequence')]) 
-    gene = together[gene == gene_name][1]
+    temp_data = whole_nucseq[toupper(substring(gene, 4, 4)) == toupper(substring(gene_type, 1,1))]
+    setnames(whole_nucseq, 'gene', gene_type)
+    colnames(temp_data) = c(gene_type, paste0(gene_type, '_sequence'))
+    gene_groups = get_common_genes_from_seqs(temp_data, gene_type = gene_type)
+    together = unique(merge(temp_data, gene_groups, by.x = gene_type, by.y = 'gene')[, c('gene', paste0(gene_type, '_sequence'))]) 
+    gene = together[gene == gene_type][1]
 
     # get sequence
-    whole_gene_seq = DNAString(gene$sequence)
+    whole_gene_seq = DNAString(gene[[paste0(gene_type, '_sequence')]])
     possible_pnucs_5_to_3 = substring(reverseComplement(whole_gene_seq),1, pnuc_count)
     whole_gene_with_pnucs = c(unlist(whole_gene_seq), unlist(possible_pnucs_5_to_3))
     subset = substring(whole_gene_with_pnucs, nchar(whole_gene_with_pnucs) - (gene_seq_length + pnuc_count-1), nchar(whole_gene_with_pnucs))

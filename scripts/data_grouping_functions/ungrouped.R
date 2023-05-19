@@ -1,17 +1,17 @@
-condense_tcr_data <- function(tcr_dataframe){
-    cols = c('trimmed_seq', 'sequence', 'gene', paste(TRIM_TYPE), paste0(GENE_NAME))
+condense_tcr_data <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    cols = c(paste0(trim_type, 'med_seq'), paste0(gene_type, '_sequence'), paste(trim_type), paste0(gene_type, '_group'))
     tcr_dataframe = tcr_dataframe[,..cols]
-    setnames(tcr_dataframe, 'sequence', 'whole_seq')
-    setnames(tcr_dataframe, TRIM_TYPE, 'trim_length')
+    setnames(tcr_dataframe, paste0(gene_type, '_sequence'), paste0(gene_type, '_whole_seq'))
     #condense data by gene, trim, etc.
-    condensed_tcr = tcr_dataframe[, .N, by = .(trimmed_seq, whole_seq, gene, trim_length, get(GENE_NAME))]
+    cols = c(paste0(trim_type, 'med_seq'), paste0(gene_type, '_whole_seq'), trim_type, paste0(gene_type, '_group'))
+    condensed_tcr = tcr_dataframe[, .N, by = cols]
     setnames(condensed_tcr, 'N', 'count')
-    setnames(condensed_tcr, 'get', GENE_NAME)
     return(condensed_tcr)
 }
 
-sum_trim_observations <- function(condensed_tcr_dataframe){
-    summed = condensed_tcr_dataframe[, sum(count), by = .(gene, trim_length, left_nucs, right_nucs)]
+sum_trim_observations <- function(condensed_tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    cols = c(paste0(gene_type, '_group'), trim_type, paste0(trim_type, '_left_nucs'), paste0(trim_type, '_right_nucs'))
+    summed = condensed_tcr_dataframe[, sum(count), by = cols]
     setnames(summed, 'V1', 'count')
     return(summed)
 }

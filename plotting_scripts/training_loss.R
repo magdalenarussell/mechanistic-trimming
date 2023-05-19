@@ -64,7 +64,7 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
 TYPE <<- 'log_loss'
 all_types = c('log_loss', 'expected_log_loss', 'v_gene_family_loss', 'log_loss_j_gene', 'full_v_gene_family_loss')
 
-LOSS_GENE_WEIGHT <<- 'p_gene_given_subject'
+LOSS_GENE_WEIGHT <<- 'p_gene_pooled'
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_evaluation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))

@@ -1,14 +1,15 @@
 source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_group_functions/', MODEL_GROUP, '.R'))
 
-get_positions <- function(){
+#TODO changing this function will be important for two gene case
+get_positions <- function(trim_type = TRIM_TYPE){
     if (LEFT_NUC_MOTIF_COUNT > 0){
-        left = paste0('motif_5end_pos', seq(LEFT_NUC_MOTIF_COUNT, 1))    
+        left = paste0(trim_type, '_motif_5end_pos', seq(LEFT_NUC_MOTIF_COUNT, 1))    
     } else {
         left = c()
     } 
     if (RIGHT_NUC_MOTIF_COUNT > 0){
-        right = paste0('motif_3end_pos', seq(1, RIGHT_NUC_MOTIF_COUNT))
+        right = paste0(trim_type, '_motif_3end_pos', seq(1, RIGHT_NUC_MOTIF_COUNT))
     } else {
         right = c()
     }
@@ -16,25 +17,25 @@ get_positions <- function(){
     return(positions)
 }
 
-split_motif_column_by_motif_position <- function(aggregated_subject_data){
-    positions = get_positions()
+split_motif_column_by_motif_position <- function(aggregated_subject_data, trim_type = TRIM_TYPE){
+    positions = get_positions(trim_type)
 
     if (LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT > 0){
-        split_data = aggregated_subject_data %>% separate('motif', positions, sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
-        together = merge(aggregated_subject_data, split_data, by = colnames(aggregated_subject_data)[!colnames(aggregated_subject_data) == 'motif'])
+        split_data = aggregated_subject_data %>% separate(paste0(trim_type, '_motif'), positions, sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
+        together = merge(aggregated_subject_data, split_data, by = colnames(aggregated_subject_data)[!colnames(aggregated_subject_data) == paste0(trim_type, '_motif')])
     } else {
         together = aggregated_subject_data
     }
     return(together)
 }
 
-aggregate_all_subject_data <- function(directory = get_subject_motif_output_location()){
+aggregate_all_subject_data <- function(directory = get_subject_motif_output_location(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     stopifnot(LEFT_NUC_MOTIF_COUNT <= 10)
     stopifnot(LEFT_SIDE_TERMINAL_MELT_LENGTH <= 10 | is.na(LEFT_SIDE_TERMINAL_MELT_LENGTH))
     desired_file_count = length(list.files(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))))
     if (!dir.exists(directory) | !(length(list.files(directory)) == desired_file_count)) {
         print('compiling motif data, first')
-        compile_all_data(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))) 
+        compile_all_data(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE)), gene_type = gene_type, trim_type = trim_type) 
     }  
     
     files = fs::dir_ls(path = directory)
@@ -45,26 +46,31 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
         file_data
     }
     
+    # TODO make sure all of the following functions work on all motifs
     if (MODEL_TYPE %like% 'dna_shape') {
         together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
-        processed_motif_data = process_data_for_model_fit(together)
+        processed_motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
         motif_data = convert_data_to_motifs(processed_motif_data)
     } else {
         together = convert_data_to_motifs(together)
-        motif_data = process_data_for_model_fit(together)
+        motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
     }
 
-    motif_data = motif_data[, -c('left_nucs', 'right_nucs', 'left_motif', 'right_motif')]
-    together_pos = split_motif_column_by_motif_position(motif_data) 
-    weighted_together = calculate_subject_gene_weight(together_pos)
+    cols = colnames(motif_data)[!(colnames(motif_data) %like% 'left_nucs')]
+    cols = cols[!(cols %like% 'right_nucs')]
+
+    motif_data = motif_data[, ..cols]
+    #MR TODO make sure the following function works on all motif cols
+    together_pos = split_motif_column_by_motif_position(motif_data, trim_type) 
+    weighted_together = calculate_subject_gene_weight(together_pos, gene_type = gene_type, trim_type = trim_type)
     stopImplicitCluster()
     return(weighted_together)
 }
 
-fit_model <- function(group_motif_data, formula = get_model_formula()){
+fit_model <- function(group_motif_data, formula = get_model_formula(TRIM_TYPE, GENE_NAME), trim_type = TRIM_TYPE){
     stopifnot(unique(group_motif_data$gene_weight_type) == GENE_WEIGHT_TYPE)
-    group_motif_data = set_contrasts(group_motif_data)
-    start_list = get_start_list(group_motif_data)
+    group_motif_data = set_contrasts(group_motif_data, trim_type = trim_type)
+    start_list = get_start_list(group_motif_data, trim_type)
 
     model = mclogit(formula, 
                     data = group_motif_data,
@@ -84,19 +90,19 @@ get_predicted_dist_file_path <- function(){
     return(path)
 }
 
-get_levels <- function(group_motif_data, ref_base, position){
-    group_motif_data = set_contrasts(group_motif_data, ref_base)
+get_levels <- function(group_motif_data, ref_base, position, trim_type = TRIM_TYPE){
+    group_motif_data = set_contrasts(group_motif_data, ref_base, trim_type)
     contrasts = contrasts(group_motif_data[[position]])
     levels = data.table(base = rownames(contrasts(group_motif_data[[position]])), number = c(seq(ncol(contrasts(group_motif_data[[position]]))), NA))
     return(levels)
 }
 
 
-get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_model_formula()){
+get_coefficient_matrix <- function(group_motif_data, ref_base, formula = get_model_formula(TRIM_TYPE, GENE_NAME), trim_type = TRIM_TYPE){
     stopifnot(MODEL_TYPE %like% "motif")
-    group_motif_data = set_contrasts(group_motif_data, ref_base)
-    model = fit_model(group_motif_data, formula = formula)
-    positions = get_positions()
+    group_motif_data = set_contrasts(group_motif_data, ref_base, trim_type)
+    model = fit_model(group_motif_data, formula = formula, trim_type)
+    positions = get_positions(trim_type)
 
     together = matrix(0, nrow = 4, ncol = LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT)
     if (MODEL_TYPE %like% 'snp-interaction'){
@@ -111,7 +117,7 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_mo
     rownames(together) = c('A', 'C', 'T', 'G')
  
     for (position in positions){
-        levels = get_levels(group_motif_data, ref_base, position)
+        levels = get_levels(group_motif_data, ref_base, position, trim_type)
         indices = levels[base %in% c('A', 'C', 'G', 'T') & !is.na(number)]$number
         for (index in indices){
             base = levels[number == index]$base
@@ -123,7 +129,7 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_mo
     }
 
     for (position in positions){
-        levels = get_levels(group_motif_data, ref_base, position)
+        levels = get_levels(group_motif_data, ref_base, position, trim_type)
         missing_base = levels[is.na(number)]$base
         together[missing_base,position] = -1*sum(together[, position])
         if (MODEL_TYPE %like% 'snp-interaction'){
@@ -134,18 +140,18 @@ get_coeffiecient_matrix <- function(group_motif_data, ref_base, formula = get_mo
     return(list(result = together, model = model, snp_interaction_result = snp_together))
 }
 
-get_complete_distance_coefficients <- function(model_coefficients_dt){
-    parameter_names = paste0('trim_length_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)) 
+get_complete_distance_coefficients <- function(model_coefficients_dt, trim_type = TRIM_TYPE){
+    parameter_names = paste0(trim_type, '_', seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)) 
     contr_sum_var = parameter_names[length(parameter_names)] 
     parameter_names_subset = parameter_names[!(parameter_names == contr_sum_var)]
-    distance_coefs = model_coefficients_dt[parameter %like% 'trim_length']
+    distance_coefs = model_coefficients_dt[parameter %like% trim_type]
     distance_coefs$parameter = parameter_names_subset
     missing = data.table(parameter = contr_sum_var, coefficient = -1 * sum(distance_coefs$coefficient), base = NA)
     together = rbind(distance_coefs, missing)
     return(together)
 }
 
-format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
+format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL, trim_type = TRIM_TYPE){
     coef_dt = as.data.frame(model$coefficients)
     colnames(coef_dt) = c('coefficient')
     coef_dt$parameter = rownames(coef_dt)
@@ -153,7 +159,7 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
     if (!is.null(formatted_pwm_matrix)){
         stopifnot(MODEL_TYPE %like% 'motif')
         coef_dt = coef_dt[!(parameter %like% 'motif')]
-        positions = get_positions()
+        positions = get_positions(trim_type)
         not_cols = colnames(formatted_pwm_matrix)[!(colnames(formatted_pwm_matrix)%in% positions)]
         # formatted_pwm = formatted_pwm_matrix[, -c('model_group')] %>% 
         formatted_pwm = formatted_pwm_matrix %>% 
@@ -170,8 +176,8 @@ format_model_coefficient_output <- function(model, formatted_pwm_matrix = NULL){
     }
 
     if ((MODEL_TYPE %like% 'distance') & !(MODEL_TYPE %like% 'linear-distance')) {
-        dist_coefs = get_complete_distance_coefficients(coef_dt)
-        coef_dt = coef_dt[!(parameter %like% 'trim_length')]
+        dist_coefs = get_complete_distance_coefficients(coef_dt, trim_type = trim_type)
+        coef_dt = coef_dt[!(parameter %like% trim_type)]
         coef_dt = rbind(coef_dt, dist_coefs)
     }
     return(coef_dt)
@@ -201,26 +207,26 @@ get_coefficient_output_file_path <- function(){
     return(path)
 }
 
-cluster_sample <- function(motif_data){
+cluster_sample <- function(motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     # sample size is the number of gene, subject combos
-    motif_data$cluster = interaction(motif_data$subject, motif_data$gene)
+    motif_data$cluster = interaction(motif_data$subject, motif_data[[paste0(gene_type, '_group')]])
     sample_genes = sample(unique(motif_data$cluster), length(unique(motif_data$cluster)), replace = TRUE)
     sample_genes_dt = data.table(sample_genes)
     counts = sample_genes_dt[, .N, by = sample_genes]
     motif_data = merge(motif_data, counts, by.x = 'cluster', by.y = 'sample_genes')
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
     source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
-    sample_data = calculate_subject_gene_weight(motif_data)
+    sample_data = calculate_subject_gene_weight(motif_data, gene_type = gene_type, trim_type = trim_type)
     return(sample_data)
 }
 
-cluster_bootstrap_model_fit <- function(motif_data, formula = get_model_formula(), iter){
+cluster_bootstrap_model_fit <- function(motif_data, formula = get_model_formula(TRIM_TYPE, GENE_NAME), iter, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
     set.seed(66)
     results = data.table()
     for (i in seq(iter)){
-        sample_data = cluster_sample(motif_data)
+        sample_data = cluster_sample(motif_data, gene_type = gene_type, trim_type = trim_type)
         if (MODEL_TYPE %like% 'motif'){
-            result = get_coeffiecient_matrix(sample_data, formula = formula, ref_base = 'A')
+            result = get_coefficient_matrix(sample_data, formula = formula, ref_base = 'A', trim_type = trim_type)
             pwm_matrix = result$result
             pwm_dt = as.data.table(pwm_matrix)
             pwm_dt$base = rownames(pwm_matrix)
@@ -237,9 +243,9 @@ cluster_bootstrap_model_fit <- function(motif_data, formula = get_model_formula(
             model = result$model
         } else {
             pwm_dt = NULL
-            model = fit_model(sample_data, formula)
+            model = fit_model(sample_data, formula, trim_type)
         }
-        coefs = format_model_coefficient_output(model, pwm_dt)
+        coefs = format_model_coefficient_output(model, pwm_dt, trim_type)
         if (!('snp_interaction' %in% colnames(coefs))){
             coefs$snp_interaction = FALSE
         }
@@ -262,9 +268,10 @@ get_coef_pvalues <- function(bootstrap_results, original_model_results){
     return(together)
 }
 
-subsample <- function(motif_data, prop){
+subsample <- function(motif_data, prop, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    stopifnot(TRIM_TYPE %in% c('v_trim', 'j_trim'))
     stopifnot(MODEL_TYPE == 'motif_two-side-base-count-beyond')
-    motif_data$cluster = interaction(motif_data$subject, motif_data$gene)
+    motif_data$cluster = interaction(motif_data$subject, motif_data[[paste0(gene_type, '_group')]])
 
     # sample proportion of individuals
     size = ceiling(prop * length(unique(motif_data$subject)))
@@ -273,7 +280,7 @@ subsample <- function(motif_data, prop){
 
     # sample proportion of sequences for each individual
     subj_subset_orig[, subsample_total_tcr := ceiling(total_tcr*prop)]
-    cols = c('gene', 'trim_length', 'observed', 'gene_type', 'left_base_count_AT', 'left_base_count_GC', 'right_base_count_AT', 'right_base_count_GC', 'motif', 'motif_5end_pos1', 'motif_3end_pos1', 'motif_3end_pos2', 'subject', 'count', 'subsample_total_tcr', 'cluster')
+    cols = c(paste0(gene_type, '_group'), trim_type, paste0(trim_type, '_observed'), paste0(trim_type, '_left_base_count_AT'), paste0(trim_type, '_left_base_count_GC'), paste0(trim_type, '_right_base_count_AT'), paste0(trim_type, '_right_base_count_GC'), paste0(trim_type, '_motif'), paste0(trim_type, '_motif_5end_pos1'), paste0(trim_type, '_motif_3end_pos1'), paste0(trim_type, '_motif_3end_pos2'), 'subject', 'count', 'subsample_total_tcr', 'cluster')
     subj_subset_orig[, row := seq(1, .N), by = .(subject)]
     subj_subset = subj_subset_orig[subj_subset_orig[, sample(.I, subsample_total_tcr, replace = TRUE, prob = count), by = subject]$V1]
     subj_subset[, count := .N, by = .(subject, row)]
@@ -288,21 +295,21 @@ subsample <- function(motif_data, prop){
 
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
     source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
-    sample_data = calculate_subject_gene_weight(subj_subset_final)
+    sample_data = calculate_subject_gene_weight(subj_subset_final, gene_type = gene_type, trim_type = trim_type)
     return(sample_data)
 }
 
-subsample_model_fit <- function(motif_data, formula = get_model_formula(), iter, prop){
+subsample_model_fit <- function(motif_data, formula = get_model_formula(TRIM_TYPE, GENE_NAME), iter, prop, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
     set.seed(66)
     results = data.table()
     for (i in seq(iter)){
-        sample_data = subsample(motif_data, prop)
-        result = get_coeffiecient_matrix(sample_data, formula = formula, ref_base = 'A')
+        sample_data = subsample(motif_data, prop, trim_type = trim_type, gene_type = GENE_NAME)
+        result = get_coefficient_matrix(sample_data, formula = formula, ref_base = 'A', trim_type = trim_type)
         pwm_matrix = result$result
         pwm_dt = as.data.table(pwm_matrix)
         pwm_dt$base = rownames(pwm_matrix)
         model = result$model
-        coefs = format_model_coefficient_output(model, pwm_dt)
+        coefs = format_model_coefficient_output(model, pwm_dt, trim_type)
         coefs$iteration = i
         results = rbind(results, coefs)
     }

@@ -18,38 +18,41 @@ blas_set_num_threads(1)
 args = commandArgs(trailingOnly=TRUE)
 
 ANNOTATION_TYPE <<- args[1]
-stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony'))
+stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony', 'alpha'))
 
-TRIM_TYPE <<- args[2]
-stopifnot(TRIM_TYPE == 'v_trim')
+DATA_GROUP <<- args[2]
+group_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/data_grouping_functions/'))
+group_types = str_sub(group_types, end = -3)
+stopifnot(DATA_GROUP %in% group_types)
 
-PRODUCTIVITY <<- args[3]
+PARAM_GROUP <<- args[3]
+param_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/param_groups/'))
+param_types = str_sub(param_types, end = -3)
+stopifnot(PARAM_GROUP %in% param_types)
+source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
 
-MOTIF_TYPE <<- args[4] 
-motif_types = list.files(path = 'mechanistic-trimming/scripts/motif_class_functions/')
-motif_types = str_sub(motif_types, end = -3)
-stopifnot(MOTIF_TYPE %in% motif_types)
+NCPU <<- as.numeric(args[4])
 
-NCPU <<- as.numeric(args[5])
+# NOTE: This method is only applicable for models fit across all subjects!
+MODEL_GROUP <<- 'all_subjects'
 
-GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
-stopifnot(GENE_NAME == 'v_gene')
-
-MODEL_GROUP <<- args[6]
-
-GENE_WEIGHT_TYPE <<- args[7]
-stopifnot(GENE_WEIGHT_TYPE %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform'))
+GENE_WEIGHT_TYPE <<- args[5]
+weight_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/'))
+weight_types = str_sub(weight_types, end = -3)
+stopifnot(GENE_WEIGHT_TYPE %in% weight_types)
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
+MODEL_TYPE <<- args[8]
 
-MODEL_TYPE <<- args[11]
-
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
+if (grepl('_side_terminal', MODEL_TYPE, fixed = TRUE) | grepl('two-side-base-count', MODEL_TYPE, fixed = TRUE) | grepl('left-base-count', MODEL_TYPE, fixed = TRUE) | grepl('two-side-dinuc-count', MODEL_TYPE, fixed = TRUE)){
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[9])
+} else {
+    LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
+}
 
 RESIDUAL_COMPARE_FEATURE <<- NULL
 TYPE <<- 'full_v_gene_family_loss'
@@ -104,8 +107,8 @@ path = file.path(MOD_PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTI
 dir.create(path, recursive = TRUE)
  
 # get difference
-wide = together[, -c('p_gene')] %>% pivot_wider(names_from = 'model', values_from = 'rmse') %>% as.data.table()
-slopes = wide[,(get(MODEL_TYPE) - get(MODEL_TYPE1)), by = gene]
+wide = together[, -c(paste0('p_', GENE_NAME))] %>% pivot_wider(names_from = 'model', values_from = 'rmse') %>% as.data.table()
+slopes = wide[,(get(MODEL_TYPE) - get(MODEL_TYPE1)), by = GENE_NAME]
 setnames(slopes, 'V1', 'slope')
 together = merge(together, slopes)
 
@@ -119,10 +122,10 @@ outliers = together[(nrow(together)-outlier_count + 1):nrow(together)]
 no_outliers = together[1:(nrow(together)-outlier_count)]
 
 # re-fit_model without outliers
-motif_data = aggregate_all_subject_data()
-new_motif_data = motif_data[gene %in% no_outliers$gene]
+motif_data = aggregate_all_subject_data(trim_type = TRIM_TYPE)
+new_motif_data = motif_data[get(GENE_NAME) %in% no_outliers[[GENE_NAME]]]
 
-new_coefs = fit_model_by_group(new_motif_data, write_coeffs=FALSE)
+new_coefs = fit_model_by_group(new_motif_data, write_coeffs=FALSE, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 
 # get coefficient plots 
 
@@ -134,14 +137,14 @@ plot_base_count_coefficient_heatmap_single_group(new_coefs, file_name = file.pat
 
 
 # plot predicted distributions on held out (outlier genes)
-model = fit_model(new_motif_data)
-outlier_motif_data = motif_data[gene %in% outliers$gene]
-outlier_motif_data = process_data_for_model_fit(outlier_motif_data)
+model = fit_model(new_motif_data, trim_type = TRIM_TYPE)
+outlier_motif_data = motif_data[get(GENE_NAME) %in% outliers[[GENE_NAME]]]
+outlier_motif_data = process_data_for_model_fit(outlier_motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE)
 outlier_motif_data$predicted_prob = temp_predict(model, newdata = outlier_motif_data)
-outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
+outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, get(GENE_NAME))]
 
 dir.create(file.path(path, 'model_without_motif_addition_outliers', 'predicted_gene_dists'))
-for (gene in unique(outlier_motif_data$gene)){
+for (gene in unique(outlier_motif_data[[GENE_NAME]])){
     plot_predicted_trimming_dists_single_group(outlier_motif_data, gene, file_name = file.path(path, 'model_without_motif_addition_outliers', 'predicted_gene_dists', paste0(gene, '.pdf')))
 }
 
@@ -151,12 +154,12 @@ for (gene in unique(outlier_motif_data$gene)){
 # No fit without outliers and genes similar to outliers...
 # re-fit_model without outliers
 gene_families = get_gene_families(cluster_count = 4, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
-outlier_clusters = unique(gene_families[gene %in% unique(outliers$gene)]$clusters_grouped)
-outlier_cluster_genes = unique(gene_families[clusters_grouped %in% outlier_clusters]$gene)
-no_outliers = together[!(gene %in% outliers) & !(gene %in% outlier_cluster_genes)]
-new_motif_data = motif_data[gene %in% no_outliers$gene]
+outlier_clusters = unique(gene_families[get(GENE_NAME) %in% unique(outliers[[GENE_NAME]])]$clusters_grouped)
+outlier_cluster_genes = unique(gene_families[clusters_grouped %in% outlier_clusters][[GENE_NAME]])
+no_outliers = together[!(get(GENE_NAME) %in% outliers) & !(get(GENE_NAME) %in% outlier_cluster_genes)]
+new_motif_data = motif_data[get(GENE_NAME) %in% no_outliers[[GENE_NAME]]]
 
-new_coefs = fit_model_by_group(new_motif_data, write_coeffs=FALSE)
+new_coefs = fit_model_by_group(new_motif_data, write_coeffs=FALSE, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 
 # get coefficient plots 
 
@@ -168,14 +171,14 @@ plot_base_count_coefficient_heatmap_single_group(new_coefs, file_name = file.pat
 
 
 # plot predicted distributions on held out (outlier genes)
-model = fit_model(new_motif_data)
-outlier_motif_data = motif_data[gene %in% outliers$gene]
-outlier_motif_data = process_data_for_model_fit(outlier_motif_data)
+model = fit_model(new_motif_data, trim_type = TRIM_TYPE)
+outlier_motif_data = motif_data[get(GENE_NAME) %in% outliers[[GENE_NAME]]]
+outlier_motif_data = process_data_for_model_fit(outlier_motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE)
 outlier_motif_data$predicted_prob = temp_predict(model, newdata = outlier_motif_data)
-outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, gene)]
+outlier_motif_data[, empirical_prob := count/sum(count), by = .(subject, get(GENE_NAME))]
 
 dir.create(file.path(path, 'model_without_motif_addition_outliers_and_families', 'predicted_gene_dists'))
-for (gene in unique(outlier_motif_data$gene)){
+for (gene in unique(outlier_motif_data[[GENE_NAME]])){
     plot_predicted_trimming_dists_single_group(outlier_motif_data, gene, file_name = file.path(path, 'model_without_motif_addition_outliers_and_families', 'predicted_gene_dists', paste0(gene, '.pdf')))
 }
 
