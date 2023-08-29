@@ -20,13 +20,14 @@ get_positions <- function(trim_type = TRIM_TYPE){
 split_motif_column_by_motif_position <- function(aggregated_subject_data, trim_type = TRIM_TYPE){
     positions = get_positions(trim_type)
 
-    if (LEFT_NUC_MOTIF_COUNT + RIGHT_NUC_MOTIF_COUNT > 0){
-        split_data = aggregated_subject_data %>% separate(paste0(trim_type, '_motif'), positions, sep = seq(1, LEFT_NUC_MOTIF_COUNT+RIGHT_NUC_MOTIF_COUNT-1))
-        together = merge(aggregated_subject_data, split_data, by = colnames(aggregated_subject_data)[!colnames(aggregated_subject_data) == paste0(trim_type, '_motif')])
-    } else {
-        together = aggregated_subject_data
+    for (side in c('5end', '3end')){
+        subset = positions[positions %like% side]
+        lr_side = ifelse(side == '5end', 'left', 'right')
+        if (length(subset) > 0){
+            aggregated_subject_data[, paste0(subset) := tstrsplit(get(paste0(trim_type, '_', lr_side, '_motif')), "")]
+        } 
     }
-    return(together)
+    return(aggregated_subject_data)
 }
 
 aggregate_all_subject_data <- function(directory = get_subject_motif_output_location(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
