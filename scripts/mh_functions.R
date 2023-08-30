@@ -50,7 +50,7 @@ get_mh <- function(seq1, seq2, aligning_trim){
         for (index in seq(nchar(seq1))){
             seq1_nt = substring(seq1, index, index) 
             seq2_nt = substring(seq2, index, index) 
-            if(seq1_nt == compl[seq2_nt]){
+            if (seq1_nt == compl[seq2_nt]){
                 mh[, index] = match[seq1_nt]
             } else {
                 mh[, index] = '-'

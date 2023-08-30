@@ -59,7 +59,6 @@ get_nuc_context <- function(whole_gene_seqs, trim_lengths){
         trim_length = trim_lengths[index]
         trimmed_gene_seq = substring(whole_gene_and_pnucs, 1, nchar(whole_gene_seq)-trim_length)
         trimmed_length = nchar(trimmed_gene_seq)
-        original_trimmed_length = trimmed_length
 
         left_nucs = substring(trimmed_gene_seq, trimmed_length - (REQUIRED_COMMON_NUCS_5 - 1), trimmed_length) 
 
@@ -158,17 +157,6 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = 
         }
         return(recondensed)
     }
-}
-
-process_partis <- function(file_data){
-    cols = c('subjects', 'v_gene', 'd_gene', 'j_gene', 'v_3p_del', 'd_5p_del', 'd_3p_del', 'j_5p_del', 'vd_insertion', 'dj_insertion', 'in_frames', 'stops')
-    file_data = file_data[,..cols]
-    new_names = c('subject', 'v_gene', 'd_gene', 'j_gene', 'v_trim', 'd0_trim', 'd1_trim', 'j_trim', 'vd_insert', 'dj_insert', 'in_frames', 'stops')
-    colnames(file_data) = new_names
-    file_data[in_frames == TRUE & stops == FALSE, productive := TRUE]
-    file_data[in_frames != TRUE | stops != FALSE, productive := FALSE]
-    file_data = file_data[v_gene != '']
-    return(file_data[, -c('in_frames')])
 }
 
 get_colnames <- function(){
@@ -290,26 +278,6 @@ convert_data_to_motifs <- function(compiled_data, left_window_size = LEFT_NUC_MO
     return(compiled_data)
 }
 
-get_background_freq_by_postion <- function(motif_data, trim_type = TRIM_TYPE){
-    positions = get_positions(trim_type)
-    backgrounds = data.table()
-    for (pos in positions){
-        back = motif_data[, sum(weighted_observation), by =pos]
-        colnames(back) = c('base', 'count')
-        back$total = sum(back$count)
-        back$position = pos
-        back$freq = back$count / back$total
-        backgrounds = rbind(backgrounds, back)
-    }
-    return(backgrounds)
-}
-
-get_raw_cdr3_seqs <- function(tcr_repertoire_file){
-    data = fread(tcr_repertoire_file)
-    cdr3s = data$cdr3_nucseq
-    return(cdr3s)
-}
-
 get_frames_for_pair <- function(v_seq, v_frame, v_trim, j_seq, j_frame, j_trim){
     # get processed V-gene sequence
     adjusted_v_seq = substring(v_seq, v_frame) 
@@ -368,7 +336,7 @@ get_frames_data <- function(){
 
     if (!file.exists(file_name)) {
         frame_data = get_all_frames()
-        fwrite(frames_data, file_name, sep = '\t')
+        fwrite(frame_data, file_name, sep = '\t')
     } else {
         frame_data = fread(file_name)
     }
