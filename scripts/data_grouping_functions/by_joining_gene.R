@@ -19,7 +19,6 @@ sum_trim_observations <- function(condensed_tcr_dataframe, gene_type = GENE_NAME
 filter_motif_data_for_possible_sites <- function(motif_data){
     if (JOINING_INSERT == 'vj_insert'){
         frame_data = get_frames_data()
-        inframe = frame_data[frame_type == 'In']
     }
     return(motif_data)
 }

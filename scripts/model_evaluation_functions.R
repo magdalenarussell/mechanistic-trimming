@@ -4,12 +4,12 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     formula = model$formula
     lhs = formula[[2]]
     rhs = formula[-2]
-    if(length(lhs)==3) {
+    if (length(lhs)==3) {
         sets = lhs[[3]]
     } else {
         stop("no way to determine choice set ids")
     }
-    if(missing(newdata)){
+    if (missing(newdata)){
         model_data =  model.frame(formula,data=model$data)
         set = model_data[[1]][,2]
         na.act = model$na.action
@@ -28,7 +28,7 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     design_matrix = design_matrix[,names(coefs), drop=FALSE]
         
     eta = c(design_matrix %*% coefs)
-    if(se.fit){
+    if (se.fit){
         variance = vcov(model)
         stopifnot(ncol(design_matrix)==ncol(variance))
     }
@@ -36,16 +36,16 @@ temp_predict <- function(model, newdata, se.fit = FALSE){
     exp.eta = exp(eta)
     sum.exp.eta = rowsum(exp.eta,set)
     probabilities = exp.eta/sum.exp.eta[set]
-    if(se.fit){
+    if (se.fit){
         wX <- probabilities*(design_matrix - rowsum(probabilities*design_matrix,set)[set,,drop=FALSE])
         se.p <- sqrt(rowSums(wX * (wX %*% variance)))
-        if(is.null(na.act))
+        if (is.null(na.act))
             list(fit=probabilities,se.fit=se.p)
         else
             list(fit=napredict(na.act,probabilities),
                  se.fit=napredict(na.act,se.p))
     } else {
-        if(is.null(na.act)) probabilities 
+        if (is.null(na.act)) probabilities 
         else napredict(na.act,probabilities)
     }
 }

@@ -55,11 +55,6 @@ get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_se
     clusters_grouped_df = as.data.frame(clusters_grouped)
     clusters_grouped_df[[gene_var]] = row.names(clusters_grouped_df)
     
-    require(RColorBrewer)
-    colors = brewer.pal(cluster_count, 'Set2')
-
-    # plot(as.phylo(clusters), type = 'unrooted', tip.color = colors[clusters_grouped], no.margin = TRUE)
-
     together = merge(seqs, as.data.table(clusters_grouped_df), by = gene_var)
     return(list(cluster_data = together, tree = as.phylo(clusters), dists = dist_format))
 }

@@ -56,9 +56,6 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/model_evaluation_functions.R'))
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data(trim_type = TRIM_TYPE)
 
-# Write model fit across all data
-# fit_model_by_group(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
-
 # compute loss
 loss = evaluate_loss(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 

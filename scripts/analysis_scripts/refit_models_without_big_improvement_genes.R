@@ -148,9 +148,6 @@ for (gene in unique(outlier_motif_data[[GENE_NAME]])){
     plot_predicted_trimming_dists_single_group(outlier_motif_data, gene, file_name = file.path(path, 'model_without_motif_addition_outliers', 'predicted_gene_dists', paste0(gene, '.pdf')))
 }
 
-# per_gene_outlier_resid_motif_model = calculate_rmse_by_gene(outlier_motif_data) 
-# per_gene_outlier_resid_NO_motif_model = calculate_rmse_by_gene(predicted_trims1[gene %in% outliers$gene]) 
-
 # No fit without outliers and genes similar to outliers...
 # re-fit_model without outliers
 gene_families = get_gene_families(cluster_count = 4, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE)$cluster_data
