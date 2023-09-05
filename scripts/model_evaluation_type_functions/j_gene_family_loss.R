@@ -5,7 +5,7 @@ WRITE_INTERMEDIATE_LOSS <<- NA
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_evaluation_type_functions/evaluation_type_classes/gene_family.R'))
 
 evaluate_loss <- function(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME) {
-    gene_families = get_gene_families(cluster_count = 4, combine_by_terminal = FALSE, full_sequence = TRUE, align = TRUE, gene_type = 'v_gene')$cluster_data
+    gene_families = get_gene_families(cluster_count = 3, combine_by_terminal = TRUE, full_sequence = FALSE, align = FALSE, gene_type = 'j_gene')$cluster_data
     cluster_counts = gene_families[, .N, by = clusters_grouped]
     largest_cluster = cluster_counts[N == max(N)]$clusters_grouped
     big_enough_clusters = cluster_counts[N > 1]$clusters_grouped
@@ -16,12 +16,12 @@ evaluate_loss <- function(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NA
     genes = c()
     clusters = c()
     for (cluster_group in c(as.list(held_out_clusters), list(held_out_clusters))) {
-        held_out_genes = unique(gene_families[clusters_grouped %in% cluster_group][['v_gene_group']])
+        held_out_genes = unique(gene_families[clusters_grouped %in% cluster_group][['j_gene_group']])
         if (length(unique(substring(held_out_genes, 1, 6))) == 1) {
             next
         }
         # Generate a held out sample and motif data subset
-        sample_data = generate_hold_out_sample(motif_data, held_out_genes, gene_type = 'v_gene', trim_type = trim_type) 
+        sample_data = generate_hold_out_sample(motif_data, held_out_genes, gene_type = 'j_gene', trim_type = trim_type) 
         motif_data_subset = sample_data$motif_data_subset
         sample = sample_data$sample
 
@@ -29,9 +29,10 @@ evaluate_loss <- function(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NA
             print('skipping cluster: number of non-zero observations is too small for model fitting')
             next
         }
+
         # Fit model to the motif_data_subset
         if (MODEL_TYPE != 'null'){
-            model = fit_model(motif_data_subset, trim_type = trim_type)
+            model = fit_model(motif_data_subset, trim_type= trim_type)
             parameter_count_vector = c(parameter_count_vector, length(model$coefficients)) 
         } else {
             model = 'null'

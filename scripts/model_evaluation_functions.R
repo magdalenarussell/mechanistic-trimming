@@ -61,7 +61,9 @@ aggregate_validation_data <- function(directory, trim_type = TRIM_TYPE, gene_typ
         }
     }
     
-    # TODO make sure all of the following functions work on all motifs
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
     if (MODEL_TYPE %like% 'dna_shape') {
         together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
         processed_motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
@@ -75,10 +77,14 @@ aggregate_validation_data <- function(directory, trim_type = TRIM_TYPE, gene_typ
     cols = cols[!(cols %like% 'right_nucs')]
 
     #remove genes with ambiguous bases
-    motvar = paste0(trim_type, '_motif')
-    genevar = paste0(gene_type, '_group')
-    amb = unique(motif_data[get(motvar) %like% 'N'][[paste0(gene_type, '_group')]])
-    motif_data = motif_data[!(get(genevar) %in% amb)]
+    motvar = paste0(trims, '_motif')
+    genevar = paste0(genes, '_group')
+    amb = c()
+    for (i in seq(length(genevar))){
+        temp = unique(motif_data[get(motvar[i]) %like% 'N'][[paste0(genevar[i])]])
+        amb = c(amb, temp)
+        motif_data = motif_data[!(get(paste0(genevar[i])) %in% amb)]
+    }
 
     motif_data = motif_data[, ..cols]
     together_pos = split_motif_column_by_motif_position(motif_data, trim_type) 
@@ -87,21 +93,8 @@ aggregate_validation_data <- function(directory, trim_type = TRIM_TYPE, gene_typ
     return(weighted_together)
 }
 
-calculate_cond_expected_log_loss <- function(model, sample_data, trim_type = TRIM_TYPE, joining_trim = JOINING_TRIM, gene_type = GENE_NAME, joining_gene_type = JOINING_GENE){
+calculate_cond_expected_log_loss <- function(model, sample_data){
     #TODO switch this function to mclogit.predict (if typo is fixed..."contasts")
-    if (any(names(model$coefficients) %like% 'motif')){
-        require(stringr)
-        mot_names = str_sub(names(model$coefficients)[names(model$coefficients) %like% 'motif'], end = -2)
-        temp_model_names = c(names(model$coefficients)[!(names(model$coefficients) %like% 'motif')], mot_names)
-    } else {
-        temp_model_names = names(model$coefficients)
-    }
-
-    if (!all(temp_model_names %in% colnames(sample_data))){
-        colnames(sample_data) = str_replace_all(colnames(sample_data), as.character(trim_type), as.character(joining_trim))
-        colnames(sample_data) = str_replace_all(colnames(sample_data), as.character(gene_type), as.character(joining_gene_type))
-        stopifnot(all(temp_model_names %in% colnames(sample_data)))
-    }
     if (MODEL_TYPE != 'null') {
         sample_data$prediction = temp_predict(model, newdata = sample_data)
     } else {
@@ -114,7 +107,7 @@ calculate_cond_expected_log_loss <- function(model, sample_data, trim_type = TRI
 }
 
 get_per_run_model_evaluation_path <- function(type){
-    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, 'temp_evaluation', LOSS_GENE_WEIGHT, type) 
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, PARAM_GROUP, 'temp_evaluation', LOSS_GENE_WEIGHT, type) 
     if (!dir.exists(path)){
         dir.create(path, recursive = TRUE)
     }
@@ -135,7 +128,7 @@ get_per_run_model_evaluation_file_name <- function(type){
 
 compile_result <- function(loss_list, type, parameter_count, held_out_genes = NA, held_out_clusters = NA, validation_gene_weighting = NA){
     loss_length = length(loss_list)
-    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(HELD_OUT_FRACTION, loss_length), sample_repetitions = rep(REPETITIONS, loss_length), model_parameter_count = parameter_count, held_out_genes = held_out_genes, held_out_clusters = held_out_clusters, loss_gene_weighting = validation_gene_weighting, data_group = DATA_GROUP) 
+    result = data.table(motif_length_5_end = rep(LEFT_NUC_MOTIF_COUNT, loss_length), motif_length_3_end = rep(RIGHT_NUC_MOTIF_COUNT, loss_length), motif_type = rep(MOTIF_TYPE, loss_length), gene_weight_type = rep(GENE_WEIGHT_TYPE, loss_length), upper_bound = rep(UPPER_TRIM_BOUND, loss_length), lower_bound = rep(LOWER_TRIM_BOUND, loss_length), model_type = rep(MODEL_TYPE, loss_length), terminal_melting_5_end_length = rep(LEFT_SIDE_TERMINAL_MELT_LENGTH, loss_length), held_out_gene_fraction = rep(HELD_OUT_FRACTION, loss_length), sample_repetitions = rep(REPETITIONS, loss_length), model_parameter_count = parameter_count, held_out_genes = held_out_genes, held_out_clusters = held_out_clusters, loss_gene_weighting = validation_gene_weighting) 
     result[[unique(type)]] = loss_list
     return(result)
 }

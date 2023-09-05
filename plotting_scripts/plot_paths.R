@@ -28,7 +28,7 @@ get_model_eval_file_path <- function(type){
 }
 
 get_manuscript_path <- function(){
-    path = file.path(MOD_PROJECT_PATH, 'plots', ANNOTATION_TYPE, TRIM_TYPE, PRODUCTIVITY,DATA_GROUP, paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'manuscript')
+    path = file.path(MOD_PROJECT_PATH, 'plots', ANNOTATION_TYPE, PARAM_GROUP, paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'manuscript')
     dir.create(path, recursive = TRUE)
     return(path)
 }

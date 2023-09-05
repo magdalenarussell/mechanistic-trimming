@@ -3,3 +3,4 @@ get_oriented_whole_nucseqs <- function(whole_nucseq = get_whole_nucseqs()){
     return(whole_nucseq)
 }
 
+source(paste0(MOD_PROJECT_PATH,'/scripts/gene_count_specific_functions/single.R'))

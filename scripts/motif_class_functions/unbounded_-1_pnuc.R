@@ -5,7 +5,7 @@ get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = GENE_NAM
     return(motif_data)
 }
 
-set_contrasts <- function(group_motif_data, ref_base = 'A', trim_type = TRIM_TYPE){
+single_set_contrasts <- function(group_motif_data, ref_base = 'A', trim_type = TRIM_TYPE){
     positions = get_positions(trim_type)
     for (position in positions){
         group_motif_data[[position]] = as.factor(group_motif_data[[position]])

@@ -3,7 +3,7 @@ get_terminal_sequences <- function(combine_by_terminal, gene_type = GENE_NAME){
     whole_nucseq = get_oriented_whole_nucseqs()
     seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(gene_type, 1, 1))]
     
-    map = get_common_genes_from_seqs(seqs)
+    map = get_common_genes_from_seqs(seqs, gene_type = gene_type)
     together = merge(seqs, map, by = gene_type)
 
     # get terminal sequences
@@ -46,8 +46,8 @@ get_gene_families <- function(cluster_count, combine_by_terminal = TRUE, full_se
         gene_var = gene_type 
     }
  
-    seqs = get_terminal_sequences(combine_by_terminal)
-    dists = get_distances(seqs, gene_var, combine_by_terminal, full_sequence, align)
+    seqs = get_terminal_sequences(combine_by_terminal, gene_type = gene_type)
+    dists = get_distances(seqs, gene_var, combine_by_terminal, full_sequence, align, gene_type = gene_type)
     dist_format = as.dist(dists) 
     
     clusters = hclust(dist_format)

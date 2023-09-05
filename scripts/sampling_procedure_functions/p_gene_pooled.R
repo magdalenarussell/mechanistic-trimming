@@ -1,6 +1,8 @@
 calculate_subject_gene_weight <- function(compiled_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    genes = get_gene_order(gene_type)
+
     compiled_data[, total_tcr := sum(count)]
-    col = c(paste0(gene_type, '_group'))
+    col = c(paste0(genes, '_group'))
     compiled_data[, paste0(gene_type, '_count') := sum(count), by = col]
     compiled_data[[paste0('p_', gene_type)]] = compiled_data[[paste0(gene_type, '_count')]]/compiled_data$total_tcr
     compiled_data[[paste0('p_', trim_type, '_given_', gene_type)]] = compiled_data$count/compiled_data[[paste0(gene_type, '_count')]]
