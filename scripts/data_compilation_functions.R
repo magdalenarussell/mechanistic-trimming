@@ -179,7 +179,11 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = 
     genes = get_gene_order(gene_type)
 
     #filter data by trim bounds
-    tcr_dataframe = tcr_dataframe[get(trims[1]) >= LOWER_TRIM_BOUND & get(trims[1]) <= UPPER_TRIM_BOUND & get(trims[2]) >= LOWER_TRIM_BOUND & get(trims[2]) <= UPPER_TRIM_BOUND]
+    if (length(trims) > 1){
+        tcr_dataframe = tcr_dataframe[get(trims[1]) >= LOWER_TRIM_BOUND & get(trims[1]) <= UPPER_TRIM_BOUND & get(trims[2]) >= LOWER_TRIM_BOUND & get(trims[2]) <= UPPER_TRIM_BOUND]
+    } else {
+         tcr_dataframe = tcr_dataframe[get(trims[1]) >= LOWER_TRIM_BOUND & get(trims[1]) <= UPPER_TRIM_BOUND]
+    }
     if (nrow(tcr_dataframe) == 0){
         return(tcr_dataframe)
     } else {
