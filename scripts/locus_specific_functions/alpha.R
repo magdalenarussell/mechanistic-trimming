@@ -1,7 +1,7 @@
 get_joining_gene_type <- function(){
-    pairs = c('v_gene' = 'j_gene', 'j_gene' = 'v_gene')
-    trims = c('v_trim' = 'j_trim', 'j_trim' = 'v_trim')
-    inserts = c('v_gene' = 'vj_insert', 'j_gene' = 'vj_insert')
+    pairs = c('v_gene' = 'j_gene', 'j_gene' = 'v_gene', 'v-j_gene' = NULL)
+    trims = c('v_trim' = 'j_trim', 'j_trim' = 'v_trim', 'v-j_trim' = NULL)
+    inserts = c('v_gene' = 'vj_insert', 'j_gene' = 'vj_insert', 'v-j_gene' = 'vj_insert')
     return(list(gene_pairs = pairs, trim_pairs = trims, insert_pairs = inserts))
 } 
 

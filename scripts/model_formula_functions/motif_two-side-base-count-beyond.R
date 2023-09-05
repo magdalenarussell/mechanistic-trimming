@@ -10,21 +10,34 @@ get_start_list <- function(motif_data, trim_type = TRIM_TYPE){
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/two_side_base_count.R'))
 
 get_model_formula <- function(trim_type = TRIM_TYPE, gene_type = GENE_NAME){
-    left_vars = get_all_base_variables('left')
-    right_vars = get_all_base_variables('right')
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    left_vars = c()
+    right_vars = c()
+    for (i in seq(length(trims))){
+        left_vars = c(left_vars, get_all_base_variables('left', trims[i]))
+        right_vars = c(right_vars, get_all_base_variables('right', trims[i]))
+    }
 
     left_vars_collapse = paste(left_vars, collapse = ' + ')
     right_vars_collapse = paste(right_vars, collapse = ' + ')
 
-    motif_positions = get_positions(trim_type) 
+    motif_positions = c()
+    for (i in seq(length(trims))){
+        motif_positions = c(motif_positions, get_positions(trims[i]))
+    }
+
     motif_positions_together = paste(motif_positions, collapse = ' + ')
 
-    formula = formula(paste0('cbind(weighted_observation, interaction(', gene_type, '_group, subject)) ~ ', left_vars_collapse, ' + ', right_vars_collapse, ' + ', motif_positions_together))
+    gene_groups = paste(paste0(genes, '_group'), collapse = ' ,')
+
+    formula = formula(paste0('cbind(weighted_observation, interaction(', gene_groups, ', subject)) ~ ', left_vars_collapse, ' + ', right_vars_collapse, ' + ', motif_positions_together))
 
     return(formula)
 }
 
-process_data_for_model_fit <- function(group_motif_data, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
-    together = process_for_two_side_base_count(group_motif_data, beyond_motif = TRUE, whole_nucseq = whole_nucseq)
+process_single_data_for_model_fit <- function(group_motif_data, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    together = process_for_two_side_base_count(group_motif_data, beyond_motif = TRUE, whole_nucseq = whole_nucseq, gene_type = gene_type, trim_type = trim_type)
     return(together)
 }

@@ -2,12 +2,23 @@ source(paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/', MOTIF_TYPE, '
 source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_formula_functions/', MODEL_TYPE, '.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/data_grouping_functions/', DATA_GROUP, '.R'))
 
 REQUIRED_COMMON_NUCS_5 <<- 10
 
+get_gene_order <- function(gene_type){
+    genes = strsplit(gene_type, '_')[[1]][1]
+    genes = strsplit(genes, '-')[[1]]
+    return(c(paste0(genes, '_gene')))
+}
+
+get_trim_order <- function(trim_type){
+    trims = strsplit(trim_type, '_')[[1]][1]
+    trims = strsplit(trims, '-')[[1]]
+    return(c(paste0(trims, '_trim')))
+}
+
 get_subject_motif_output_location <- function(){
-    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, DATA_GROUP, TRIM_TYPE, PRODUCTIVITY, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data')
+    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, PARAM_GROUP, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'motif_data')
     return(output_location)
 }
 
@@ -77,36 +88,43 @@ get_nuc_context <- function(whole_gene_seqs, trim_lengths){
     return(list(left_nucs = left_nuc_list, right_nucs = right_nuc_list))
 }
 
-get_oriented_full_sequences <- function(subject_data, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME){
-    temp_data = merge(subject_data, whole_nucseq, by.x = gene_type, by.y = 'gene')
-    gene_seqs = whole_nucseq[substring(gene, 4, 4) == toupper(substring(gene_type, 1, 1))]
-    gene_groups = get_common_genes_from_seqs(gene_seqs, gene_type)
-    together = merge(temp_data, gene_groups, by = gene_type)
-    return(together)
-}
-
 get_unobserved_nuc_context <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
     # get observed trim lengths, genes
-    remove_cols = c('count', paste0(trim_type, 'med_seq'), paste0(gene_type, 'whole_seq'), paste0(trim_type, '_left_nucs'), paste0(trim_type, '_right_nucs'), paste0(trim_type, '_observed'))
+    remove_cols = c('count', paste0(genes, 'whole_seq'), paste0(trims, '_left_nucs'), paste0(trims, '_right_nucs'))
     cols = colnames(tcr_dataframe)[!(colnames(tcr_dataframe) %in% remove_cols)]
     tcr_dataframe_observed = tcr_dataframe[,.N, by = cols]
+    
     # get unique genes
-    non_trim_cols = cols[!(cols %in% c(trim_type, 'N'))]
+    non_trim_cols = cols[!(cols %in% c(trims, 'N'))]
     unique_obs = unique(tcr_dataframe_observed[,..non_trim_cols])
+
     # get desired trim lengths, genes
     trim_lengths = seq(LOWER_TRIM_BOUND,UPPER_TRIM_BOUND)
-    desired_obs = unique_obs %>%
-        mutate(!!trim_type := list(trim_lengths)) %>%
-        unnest(cols = c(trim_type)) %>%
-        as.data.table()
+
+    desired_obs = unique_obs
+    for (i in seq(length(trims))){
+        desired_obs = desired_obs %>%
+            mutate(!!trims[i]:= list(trim_lengths)) %>%
+            unnest(cols = trims[i]) %>%
+            as.data.table()
+    }
+
     # get unobserved subset
     unobserved = desired_obs[!tcr_dataframe_observed, on = cols]
+
     # get unobserved nuc context
-    unobserved = unobserved[, c(paste0(trim_type, '_left_nucs'), paste0(trim_type, '_right_nucs')):= get_nuc_context(get(paste0(gene_type, '_whole_seq')), get(trim_type))] 
-    unobserved[[paste0(trim_type, '_observed')]] = FALSE
+    for (i in seq(length(trims))){
+        u_cols = c(paste0(genes[i], '_whole_seq'), paste0(genes[i], '_group'), trims[i])
+        subset = unique(unobserved[, ..u_cols])
+        subset = subset[, c(paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs')):= get_nuc_context(get(paste0(genes[i], '_whole_seq')), get(trims[i]))] 
+        unobserved = merge(unobserved, subset, by = u_cols)
+    }
+
     unobserved$count = 0
-    cols = colnames(unobserved)[!(colnames(unobserved) %like% 'whole_seq')]
-    return(unobserved[,..cols])
+    return(unobserved)
 }
 
 filter_by_productivity <- function(data){
@@ -127,24 +145,64 @@ filter_by_productivity <- function(data){
     return(data)
 }
 
+condense_tcr_data <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE, INSERTIONS = TRUE){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    cols = c(paste0(genes, '_sequence'), paste0(genes, '_group'), paste(trims), JOINING_INSERT)
+    tcr_dataframe = tcr_dataframe[,..cols]
+    if (isTRUE(INSERTIONS)){
+        tcr_dataframe = tcr_dataframe[get(JOINING_INSERT) != 0]
+    } else {
+        tcr_dataframe = tcr_dataframe[get(JOINING_INSERT) == 0]
+    }
+    setnames(tcr_dataframe, paste0(genes, '_sequence'), paste0(genes, '_whole_seq'))
+    #condense data by gene, trim, etc.
+    cols = c(paste0(genes, '_whole_seq'), trims, paste0(genes, '_group'))
+    condensed_tcr = tcr_dataframe[, .N, by = cols]
+    setnames(condensed_tcr, 'N', 'count')
+    return(condensed_tcr)
+}
+
+sum_trim_observations <- function(condensed_tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    cols = c(paste0(genes, '_group'), trims, paste0(trims, '_left_nucs'), paste0(trims, '_right_nucs'))
+    summed = condensed_tcr_dataframe[, sum(count), by = cols]
+    setnames(summed, 'V1', 'count')
+    return(summed)
+}
+
 general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
     #filter data by trim bounds
-    tcr_dataframe = tcr_dataframe[get(TRIM_TYPE) >= LOWER_TRIM_BOUND & get(TRIM_TYPE) <= UPPER_TRIM_BOUND]
+    tcr_dataframe = tcr_dataframe[get(trims[1]) >= LOWER_TRIM_BOUND & get(trims[1]) <= UPPER_TRIM_BOUND & get(trims[2]) >= LOWER_TRIM_BOUND & get(trims[2]) <= UPPER_TRIM_BOUND]
     if (nrow(tcr_dataframe) == 0){
         return(tcr_dataframe)
     } else {
         #condense data by gene, trim, etc.
-        tcr_dataframe[, paste0(trim_type, 'med_seq') := substring(get(paste0(gene_type, '_sequence')), 1, nchar(get(paste0(gene_type, '_sequence'))) - get(trim_type))]
         tcr_dataframe = condense_tcr_data(tcr_dataframe, gene_type = gene_type, trim_type = trim_type)
-        #get motifs
-        motif_dataframe = tcr_dataframe[,c(paste0(trim_type, '_left_nucs'), paste0(trim_type, '_right_nucs')):=get_nuc_context(get(paste0(gene_type, '_whole_seq')), get(trim_type))]
-        motif_dataframe[[paste0(trim_type, '_observed')]] = TRUE
-        if (nrow(motif_dataframe) < length(unique(motif_dataframe[[paste0(gene_type, '_group')]]))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)){
-            unobserved = get_unobserved_nuc_context(motif_dataframe, gene_type = gene_type, trim_type = trim_type)
-            together = rbind(motif_dataframe[,-c(1,2)], unobserved)
-        } else {
-            together = motif_dataframe[,-c(1,2)]
+
+        #get motifs for observed trims
+        motif_dataframe = tcr_dataframe
+        for (i in seq(length(trims))){
+            u_cols = c(paste0(genes[i], '_whole_seq'), paste0(genes[i], '_group'), trims[i])
+            subset = unique(motif_dataframe[, ..u_cols])
+            subset = subset[, c(paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs')):= get_nuc_context(get(paste0(genes[i], '_whole_seq')), get(trims[i]))] 
+            motif_dataframe = merge(motif_dataframe, subset, by = u_cols)
         }
+
+        # get motifs for unobserved
+        if (nrow(motif_dataframe) < length(interaction(motif_dataframe[[paste0(genes[1], '_group')]], motif_dataframe[[paste0(genes[2], '_group')]]))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)){
+            unobserved = get_unobserved_nuc_context(motif_dataframe, gene_type = gene_type, trim_type = trim_type)
+            together = rbind(motif_dataframe, unobserved)
+        } else {
+            together = motif_dataframe
+        }
+
         # condense observations by group
         recondensed = sum_trim_observations(together, gene_type = gene_type, trim_type = trim_type)
 
@@ -159,75 +217,58 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = 
     }
 }
 
-get_colnames <- function(){
-    names = list(v_call="v_call", d_call="d_call", j_call="j_call", v_germline_start="v_germ_start_vdj", d_germline_start="d_germ_start", j_germline_start="j_germ_start", np1_length="np1_length", np2_length="np2_length", junction="junction", junction_length="junction_length", sequence_alignment="sequence_alignment")
-    return(names)
+convert_data_to_motifs <- function(compiled_data, left_window_size = LEFT_NUC_MOTIF_COUNT, right_window_size = RIGHT_NUC_MOTIF_COUNT, trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    for (i in seq(length(trims))){
+        left =paste0(trims[i], '_left_nucs') 
+        right = paste0(trims[i], '_right_nucs')
+        compiled_data[, paste0(trims[i], '_left_motif') := substring(get(left), REQUIRED_COMMON_NUCS_5-(left_window_size-1), REQUIRED_COMMON_NUCS_5)]
+        compiled_data[, paste0(trims[i], '_right_motif') := substring(get(right), 1, right_window_size)]
+        compiled_data[, paste0(trims[i], '_motif') := paste0(get(left), get(right))] 
+    }
+    return(compiled_data)
 }
 
-count_deletions_changeo <- function(row, type, gene_type = GENE_NAME){
-    stopifnot(type %in% c('v', 'j'))
-    gene_type = paste0(substring(type, 1, 1), '_call')
-    allele = str_split(row[[gene_type]], ',')[[1]][1]
-    deleted = c(NA, NA)
-    if (is.na(allele)) { 
-        return(deleted) 
+process_data_for_model_fit <- function(group_motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    processed = group_motif_data
+    for (i in seq(length(trims))){
+        processed = process_single_data_for_model_fit(processed, gene_type = genes[i], trim_type = trims[i])
     }
-
-    germline_seqs = get_whole_nucseqs() 
-    germline = germline_seqs[gene == allele]$sequence
-
-    names = get_colnames()
-    allele_germline_start = as.numeric(row[[as.character(names[paste0(type, '_germline_start')])]])
-    allele_germline_end = allele_germline_start + row[[paste0(type, '_seq_length')]] - 1
-        
-    germline_head = stringi::stri_sub(germline, 1, allele_germline_start - 1)
-    deleted_head = nchar(gsub("\\.", "", germline_head))
-    germline_tail = stringi::stri_sub(germline, allele_germline_end+1, nchar(germline))
-    deleted_tail = nchar(gsub("\\.", "", germline_tail))
-                
-    deleted[1] = deleted_head
-    deleted[2] = deleted_tail
-    return(deleted)
+    return(processed)
 }
 
-sample_by_family <- function(data){
-    counts = data[, .N, by = family]
-    singles = counts[N == 1]$family
-    not_single = counts[N != 1]$family
-    single_data = data[family %in% singles]
-    for (fam in not_single){
-        max = data[family == fam, max(conscount)]
-        selected = data[family == fam & conscount == max]
-        single_data = rbind(single_data, selected)
+split_motif_column_by_motif_position <- function(aggregated_subject_data, trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+
+    for (i in seq(length(trims))){
+        positions = get_positions(trims[i])
+        for (side in c('5end', '3end')){
+            subset = positions[positions %like% side]
+            lr_side = ifelse(side == '5end', 'left', 'right')
+            if (length(subset) > 0){
+                aggregated_subject_data[, paste0(subset) := tstrsplit(get(paste0(trims[i], '_', lr_side, '_motif')), "")]
+            } 
+        }
     }
-    return(single_data)
+    return(aggregated_subject_data)
 }
 
-process_changeo <- function(file_path, gene_type = GENE_NAME){
-    file_data = fread(file_path)
-    colnames(file_data) = tolower(colnames(file_data))
-    for (i in 1:nrow(file_data)){
-        row = file_data[i]
-        v_dels = count_deletions_changeo(row, type = 'v', gene_type = gene_type) 
-        j_dels = count_deletions_changeo(row, type = 'j', gene_type = gene_type)
-        file_data[['v_trim']][i] = v_dels[2]
-        file_data[['j_trim']][i] = j_dels[1]
-        file_data[['v_gene']][i] = str_split(row[['v_call']], ',')[[1]][1]
-        file_data[['j_gene']][i] = str_split(row[['j_call']], ',')[[1]][1]
+set_contrasts <- function(group_motif_data, ref_base = 'A', trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+
+    for (i in seq(length(trims))){
+        group_motif_data = single_set_contrasts(group_motif_data, ref_base, trims[i])
     }
-    file_data = sample_by_family(file_data)
-    cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim')
-    subset = file_data[, ..cols]
-    subset$productive = FALSE
-    return(subset)
+    return(group_motif_data)
 }
 
 compile_data_for_subject <- function(file_path, write = TRUE, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
-    if (file_path %like% 'tab'){
-        temp_data = process_changeo(file_path, gene_type)
-    } else {
-        temp_data = fread(file_path)
-    }
+    temp_data = fread(file_path)
     if (gene_type == 'd_gene'){
         temp_data = temp_data[d_gene != '-']
     }
@@ -267,15 +308,6 @@ compile_all_data <- function(directory, gene_type = GENE_NAME, trim_type = TRIM_
         print(paste0(file))
     }
     stopImplicitCluster()
-}
-
-convert_data_to_motifs <- function(compiled_data, left_window_size = LEFT_NUC_MOTIF_COUNT, right_window_size = RIGHT_NUC_MOTIF_COUNT, trim_type = TRIM_TYPE){
-    left =paste0(trim_type, '_left_nucs') 
-    right = paste0(trim_type, '_right_nucs')
-    compiled_data[, paste0(trim_type, '_left_motif') := substring(get(left), REQUIRED_COMMON_NUCS_5-(left_window_size-1), REQUIRED_COMMON_NUCS_5)]
-    compiled_data[, paste0(trim_type, '_right_motif') := substring(get(right), 1, right_window_size)]
-    compiled_data[, paste0(trim_type, '_motif') := paste0(get(left), get(right))] 
-    return(compiled_data)
 }
 
 get_frames_for_pair <- function(v_seq, v_frame, v_trim, j_seq, j_frame, j_trim){

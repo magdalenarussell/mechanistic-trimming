@@ -19,45 +19,40 @@ args = commandArgs(trailingOnly=TRUE)
 ANNOTATION_TYPE <<- args[1]
 stopifnot(ANNOTATION_TYPE %in% c('igor', 'parsimony', 'alpha'))
 
-DATA_GROUP <<- args[2]
-group_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/data_grouping_functions/'))
-group_types = str_sub(group_types, end = -3)
-stopifnot(DATA_GROUP %in% group_types)
-
-TRIM_TYPE <<- args[3]
+TRIM_TYPE <<- args[2]
 trim_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/gene_specific_functions/'))
 trim_types = str_sub(trim_types, end = -3)
 stopifnot(TRIM_TYPE %in% trim_types)
 
-PRODUCTIVITY <<- args[4]
+PRODUCTIVITY <<- args[3]
 
-MOTIF_TYPE <<- args[5] 
+MOTIF_TYPE <<- args[4] 
 motif_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/'))
 motif_types = str_sub(motif_types, end = -3)
 stopifnot(MOTIF_TYPE %in% motif_types)
 
-NCPU <<- as.numeric(args[6])
+NCPU <<- as.numeric(args[5])
 
 GENE_NAME <<- paste0(substring(TRIM_TYPE, 1, 1), '_gene')
 
 MODEL_GROUP <<- 'all_subjects' 
 
-GENE_WEIGHT_TYPE <<- args[7]
+GENE_WEIGHT_TYPE <<- args[6]
 weight_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/sampling_procedure_functions/'))
 weight_types = str_sub(weight_types, end = -3)
 stopifnot(GENE_WEIGHT_TYPE %in% weight_types)
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[7])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[9])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[8])
 
-UPPER_TRIM_BOUND <<- as.numeric(args[10]) 
-LOWER_TRIM_BOUND <<- as.numeric(args[11])
+UPPER_TRIM_BOUND <<- as.numeric(args[9]) 
+LOWER_TRIM_BOUND <<- as.numeric(args[10])
 
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond'
 
-LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[12])
+LEFT_SIDE_TERMINAL_MELT_LENGTH <<- as.numeric(args[11])
 
 source(paste0(MOD_PROJECT_PATH, '/scripts/data_compilation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))

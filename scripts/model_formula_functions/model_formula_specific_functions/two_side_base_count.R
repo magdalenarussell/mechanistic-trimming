@@ -30,7 +30,8 @@ count_bases_seq_list <- function(seq_list, side, trim_type = TRIM_TYPE){
 get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMINAL_MELT_LENGTH, beyond_motif, single_stranded = FALSE, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     trims = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)
     
-    genes = whole_nucseq$gene[substring(whole_nucseq$gene, 4, 4) == toupper(substring(gene_type, 1, 1))]
+    gene_col = whole_nucseq$gene
+    genes = gene_col[substring(gene_col, 4, 4) == toupper(substring(gene_type, 1, 1))]
     together = data.table(gene = rep(genes, each = length(trims)))
     together[[trim_type]] = rep(trims, length(genes))
     together = merge(together, whole_nucseq, by = 'gene')
@@ -83,10 +84,10 @@ get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMI
     return(motif_data_together)
 }
 
-process_for_two_side_base_count <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMINAL_MELT_LENGTH, beyond_motif = FALSE, single_stranded = FALSE, whole_nucseq = get_oriented_whole_nucseqs(), trim_type = TRIM_TYPE){
+process_for_two_side_base_count <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMINAL_MELT_LENGTH, beyond_motif = FALSE, single_stranded = FALSE, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     vars = get_all_base_variables('left', trim_type)
     if (!all(vars %in% colnames(motif_data))){
-        motif_data = get_left_right_seq_vars(motif_data, left_nuc_count, beyond_motif, single_stranded, whole_nucseq)
+        motif_data = get_left_right_seq_vars(motif_data, left_nuc_count, beyond_motif, single_stranded, whole_nucseq, gene_type, trim_type)
 
         for (side in c('left', 'right')){
             col = paste0(trim_type, '_', side, '_seq')
