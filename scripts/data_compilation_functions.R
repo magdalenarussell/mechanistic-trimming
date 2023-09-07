@@ -3,7 +3,7 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/', ANNOTA
 source(paste0(MOD_PROJECT_PATH,'/scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 
-REQUIRED_COMMON_NUCS_5 <<- 10
+REQUIRED_COMMON_NUCS_5 <<- 30 
 
 get_gene_order <- function(gene_type){
     genes = strsplit(gene_type, '_')[[1]][1]
@@ -145,15 +145,16 @@ filter_by_productivity <- function(data){
     return(data)
 }
 
-condense_tcr_data <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE, INSERTIONS = TRUE){
+condense_tcr_data <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = TRIM_TYPE, insertions = INSERTIONS){
+    stopifnot(insertions %in% c('nonzero', 'zero', 'all'))
     trims = get_trim_order(trim_type)
     genes = get_gene_order(gene_type)
 
     cols = c(paste0(genes, '_sequence'), paste0(genes, '_group'), paste(trims), JOINING_INSERT)
     tcr_dataframe = tcr_dataframe[,..cols]
-    if (isTRUE(INSERTIONS)){
+    if (insertions == 'nonzero'){
         tcr_dataframe = tcr_dataframe[get(JOINING_INSERT) != 0]
-    } else {
+    } else if (insertions == 'zero'){
         tcr_dataframe = tcr_dataframe[get(JOINING_INSERT) == 0]
     }
     setnames(tcr_dataframe, paste0(genes, '_sequence'), paste0(genes, '_whole_seq'))
