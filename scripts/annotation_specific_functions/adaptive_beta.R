@@ -1,5 +1,7 @@
 LOCUS <<- 'beta'
+DATA_TYPE <<- 'adaptive'
 source(paste0(MOD_PROJECT_PATH, '/scripts/locus_specific_functions/', LOCUS, '.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/data_type_functions/', DATA_TYPE, '.R'))
 
 extract_subject_ID <- function(tcr_repertoire_file_path){
     file_name = str_split(tcr_repertoire_file_path, "/")[[1]][7]
@@ -9,9 +11,6 @@ extract_subject_ID <- function(tcr_repertoire_file_path){
 }
 
 get_whole_nucseqs <- function(){
-    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', ANNOTATION_TYPE)))
-    setnames(whole_nucseq, 'gene_names', 'gene')
-    setnames(whole_nucseq, 'sequences', 'sequence')
-    return(whole_nucseq)
+    whole_nucseq = fread(get(paste0('WHOLE_NUCSEQS_', LOCUS)))[, -c('name')]
+    return(whole_nucseq[, c('gene', 'sequence')])
 }
-

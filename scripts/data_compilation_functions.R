@@ -3,7 +3,7 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/', ANNOTA
 source(paste0(MOD_PROJECT_PATH,'/scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 
-REQUIRED_COMMON_NUCS_5 <<- 30 
+REQUIRED_COMMON_NUCS_5 <<- UPPER_TRIM_BOUND + 10 
 
 get_gene_order <- function(gene_type){
     genes = strsplit(gene_type, '_')[[1]][1]
@@ -151,6 +151,9 @@ condense_tcr_data <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = 
     genes = get_gene_order(gene_type)
 
     cols = c(paste0(genes, '_sequence'), paste0(genes, '_group'), paste(trims), JOINING_INSERT)
+    if ('count' %in% colnames(tcr_dataframe)){
+        cols = c(cols, 'count')
+    }
     tcr_dataframe = tcr_dataframe[,..cols]
     if (insertions == 'nonzero'){
         tcr_dataframe = tcr_dataframe[get(JOINING_INSERT) != 0]
@@ -160,8 +163,13 @@ condense_tcr_data <- function(tcr_dataframe, gene_type = GENE_NAME, trim_type = 
     setnames(tcr_dataframe, paste0(genes, '_sequence'), paste0(genes, '_whole_seq'))
     #condense data by gene, trim, etc.
     cols = c(paste0(genes, '_whole_seq'), trims, paste0(genes, '_group'))
-    condensed_tcr = tcr_dataframe[, .N, by = cols]
-    setnames(condensed_tcr, 'N', 'count')
+    if ('count' %in% colnames(tcr_dataframe)){
+        condensed_tcr = tcr_dataframe[, sum(count), by = cols]
+        setnames(condensed_tcr, 'V1', 'count')
+    } else {
+        condensed_tcr = tcr_dataframe[, .N, by = cols]
+        setnames(condensed_tcr, 'N', 'count')
+    }
     return(condensed_tcr)
 }
 
@@ -274,14 +282,13 @@ set_contrasts <- function(group_motif_data, ref_base = 'A', trim_type = TRIM_TYP
 
 compile_data_for_subject <- function(file_path, write = TRUE, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     temp_data = fread(file_path)
+    temp_data = reformat_data(temp_data)
     if (gene_type == 'd_gene'){
         temp_data = temp_data[d_gene != '-']
     }
-    if (!('subject' %in% colnames(temp_data))){
-        subject_id = extract_subject_ID(file_path)
-    }else {
-        subject_id = NULL
-    }
+
+    subject_id = extract_subject_ID(file_path)
+
     temp_data = filter_by_productivity(temp_data)    
     output_location = get_subject_motif_output_location() 
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
