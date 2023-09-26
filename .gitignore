@@ -6,6 +6,7 @@ plots/
 temp_*
 analysis/
 core
+__pycache__
 
 # History files
 .Rhistory
