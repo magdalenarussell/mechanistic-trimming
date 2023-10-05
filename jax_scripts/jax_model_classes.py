@@ -4,6 +4,8 @@ import jax
 import jax.numpy as jnp
 import jaxopt
 import patsy
+import pickle
+from pandarallel import pandarallel
 from patsy.contrasts import Sum
 from sklearn.model_selection import GroupKFold
 
@@ -120,6 +122,10 @@ class DataPreprocessor():
             # Create a new DataFrame with the encoded values
             encoded_data = pd.DataFrame(encoded_values, columns=[f"{col}_{i}" for i in unique[:-1]])
             encoded_data[col] = unique
+            nonbase_var = col + '_-'
+            if nonbase_var in encoded_data.columns:
+                encoded_data[nonbase_var] = 0.0
+                encoded_data.loc[encoded_data[col] == '-', encoded_data.columns != col] = 0.0
         else:
             encoded_data = pd.DataFrame({col:unique})
         return(encoded_data)
@@ -175,9 +181,19 @@ class DataPreprocessor():
         if type(getattr(self, col)) == list:
             new_col_name = '_'.join(getattr(self, col))
             setattr(self, new_col, new_col_name)
-            training_df[new_col_name] = training_df.apply(lambda row: '_'.join(row[getattr(self, col)].astype(str)), axis=1)
+            training_df[new_col_name] = training_df.parallel_apply(lambda row: '_'.join(row[getattr(self, col)].astype(str)), axis=1)
             setattr(self, col, new_col_name)
         return training_df
+
+    def check_within_set_variance(self, training_df):
+        for col in self.variable_colnames:
+            var_counts = training_df.groupby([self.group_colname, col]).size().reset_index(name = 'N')
+            unique_var_counts = var_counts.groupby([self.group_colname]).size().reset_index(name = 'N')
+            if 1 in unique_var_counts.N.unique():
+                self.variable_colnames.remove(col)
+                self.variable_colnames = self.variable_colnames
+                print('removing ' + col + ' from model due to insufficient within-choice set variance')
+
 
 
 class DataTransformer(DataPreprocessor):
@@ -257,6 +273,10 @@ class DataTransformer(DataPreprocessor):
         # Transform categorical variable columns into contrast columns
         for col in self.variable_colnames:
             self.training_df = self.transform_categorical_vars(self.training_df, col)
+
+        # check for within-choice-set variance
+        self.check_within_set_variance(self.training_df)
+
         return(self.training_df)
 
     def get_matrices(self):
@@ -300,7 +320,10 @@ class DataTransformer(DataPreprocessor):
         d = {n: c for n, c in zip(self.variable_colnames, coefs)}
         for col in list(set(self.original_variable_colnames) - set(self.variable_colnames)):
             contrast_vars, missing_var = self.get_dropped_contrast_var(self.training_df, col)
-            d[missing_var] = sum(d[var] for var in contrast_vars)
+            for element in contrast_vars:
+                if element not in self.variable_colnames:
+                    contrast_vars.remove(element)
+            d[missing_var] = -1*sum(d[var] for var in contrast_vars)
         return d
 
 
@@ -328,7 +351,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         coefs (ndarray): Trained model coefficients.
         training_info: Information about the training process.
         maxiter (int): Maximum number of iterations for optimization.
-        stepsize (float): Step size for optimization.
+        tolerance (float): tolerance for optimization.
         l2reg (float): L2 regularization strength.
         l2kfold (int): Number of folds for L2 regularization hyperparameter tuning.
 
@@ -345,7 +368,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         loss_fn(coefs, variables, counts, l2reg=0):
             Computes the loss function for optimization.
 
-        fit(variable_matrix, counts_matrix, l2reg, maxiter, stepsize, initial_coefs):
+        fit(variable_matrix, counts_matrix, l2reg, maxiter, tolerance, initial_coefs):
             Fits the conditional logistic regression model using gradient descent.
 
         grid_search_cv(l2kfold, l2reg_values=[10**i for i in range(-2, 8)] + [0]):
@@ -354,7 +377,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         get_l2reg():
             Determines the optimal L2 regularization strength.
 
-        train_model(l2=False, maxiter=None, stepsize=None):
+        train_model(l2=False, maxiter=None, tolerance=None):
             Trains the conditional logistic regression model with optional L2 regularization.
 
     Inherits Attributes and Methods from DataTransformer class.
@@ -368,10 +391,11 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.initial_coefs = self.get_random_coefs()
         self.coefs = None
         self.training_info = None
-        self.maxiter = 100000
-        self.stepsize = 0.000001
+        self.maxiter = 1000
+        self.tolerance = 1e-8
         self.l2reg = 0
         self.l2kfold = None
+        self.l2reg_grid = None
 
     # Get probability for input parameters given coefficients
     def get_prob(self, variables, coefs=None):
@@ -449,7 +473,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         loss = self.cross_entropy(probs, counts) + self.l2regularization(coefs, size, l2reg)
         return loss
 
-    def fit(self, variable_matrix, counts_matrix, l2reg, maxiter, stepsize, initial_coefs):
+    def fit(self, variable_matrix, counts_matrix, l2reg, maxiter, tol, initial_coefs):
         """
         Fit the conditional logistic regression model using gradient descent.
 
@@ -458,14 +482,14 @@ class ConditionalLogisticRegressor(DataTransformer):
             counts_matrix (ndarray): Counts of choices.
             l2reg (float): L2 regularization strength.
             maxiter (int): Maximum number of optimization iterations.
-            stepsize (float): Step size for optimization.
+            tolerance (float): tolerance for optimization.
             initial_coefs (ndarray): Initial coefficients for model training.
 
         Returns:
             OptimizationResult: Result of the optimization process.
         """
         # Create a jaxopt GradientDescent optimizer
-        solver = jaxopt.GradientDescent(fun=self.loss_fn, maxiter=maxiter, stepsize=stepsize)
+        solver = jaxopt.GradientDescent(fun=self.loss_fn, maxiter=maxiter, tol=tol, implicit_diff=True, verbose=True)
 
         # Run gradient descent
         res = solver.run(initial_coefs,
@@ -474,7 +498,7 @@ class ConditionalLogisticRegressor(DataTransformer):
                          l2reg=l2reg)
         return(res)
 
-    def grid_search_cv(self, l2kfold, l2reg_values=[10**i for i in range(-2, 8)] + [0]):
+    def grid_search_cv(self, l2kfold, l2reg_values=[10**i for i in range(-2, 11)] + [0]):
         """
         Perform grid search cross-validation for hyperparameter tuning.
 
@@ -497,7 +521,7 @@ class ConditionalLogisticRegressor(DataTransformer):
                 train_counts, val_counts = self.counts_matrix[train_index], self.counts_matrix[val_index]
 
                 # Train the model on the training data
-                model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.stepsize, self.initial_coefs)
+                model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.tolerance, self.initial_coefs)
 
                 # Compute the loss on the validation data
                 loss = self.loss_fn(model.params,
@@ -524,17 +548,18 @@ class ConditionalLogisticRegressor(DataTransformer):
         """
         self.l2kfold = min(len(np.unique(self.nonrepeat_grp_matrix)), 10)
         grid = self.grid_search_cv(self.l2kfold)
+        self.l2reg_grid = grid
         min_obs = grid[grid.mean_CV_loss == min(grid.mean_CV_loss)]
         return(float(min_obs.l2reg.iloc[0]))
 
-    def train_model(self, l2=False, maxiter=None, stepsize=None):
+    def train_model(self, l2=False, maxiter=None, tolerance=None):
         """
         Train the conditional logistic regression model with optional L2 regularization.
 
         Args:
             l2 (bool): Whether to use L2 regularization.
             maxiter (int, optional): Maximum number of optimization iterations. If not provided, the default value is used.
-            stepsize (float, optional): Step size for optimization. If not provided, the default value is used.
+            tolerance (float, optional): tolerance for optimization. If not provided, the default value is used.
 
         Returns:
             self: The trained ConditionalLogisticRegressor instance.
@@ -549,18 +574,34 @@ class ConditionalLogisticRegressor(DataTransformer):
         else:
             self.maxiter = maxiter
 
-        if stepsize is None:
-            stepsize = self.stepsize
+        if tolerance is None:
+            tolerance = self.tolerance
         else:
-            self.stepsize = stepsize
+            self.tolerance = tolerance
 
-        res = self.fit(self.variable_matrix, self.counts_matrix, self.l2reg, maxiter, stepsize, self.initial_coefs)
+        res = self.fit(self.variable_matrix,
+                       self.counts_matrix,
+                       self.l2reg,
+                       maxiter,
+                       tolerance,
+                       self.initial_coefs)
 
         self.coefs = res.params
         self.training_info = res
         self.maxiter = maxiter
-        self.stepsize = stepsize
+        self.tolerance = tolerance
         return self
+
+    def save_model(self, file_path):
+        assert self.coefs is not None, "need to train model before saving"
+        with open(file_path, 'wb') as file:
+            # Serialize and save the object to the file
+            pickle.dump(self, file)
+
+    def load_model(self, file_path):
+        with open(file_path, 'rb') as file:
+            self = pickle.load(file)
+        assert self.coefs is not None, "model is not trained"
 
 
 class ConditionalLogisticRegressionPredictor(DataTransformer):
@@ -643,12 +684,41 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
                              self.counts_matrix)
         return(float(loss))
 
-    def get_coefficients(self):
+    def get_coefficients_df(self):
         """
-        Get the model coefficients as a dictionary.
+        Get the model coefficients as a DataFrame.
 
         Returns:
             dict: A dictionary containing variable names as keys and their corresponding coefficients as values.
         """
         self.coefs = self.model.coefs
-        return(super().get_coefficients())
+        df = pd.DataFrame.from_dict(super().get_coefficients(), columns = ['value'], orient = 'index')
+        df['coefficient'] = df.index
+        df.reset_index(drop=True, inplace=True)
+
+        # get bases
+        df['base'] = None
+        df.loc[df.coefficient.str.contains('motif'), 'base'] = df.coefficient.str.split('_').str[-1]
+        df.loc[df.coefficient.str.contains('base_count'), 'base'] = df.coefficient.str.split('_').str[-1]
+
+        # get positions
+        df['position'] = None
+        df.loc[df.coefficient.str.contains('motif'), 'position'] = df.coefficient.str.split('_').str[-2]
+        df.loc[df.coefficient.str.contains('mh_prop'), 'position'] = df.coefficient.str.split('_').str[3] + df.coefficient.str.split('_').str[4]
+
+        # get side
+        df['side'] = None
+        df.loc[df.coefficient.str.contains('motif'), 'side'] = df.coefficient.str.split('_').str[3]
+        df.loc[df.coefficient.str.contains('base_count'), 'side'] = df.coefficient.str.split('_').str[2]
+        df.loc[df.coefficient.str.contains('mh_prop'), 'side'] = df.coefficient.str.split('_').str[2]
+
+        # fix trimming specific
+        df['trim_type'] = None
+        df.loc[df.coefficient.str.contains('_trim'), 'trim_type'] = df.coefficient.str.split('_trim').str[0] + '_trim'
+
+        # simplify coefficients
+        df.loc[df.coefficient.str.contains('motif'), 'coefficient'] = 'motif'
+        df.loc[df.coefficient.str.contains('base_count'), 'coefficient'] = 'base_count'
+        df.loc[df.coefficient.str.contains('mh_prop'), 'coefficient'] = 'mh_prop'
+
+        return(df)

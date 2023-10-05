@@ -127,6 +127,16 @@ get_unobserved_nuc_context <- function(tcr_dataframe, gene_type = GENE_NAME, tri
     return(unobserved)
 }
 
+adaptive_data_filtering <- function(data){
+    if ('adaptive_v_gene_call' %in% colnames(data)){
+        data = data[v_gene == adaptive_v_gene_call]
+        if (LOCUS == 'alpha'){
+            data = data[vj_insert <= 15]
+        }
+    }
+    return(data)
+}
+
 filter_by_productivity <- function(data){
     stopifnot(PRODUCTIVITY %in% c('productive', 'nonproductive', 'both'))
     if (PRODUCTIVITY == 'productive'){
@@ -232,7 +242,6 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = 
 
 convert_data_to_motifs <- function(compiled_data, left_window_size = LEFT_NUC_MOTIF_COUNT, right_window_size = RIGHT_NUC_MOTIF_COUNT, trim_type = TRIM_TYPE){
     trims = get_trim_order(trim_type)
-    genes = get_gene_order(gene_type)
 
     for (i in seq(length(trims))){
         left =paste0(trims[i], '_left_nucs') 
@@ -290,6 +299,7 @@ compile_data_for_subject <- function(file_path, write = TRUE, gene_type = GENE_N
     subject_id = extract_subject_ID(file_path)
 
     temp_data = filter_by_productivity(temp_data)    
+    temp_data = adaptive_data_filtering(temp_data)
     output_location = get_subject_motif_output_location() 
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     together = get_oriented_full_sequences(temp_data, gene_type = gene_type)
@@ -385,4 +395,21 @@ get_frames_data <- function(){
         frame_data = fread(file_name)
     }
     return(frame_data)
+}
+
+processed_data_path <- function(){
+    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, PARAM_GROUP, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_', MODEL_TYPE))
+    dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
+    filename = file.path(output_location, 'processed_data.tsv')
+    return(filename)
+}
+
+subset_processed_data <- function(data, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    params = get_parameter_vector(trims, genes)
+    other = c(paste0(genes, '_group'), trims, 'weighted_observation', 'count', 'total_tcr')
+    cols = c(other, params)
+    return(data[, ..cols])
 }

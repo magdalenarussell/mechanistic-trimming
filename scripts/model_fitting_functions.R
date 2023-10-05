@@ -54,14 +54,13 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
     cols = cols[!(cols %like% 'right_nucs')]
 
     motif_data = motif_data[, ..cols]
-    together_pos = split_motif_column_by_motif_position(motif_data, trim_type) 
+    together_pos = split_motif_column_by_motif_position(motif_data, trim_type = trim_type) 
     weighted_together = calculate_subject_gene_weight(together_pos, gene_type = gene_type, trim_type = trim_type)
     stopImplicitCluster()
     return(weighted_together)
 }
 
 fit_model <- function(group_motif_data, formula = get_model_formula(TRIM_TYPE, GENE_NAME), trim_type = TRIM_TYPE){
-    stopifnot(unique(group_motif_data$gene_weight_type) == GENE_WEIGHT_TYPE)
     group_motif_data = set_contrasts(group_motif_data, trim_type = trim_type)
     start_list = get_start_list(group_motif_data, trim_type)
 
@@ -308,7 +307,7 @@ subsample <- function(motif_data, prop, trim_type = TRIM_TYPE, gene_type = GENE_
 
     # sample proportion of sequences for each individual
     subj_subset_orig[, subsample_total_tcr := ceiling(total_tcr*prop)]
-    cols = c(paste0(genes, '_group'), trims, paste0(trim_type, '_observed'), paste0(trims, '_left_base_count_AT'), paste0(trims, '_left_base_count_GC'), paste0(trims, '_right_base_count_AT'), paste0(trims, '_right_base_count_GC'), paste0(trims, '_motif'), paste0(trims, '_motif_5end_pos1'), paste0(trims, '_motif_3end_pos1'), paste0(trims, '_motif_3end_pos2'), 'subject', 'count', 'subsample_total_tcr', 'cluster')
+    cols = c(paste0(genes, '_group'), trims, paste0(trim_type, '_observed'), paste0(trims, '_5end_base_count_AT'), paste0(trims, '_5end_base_count_GC'), paste0(trims, '_3end_base_count_AT'), paste0(trims, '_3end_base_count_GC'), paste0(trims, '_motif'), paste0(trims, '_motif_5end_pos1'), paste0(trims, '_motif_3end_pos1'), paste0(trims, '_motif_3end_pos2'), 'subject', 'count', 'subsample_total_tcr', 'cluster')
     subj_subset_orig[, row := seq(1, .N), by = .(subject)]
     subj_subset = subj_subset_orig[subj_subset_orig[, sample(.I, subsample_total_tcr, replace = TRUE, prob = count), by = subject]$V1]
     subj_subset[, count := .N, by = .(subject, row)]

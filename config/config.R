@@ -11,7 +11,8 @@ PROJECT_PATH <<- ROOT_PATH
 # (required) Training data set; change the path to these data after IGoR processing
 # TCR_REPERTOIRE_DATA_igor = paste0(MOD_PROJECT_PATH, '/_ignore/emerson_igor_stats/')
 
-TCR_REPERTOIRE_DATA_adaptive_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/heikkila_alpha/')
+TCR_REPERTOIRE_DATA_adaptive_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/heikkila_alpha/adaptive/')
+TCR_REPERTOIRE_DATA_igor_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/heikkila_alpha/igor/')
 
 
 # (required) TRB gene names and germline sequences from IMGT

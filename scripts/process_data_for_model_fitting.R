@@ -26,11 +26,11 @@ source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
 NCPU <<- as.numeric(args[3])
 
 # 5' motif nucleotide count
-LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
+LEFT_NUC_MOTIF_COUNT <<- as.numeric(args[4])
 # 3' motif nucleotide count
-RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[6])
+RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 
-MODEL_TYPE <<- args[7]
+MODEL_TYPE <<- args[6]
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
@@ -38,5 +38,9 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data(trim_type = TRIM_TYPE)
 
+# subset data
+motif_data = subset_processed_data(motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
+
 # Write processed data
-#TODO...
+filename = processed_data_path()
+fwrite(motif_data, filename, sep = '\t')
