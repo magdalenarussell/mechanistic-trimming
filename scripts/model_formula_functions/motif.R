@@ -13,20 +13,24 @@ get_start_list <- function(motif_data, trim_type = TRIM_TYPE){
     return(start_list)
 }
 
-get_model_formula <- function(trim_type = TRIM_TYPE, gene_type = GENE_NAME){
-    trims = get_trim_order(trim_type)
-    genes = get_gene_order(gene_type)
-
+get_parameter_vector <- function(trims, genes){
     motif_positions = c()
     for (i in seq(length(trims))){
         motif_positions = c(motif_positions, get_positions(trims[i]))
     }
+    return(motif_positions)
+}
 
+get_model_formula <- function(trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
+    motif_positions = get_parameter_vector(trims, genes)
     motif_positions_together = paste(motif_positions, collapse = ' + ')
 
     gene_groups = paste(paste0(genes, '_group'), collapse = ' ,')
 
-    formula = formula(paste0('cbind(weighted_observation, interaction(', gene_groups, ', subject)) ~ ', motif_positions_together))
+    formula = formula(paste0('cbind(weighted_observation, interaction(', gene_groups, ')) ~ ', motif_positions_together))
     return(formula)
 }
 

@@ -1,5 +1,5 @@
 get_all_base_variables <- function(side, trim_type = TRIM_TYPE){
-    stopifnot(side %in% c('left', 'right'))
+    stopifnot(side %in% c('5end', '3end'))
     bases = c('GC', 'AT')
     vars = paste0(trim_type, '_', side, '_base_count_', bases)
     return(vars)
@@ -68,15 +68,15 @@ get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMI
     together[[paste0(gene_type, '_sequence_pnuc')]] = paste(as.character(seq), as.character(possible_pnucs_5_to_3), sep = '')
 
     if (isFALSE(single_stranded)){
-        together[, paste0(trim_type, '_right_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - get(trim_type) + 1 + right_position_shift - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc')))-2*abs(PNUC_COUNT))]
+        together[, paste0(trim_type, '_3end_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - get(trim_type) + 1 + right_position_shift - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc')))-2*abs(PNUC_COUNT))]
     } else {
-        together[, paste0(trim_type, '_right_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - get(trim_type) + 1 + right_position_shift - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc'))))]
+        together[, paste0(trim_type, '_3end_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - get(trim_type) + 1 + right_position_shift - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc'))))]
     }
 
     if (is.numeric(left_nuc_count)){
-        together[, paste0(trim_type, '_left_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - (get(trim_type) + left_nuc_count) + 1 - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc')))-get(trim_type) - left_position_shift - abs(PNUC_COUNT))]
+        together[, paste0(trim_type, '_5end_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - (get(trim_type) + left_nuc_count) + 1 - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc')))-get(trim_type) - left_position_shift - abs(PNUC_COUNT))]
     } else if (left_nuc_count == 'right_nuc_count') {
-        together[, paste0(trim_type, '_left_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - (get(trim_type) + nchar(get(paste0(trim_type, '_right_seq')))) + 1 - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc')))-get(trim_type) - left_position_shift - abs(PNUC_COUNT))]
+        together[, paste0(trim_type, '_5end_seq') := substring(get(paste0(gene_type, '_sequence_pnuc')), nchar(get(paste0(gene_type, '_sequence_pnuc'))) - (get(trim_type) + nchar(get(paste0(trim_type, '_3end_seq')))) + 1 - abs(PNUC_COUNT), nchar(get(paste0(gene_type, '_sequence_pnuc')))-get(trim_type) - left_position_shift - abs(PNUC_COUNT))]
     }
    
     cols = colnames(together)[!(colnames(together) %like% '_sequence')]
@@ -85,11 +85,11 @@ get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMI
 }
 
 process_for_two_side_base_count <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMINAL_MELT_LENGTH, beyond_motif = FALSE, single_stranded = FALSE, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
-    vars = get_all_base_variables('left', trim_type)
+    vars = get_all_base_variables('5end', trim_type)
     if (!all(vars %in% colnames(motif_data))){
         motif_data = get_left_right_seq_vars(motif_data, left_nuc_count, beyond_motif, single_stranded, whole_nucseq, gene_type, trim_type)
 
-        for (side in c('left', 'right')){
+        for (side in c('5end', '3end')){
             col = paste0(trim_type, '_', side, '_seq')
             base_counts = count_bases_seq_list(motif_data[[col]], side, trim_type)
             motif_data = merge(motif_data, base_counts, by = col)

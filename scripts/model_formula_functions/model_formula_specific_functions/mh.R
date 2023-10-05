@@ -94,32 +94,32 @@ get_mh_prop <- function(seq1, seq2){
 get_mh_prop_cols <- function(data, overlap_count, keep_gene_seqs = FALSE){
     # get overlapping regions
     names = get_overlap_names(overlap_count)
-    data[, paste(names) := get_overlapping_regions(v_gene_sequence, j_gene_sequence, v_trim, j_trim, overlap_count)]
+    if (!all(names %in% colnames(data))){
+        data[, paste(names) := get_overlapping_regions(v_gene_sequence, j_gene_sequence, v_trim, j_trim, overlap_count)]
 
-    stopifnot(isFALSE(keep_nt_identity))
-    # get MH
-    for (pos in c('up', 'down', 'mid')){
-        n = paste0('mh_prop_', pos, '_overlap_', overlap_count)
-        v_seq_col = paste0('v_gene_', pos, '_overlap_', overlap_count)
-        j_seq_col = paste0('j_gene_', pos, '_overlap_', overlap_count)
-        cols = c(v_seq_col, j_seq_col)
-        subset = unique(data[, ..cols])
+        # get MH
+        for (pos in c('up', 'down', 'mid')){
+            n = paste0('mh_prop_', pos, '_overlap_', overlap_count)
+            v_seq_col = paste0('v_gene_', pos, '_overlap_', overlap_count)
+            j_seq_col = paste0('j_gene_', pos, '_overlap_', overlap_count)
+            cols = c(v_seq_col, j_seq_col)
+            subset = unique(data[, ..cols])
 
-        subset[, paste(n) := get_mh_prop(get(v_seq_col), get(j_seq_col))]
-        subset[is.na(get(n)), paste(n) := 0]
-        data = merge(data, subset, by = cols)
-    }
+            subset[, paste(n) := get_mh_prop(get(v_seq_col), get(j_seq_col))]
+            subset[is.na(get(n)), paste(n) := 0]
+            data = merge(data, subset, by = cols)
+        }
 
-    if (keep_gene_seqs == FALSE) {
-        remove = c('v_gene_sequence', 'j_gene_sequence')
-        cols = colnames(data)[!(colnames(data) %in% remove)]
-        data = data[, ..cols]
+        if (keep_gene_seqs == FALSE) {
+            remove = c('v_gene_sequence', 'j_gene_sequence')
+            cols = colnames(data)[!(colnames(data) %in% remove)]
+            data = data[, ..cols]
+        }
     }
     return(data)
 }
 
-get_oriented_sequences_for_processed_df <- function(motif_data, gene_type = GENE_NAME){
-    trims = get_trim_order(trim_type)
+get_oriented_sequences_for_processed_df <- function(motif_data, whole_nucseq, gene_type = GENE_NAME){
     genes = get_gene_order(gene_type)
 
     for (g in genes){
@@ -152,7 +152,7 @@ get_oriented_sequences_for_processed_df <- function(motif_data, gene_type = GENE
 }
 
 process_for_mh <- function(motif_data, whole_nucseq = get_oriented_whole_nucseqs(), overlap_vector = c(0, 1, 2, 3, 4), trim_type = TRIM_TYPE, gene_type = GENE_NAME){
-    motif_data = get_oriented_sequences_for_processed_df(motif_data)
+    motif_data = get_oriented_sequences_for_processed_df(motif_data, whole_nucseq)
     
     for (overlap in overlap_vector){
         motif_data = get_mh_prop_cols(motif_data, overlap, keep_gene_seqs = TRUE)

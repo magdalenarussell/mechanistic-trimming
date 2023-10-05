@@ -4,7 +4,9 @@ source(paste0(MOD_PROJECT_PATH, '/scripts/locus_specific_functions/', LOCUS, '.R
 source(paste0(MOD_PROJECT_PATH, '/scripts/data_type_functions/', DATA_TYPE, '.R'))
 
 extract_subject_ID <- function(tcr_repertoire_file_path){
-    file_name = str_split(tcr_repertoire_file_path, "/")[[1]][8]
+    split_name = str_split(tcr_repertoire_file_path, "/")[[1]]
+
+    file_name = split_name[length(split_name)]
     file_root_name = str_split(file_name, ".tsv")[[1]][1]
     return(file_root_name)
 }

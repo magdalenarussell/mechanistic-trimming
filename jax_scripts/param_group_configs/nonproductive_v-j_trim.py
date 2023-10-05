@@ -7,3 +7,4 @@ LOWER_TRIM_BOUND = -2
 INSERTIONS = 'nonzero'
 MODEL_GROUP = 'all_subjects'
 GENE_WEIGHT_TYPE = 'p_gene_pooled'
+REPEAT_OBS_COLNAME = None
