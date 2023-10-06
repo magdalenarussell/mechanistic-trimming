@@ -24,6 +24,7 @@ MODEL_TYPE = sys.argv[5]
 L2 = sys.argv[6]
 L2 = (L2.lower() == 'true')
 NCPU = int(sys.argv[7])
+ANNOTATION_TYPE_VALIDATION = sys.argv[8]
 
 # initialize parallelized pandas
 pandarallel.initialize(nb_workers=NCPU, progress_bar=True)
@@ -46,46 +47,39 @@ model_params = variable_configuration.model_specific_parameters(param_config,
                                                                 LEFT_NUC_MOTIF_COUNT,
                                                                 RIGHT_NUC_MOTIF_COUNT)
 model_params = model_params.process_model_parameters()
-print('oaded parameters')
+print('loaded parameters')
 
 # read in data
-processed_data_filename = params.R_processed_data_path()
+processed_data_filename = params.R_processed_data_path(annotation = ANNOTATION_TYPE_VALIDATION)
 processed_data = pd.read_csv(processed_data_filename, sep = '\t')
 print('read in data')
 
-# initialize model 
-model = ConditionalLogisticRegressor(training_df = processed_data,
-                                     variable_colnames = model_params.variable_colnames,
-                                     count_colname = model_params.count_colname,
-                                     group_colname = model_params.group_colname,
-                                     repeat_obs_colname = model_params.repeat_obs_colname,
-                                     choice_colname = model_params.choice_colname)
-print('initialized model')
-
-# train model
-model = model.train_model(l2=L2, maxiter=20000, tolerance=1e-8)
-print('trained model')
-
-# save trained model
+# validate model
 model_filename = params.model_output_path(L2)
-model.save_model(model_filename)
+evaluator = ConditionalLogisticRegressionEvaluator(model_filename,
+                                                   processed_data)
 
-# make predictions on full training dataset
-predictor = ConditionalLogisticRegressionPredictor(model=model,
-                                                   new_df=processed_data,
-                                                   variable_colnames = model_params.variable_colnames,
-                                                   count_colname = model_params.count_colname,
-                                                   group_colname = model_params.group_colname,
-                                                   repeat_obs_colname = model_params.repeat_obs_colname,
-                                                   choice_colname = model_params.choice_colname)
+result = evaluator.compile_results_df(params.left_nuc_motif_count,
+                                      params.right_nuc_motif_count,
+                                      params.motif_type,
+                                      params.gene_weight_type,
+                                      params.upper_trim_bound,
+                                      params.lower_trim_bound,
+                                      params.insertions,
+                                      params.model_type,
+                                      10,
+                                      True)
+
+result['validation_data_type'] = ANNOTATION_TYPE_VALIDATION
 
 # write predictions and coefficients
-training_pred = predictor.predict()
-predictions_filename = params.predictions_data_path(L2)
-training_pred.to_csv(predictions_filename, sep='\t', index=False)
+path = params.model_eval_results_path(L2)
 
-coefs = predictor.get_coefficients_df()
-coefs_filename = params.trained_coefs_path(L2)
-coefs.to_csv(coefs_filename, sep='\t', index=False)
-print('finished processing model predictions')
+if os.path.isfile(path):
+    # Read the file as a Pandas DataFrame
+    df = pd.read_csv(path)
+    result = pd.concat([df, result], axis = 0, fill_value = 'NA')
+
+result.to_csv(path, sep='\t', index=False)
+print('finished validating model')
 

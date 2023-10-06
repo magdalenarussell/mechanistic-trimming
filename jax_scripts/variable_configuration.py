@@ -20,13 +20,15 @@ class global_paramaters():
         self.model_group = getattr(self.param_config, "MODEL_GROUP")
         self.gene_weight_type = getattr(self.param_config, "GENE_WEIGHT_TYPE")
 
-    def R_processed_data_path(self):
-        path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
+    def R_processed_data_path(self, annotation = None):
+        if annotation == None:
+            annotation = self.annotation_type
+        path = self.root_path + '/' + annotation + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
         file_name = path + '/processed_data.tsv'
         return(file_name)
 
     def model_output_path(self, l2):
-        path = self.project_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
+        path = self.project_path + '/trained_models/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
         os.makedirs(path, exist_ok=True)
         file_name = path + '/trained_model_L2' + str(l2) + '.pkl'
         return(file_name)
@@ -39,6 +41,11 @@ class global_paramaters():
     def trained_coefs_path(self, l2):
         path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
         file_name = path + '/trained_coefs_L2' + str(l2) + '.tsv'
+        return(file_name)
+
+    def model_eval_results_path(self, l2):
+        path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
+        file_name = path + '/model_evaluation_results_L2' + str(l2) + '.tsv'
         return(file_name)
 
 

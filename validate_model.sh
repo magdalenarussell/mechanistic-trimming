@@ -1,23 +1,19 @@
 #!/bin/bash
-
 source $HOME/miniconda3/etc/profile.d/conda.sh
-conda activate mechanistic-trimming 
+conda activate mechanistic-trimming_jax
 set -eu
 
 ANNOTATION_TYPE=$1
 PARAM_GROUP=$2
 NCPU=$3
-MODEL_GROUP=$4
-GENE_WEIGHT_TYPE=$5
-LEFT_MOTIF_COUNT=$6
-RIGHT_MOTIF_COUNT=$7
-MODEL_TYPE=$8
-VALIDATION_DATA_DIR=$9
-VALIDATION_TYPE=${10}
-VALIDATION_TRIM_TYPE=${11}
-VALIDATION_PRODUCTIVITY=${12}
-LOSS_WEIGHT_TYPE=${13}
+LEFT_MOTIF_COUNT=$4
+RIGHT_MOTIF_COUNT=$5
+MODEL_TYPE=$6
+L2=$7
+ANNOTATION_TYPE_VALIDATION=$8
 
-Rscript $PWD/mechanistic-trimming/scripts/validate_model.R $ANNOTATION_TYPE $PARAM_GROUP $NCPU $MODEL_GROUP $GENE_WEIGHT_TYPE $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $VALIDATION_DATA_DIR $VALIDATION_TYPE $VALIDATION_TRIM_TYPE $VALIDATION_PRODUCTIVITY $LOSS_WEIGHT_TYPE
+Rscript $PWD/mechanistic-trimming/scripts/process_data_for_model_fitting.R $ANNOTATION_TYPE_VALIDATION $PARAM_GROUP $NCPU $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE
+echo "finished processing data for model validation"
 
-
+python -i $PWD/mechanistic-trimming/jax_scripts/validate_model.py $ANNOTATION_TYPE $PARAM_GROUP $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $L2 $NCPU $ANNOTATION_TYPE_VALIDATION
+echo "finished model validation"
