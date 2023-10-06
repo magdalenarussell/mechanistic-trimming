@@ -9,9 +9,6 @@ from pandarallel import pandarallel
 from patsy.contrasts import Sum
 from sklearn.model_selection import GroupKFold
 
-# TODO move on to more complex case
-# TODO make compatible with up and downstream R code
-
 class DataPreprocessor():
     """
     A class for preprocessing and transforming data.
@@ -279,6 +276,11 @@ class DataTransformer(DataPreprocessor):
 
         return(self.training_df)
 
+    def reset_weighted_observations(self, counts_mat):
+        mat_sum = jnp.sum(counts_mat)
+        reset_mat = counts_mat/mat_sum
+        return(reset_mat)
+
     def get_matrices(self):
         """
         Prepares data matrices for modeling.
@@ -498,7 +500,29 @@ class ConditionalLogisticRegressor(DataTransformer):
                          l2reg=l2reg)
         return(res)
 
-    def grid_search_cv(self, l2kfold, l2reg_values=[10**i for i in range(-2, 11)] + [0]):
+    def cv_loss(self, fold_count, l2reg):
+        kf = GroupKFold(n_splits=fold_count)
+        scores = []
+
+        for train_index, val_index in kf.split(X=self.variable_matrix, y=self.counts_matrix, groups=self.nonrepeat_grp_matrix):
+            train_data, val_data = self.variable_matrix[train_index], self.variable_matrix[val_index]
+            train_counts, val_counts = self.counts_matrix[train_index], self.counts_matrix[val_index]
+            train_counts = self.reset_weighted_observations(train_counts)
+            val_counts = self.reset_weighted_observations(val_counts)
+
+            # Train the model on the training data
+            model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.tolerance, self.initial_coefs)
+
+            # Compute the loss on the validation data
+            loss = self.loss_fn(model.params,
+                                val_data,
+                                val_counts)
+
+            # Store the loss as a score (lower score is better)
+            scores.append(float(loss))
+        return(scores)
+
+    def grid_search_cv(self, l2kfold, l2reg_values=[10**i for i in range(-2, 10)] + [0]):
         """
         Perform grid search cross-validation for hyperparameter tuning.
 
@@ -513,23 +537,7 @@ class ConditionalLogisticRegressor(DataTransformer):
 
         for l2reg in l2reg_values:
             # Perform cross-validation
-            kf = GroupKFold(n_splits=l2kfold)
-            scores = []
-
-            for train_index, val_index in kf.split(X=self.variable_matrix, y=self.counts_matrix, groups=self.nonrepeat_grp_matrix):
-                train_data, val_data = self.variable_matrix[train_index], self.variable_matrix[val_index]
-                train_counts, val_counts = self.counts_matrix[train_index], self.counts_matrix[val_index]
-
-                # Train the model on the training data
-                model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.tolerance, self.initial_coefs)
-
-                # Compute the loss on the validation data
-                loss = self.loss_fn(model.params,
-                                    val_data,
-                                    val_counts)
-
-                # Store the loss as a score (lower score is better)
-                scores.append(float(loss))
+            scores = self.cv_loss(l2kfold, l2reg)
 
             # Calculate the mean cross-validation score
             mean_score = np.mean(scores)
@@ -597,11 +605,6 @@ class ConditionalLogisticRegressor(DataTransformer):
         with open(file_path, 'wb') as file:
             # Serialize and save the object to the file
             pickle.dump(self, file)
-
-    def load_model(self, file_path):
-        with open(file_path, 'rb') as file:
-            self = pickle.load(file)
-        assert self.coefs is not None, "model is not trained"
 
 
 class ConditionalLogisticRegressionPredictor(DataTransformer):
@@ -722,3 +725,78 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
         df.loc[df.coefficient.str.contains('mh_prop'), 'coefficient'] = 'mh_prop'
 
         return(df)
+
+class ConditionalLogisticRegressionEvaluator(DataTransformer):
+    def __init__(self, model_path, validation_df = None):
+        self.model = self.load_model(model_path)
+        self.validation_df = validation_df
+        if not isinstance(self.model, ConditionalLogisticRegressor):
+            raise TypeError("'model' must be a ConditionalLogisticRegressor object")
+        super().__init__(self.validation_df, self.model.variable_colnames, self.model.count_colname, self.model.group_colname, self.model.repeat_obs_colname, self.model.choice_colname)
+        self.log_loss = None
+        self.expected_log_loss = None
+
+    def load_model(self, file_path):
+        with open(file_path, 'rb') as file:
+            model = pickle.load(file)
+        assert model.coefs is not None, "model is not trained"
+        return(model)
+
+    def calculate_log_loss(self):
+        # Compute the loss on the training data
+        loss = self.model.loss_fn(self.model.coefs,
+                                  self.model.variable_matrix,
+                                  self.model.counts_matrix)
+        return(loss)
+
+    def calculate_expected_log_loss(self, fold_count=20):
+         # Compute the expected loss on the training data
+         expected = self.model.cv_loss(fold_count, self.model.l2reg)
+         e_loss = sum((1/fold_count) * expected)
+         return(e_loss)
+
+    def calculate_validation_log_loss(self):
+        assert validation_df != None, 'No input validation dataframe provided'
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices()
+        loss = self.model.loss_fn(self.model.coefs,
+                                  variable_matrix,
+                                  counts_matrix)
+        return(loss)
+
+    def compile_evaluation_results_df(self, left_nuc_count, right_nuc_count, motif_type, gene_weight_type, upper_trim_bound, lower_trim_bound, insertion_bound, model_type, base_count_5end_length, calculate_validation_loss = False):
+        result = {'motif_length_5_end':left_nuc_count,
+                  'motif_length_3_end':right_nuc_count,
+                  'motif_type':motif_type,
+                  'gene_weight_type':gene_weight_type,
+                  'upper_bound':upper_trim_bound,
+                  'lower_bound':lower_trim_bound,
+                  'insertion_bound':insertion_bound,
+                  'model_type':model_type,
+                  'base_count_5end_length':base_count_5end_length,
+                  'model_parameter_count':len(self.model.coefs)}
+
+        results_df = pd.DataFrame(result)
+
+        if calculate_validation_loss is False:
+            self.log_loss = self.calculate_log_loss()
+            self.expected_log_loss = self.calculate_expected_log_loss()
+
+            # add loss result
+            l = results_df.copy()
+            l['loss_type'] = 'Log loss on training data'
+            l['log_loss'] = self.log_loss
+
+            # add expected loss result
+            e = results_df.copy()
+            e['loss_type'] = 'Expected log loss across training data'
+            e['log_loss'] = self.expected_log_loss
+
+            final = pd.concat([l, e], axis = 0)
+        else:
+            val_loss = self.calculate_validation_log_loss()
+            final = result.copy()
+            final['loss type'] = 'Log loss on validation data'
+            final['log_loss'] = val_loss
+        return(final)
+
+
