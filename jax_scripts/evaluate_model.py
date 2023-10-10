@@ -52,15 +52,15 @@ print('loaded parameters')
 model_filename = params.model_output_path(L2)
 evaluator = ConditionalLogisticRegressionEvaluator(model_filename)
 
-result = evaluator.compile_results_df(params.left_nuc_motif_count,
-                                      params.right_nuc_motif_count,
-                                      params.motif_type,
-                                      params.gene_weight_type,
-                                      params.upper_trim_bound,
-                                      params.lower_trim_bound,
-                                      params.insertions,
-                                      params.model_type,
-                                      10)
+result = evaluator.compile_evaluation_results_df(params.left_nuc_motif_count,
+                                                 params.right_nuc_motif_count,
+                                                 params.motif_type,
+                                                 params.gene_weight_type,
+                                                 params.upper_trim_bound,
+                                                 params.lower_trim_bound,
+                                                 params.insertions,
+                                                 params.model_type,
+                                                 10)
 
 path = params.model_eval_results_path(L2)
 result.to_csv(path, sep='\t', index=False)

@@ -752,7 +752,7 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
     def calculate_expected_log_loss(self, fold_count=20):
          # Compute the expected loss on the training data
          expected = self.model.cv_loss(fold_count, self.model.l2reg)
-         e_loss = sum((1/fold_count) * expected)
+         e_loss = sum((1/fold_count) * np.array(expected))
          return(e_loss)
 
     def calculate_validation_log_loss(self):
@@ -764,16 +764,16 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
         return(loss)
 
     def compile_evaluation_results_df(self, left_nuc_count, right_nuc_count, motif_type, gene_weight_type, upper_trim_bound, lower_trim_bound, insertion_bound, model_type, base_count_5end_length, calculate_validation_loss = False):
-        result = {'motif_length_5_end':left_nuc_count,
-                  'motif_length_3_end':right_nuc_count,
-                  'motif_type':motif_type,
-                  'gene_weight_type':gene_weight_type,
-                  'upper_bound':upper_trim_bound,
-                  'lower_bound':lower_trim_bound,
-                  'insertion_bound':insertion_bound,
-                  'model_type':model_type,
-                  'base_count_5end_length':base_count_5end_length,
-                  'model_parameter_count':len(self.model.coefs)}
+        result = {'motif_length_5_end':[left_nuc_count],
+                  'motif_length_3_end':[right_nuc_count],
+                  'motif_type':[motif_type],
+                  'gene_weight_type':[gene_weight_type],
+                  'upper_bound':[upper_trim_bound],
+                  'lower_bound':[lower_trim_bound],
+                  'insertion_bound':[insertion_bound],
+                  'model_type':[model_type],
+                  'base_count_5end_length':[base_count_5end_length],
+                  'model_parameter_count':[len(self.model.coefs)]}
 
         results_df = pd.DataFrame(result)
 
