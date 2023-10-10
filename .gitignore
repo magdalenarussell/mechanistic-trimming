@@ -1,5 +1,6 @@
 # Misc.
 _ignore/
+_ignore_old_R/
 slurm*
 general_cluster_submit*
 plots/
