@@ -602,6 +602,7 @@ class ConditionalLogisticRegressor(DataTransformer):
 
     def save_model(self, file_path):
         assert self.coefs is not None, "need to train model before saving"
+        self.training_df = None
         with open(file_path, 'wb') as file:
             # Serialize and save the object to the file
             pickle.dump(self, file)
