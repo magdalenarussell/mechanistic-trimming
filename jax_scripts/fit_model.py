@@ -84,8 +84,9 @@ training_pred = predictor.predict()
 predictions_filename = params.predictions_data_path(L2)
 training_pred.to_csv(predictions_filename, sep='\t', index=False)
 
-coefs = predictor.get_coefficients_df()
-coefs_filename = params.trained_coefs_path(L2)
-coefs.to_csv(coefs_filename, sep='\t', index=False)
+if MODEL_TYPE != 'null':
+    coefs = predictor.get_coefficients_df()
+    coefs_filename = params.trained_coefs_path(L2)
+    coefs.to_csv(coefs_filename, sep='\t', index=False)
 print('finished processing model predictions')
 
