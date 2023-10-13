@@ -1,43 +1,3 @@
-make_loss_type_names_neat <- function(type) {
-    if (type == 'expected_log_loss'){
-        nice = 'Expected\nlog loss\n(held-out\ndatasets)'
-    } else if (type == 'log_loss'){
-        nice = 'Log loss\n(full training\ndataset)'
-    } else if (type == 'aic'){
-        nice = 'AIC' 
-    } else if (type == 'raw_loss'){
-        nice = 'Raw count log loss (training dataset)' 
-    } else if (type == 'old_loss_cv'){
-        nice = 'Raw count conditional log loss\n(held-out dataset)' 
-    } else if (type == 'log_loss_j_gene'){
-        nice = 'Log loss\n(full J-gene\ndataset)' 
-    } else if (type %like% 'v_gene_family_loss'){
-        if (type == 'v_gene_family_loss'){
-            nice = 'Log loss (\"most-different\"\nheld-out dataset)'
-        } else {
-            if (type %like% 'full_v_gene_family_loss') {
-                nice = str_replace(type, 'full_v_gene_family_loss,', 'Log loss\n(full seq.\nV-gene family\n')
-            } else {
-                nice = str_replace(type, 'v_gene_family_loss,', 'Log loss\n(V-gene family\n')
-            }
-            nice = paste0(nice, '\nheld-out)')
-        }
-    } else {
-        nice = type
-    }
-    return(nice)
-}
-
-order_losses <- function(loss_list){
-    loss_list_ordered = c(loss_list[loss_list %like% 'training'], 
-                          loss_list[loss_list %like% 'Expected'],
-                          loss_list[(loss_list %like% 'V-gene family' & !(loss_list %like% 'full seq.')) | (loss_list %like% 'terminal')],
-                          loss_list[loss_list %like% 'full seq.'], 
-                          loss_list[loss_list %like% 'testing'],
-                          loss_list[loss_list %like% 'J-gene'])
-    return(unique(loss_list_ordered))
-}
- 
 make_model_names_neat <- function(model_names){
     model_names = str_replace_all(model_names, 'two_side', 'two-side')
     two_side_original = sapply(strsplit(model_names, 'two-side'), `[`, 2)
@@ -50,16 +10,6 @@ make_model_names_neat <- function(model_names){
     }
     nice_model_names = str_replace_all(model_names, '_', ' + ')
     return(nice_model_names)
-}
-
-make_hairpin_names_neat <- function(motif_types){
-    pnucs = sapply(strsplit(motif_types, '_'), `[`, 2) 
-    pnucs = str_replace_all(pnucs, '^1', '+1')
-    pnucs = str_replace_all(pnucs, '^3', '+3')
-    pnucs = paste0(pnucs, ' hairpin opening position')
-    pnucs = str_replace_all(pnucs, 'no', 'blunt')
-    pnucs= str_replace_all(pnucs, 'NA', '+2')
-    return(pnucs)
 }
 
 process_model_evaluation_file <- function(eval_data, model_types_neat, left_motif_size_filter = NA, right_motif_size_filter = NA, terminal_melting_5_end_length_filter = NA, lower_trim_bound = LOWER_TRIM_BOUND, upper_trim_bound = UPPER_TRIM_BOUND){

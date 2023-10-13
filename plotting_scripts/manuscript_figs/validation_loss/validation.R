@@ -50,7 +50,6 @@ TYPE <<- 'log_loss'
 LOSS_GENE_WEIGHT <<- 'p_gene_given_subject' 
 stopifnot(LOSS_GENE_WEIGHT %in% c('p_gene_given_subject', 'p_gene_marginal', 'raw_count', 'uniform', 'p_gene_marginal_all_seqs'))
 
-source(paste0(MOD_PROJECT_PATH,'scripts/model_evaluation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'plotting_scripts/plotting_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'plotting_scripts/model_evaluation_functions.R'))
 
