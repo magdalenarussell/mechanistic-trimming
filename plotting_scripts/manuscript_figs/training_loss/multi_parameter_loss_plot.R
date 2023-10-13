@@ -85,4 +85,5 @@ plot = plot + ylab('Expected per-sequence log loss\n')
 
 # save plot
 file_name = paste0(PROJECT_PATH, '/mechanistic-trimming/plotting_scripts/manuscript_figs/training_loss/loss_compare.pdf')
+
 ggsave(file_name, plot = plot, width = 32, height = 18, units = 'in', dpi = 750, device = cairo_pdf)
