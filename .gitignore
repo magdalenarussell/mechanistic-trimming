@@ -8,6 +8,7 @@ temp_*
 analysis/
 core
 __pycache__
+trained_models/*
 
 # History files
 .Rhistory
