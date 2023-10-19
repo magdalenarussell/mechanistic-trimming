@@ -40,13 +40,15 @@ eval_results = data.table()
 for (m in model_types) {
     if (m == 'null'){
         next
+    } else if (m %like% 'mh'){
+        l = 'True'
+    } else {
+        l = 'False'
     }
-    for (l in c('True')){
-        path = get_model_eval_file_path(L2=l, model_type=m)
-        temp = fread(path)
-        temp$L2 = l
-        eval_results = rbind(eval_results, temp)
-    }
+    path = get_model_eval_file_path(L2=l, model_type=m)
+    temp = fread(path)
+    temp$L2 = l
+    eval_results = rbind(eval_results, temp)
 }
 
 # get null model loss results
