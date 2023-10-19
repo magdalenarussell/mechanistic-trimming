@@ -27,6 +27,12 @@ class global_paramaters():
         file_name = path + '/processed_data.tsv'
         return(file_name)
 
+    def R_subsampling_processed_data_path(self, prop, annotation = None):
+        if annotation == None:
+            annotation = self.annotation_type
+        path = self.root_path + '/' + annotation + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type +'/temp_subsampling_exp/prop' + prop
+        return(path)
+
     def model_output_path(self, l2):
         path = self.project_path + '/trained_models/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
         os.makedirs(path, exist_ok=True)
@@ -41,6 +47,11 @@ class global_paramaters():
     def trained_coefs_path(self, l2):
         path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
         file_name = path + '/trained_coefs_L2' + str(l2) + '.tsv'
+        return(file_name)
+
+    def subsampling_coefs_path(self, prop, l2):
+        path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type + '/subsampling_experiment'
+        file_name = path + '/data_prop' + str(prop) + '_coefs_L2' + str(l2) + '.tsv'
         return(file_name)
 
     def model_eval_results_path(self, l2):

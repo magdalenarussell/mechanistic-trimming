@@ -1,6 +1,7 @@
 import sys
 sys.path.append('/home/mrussel2/microhomology/jax_scripts/')
 import os
+import glob
 import pandas as pd
 import numpy as np
 import jax
@@ -12,7 +13,7 @@ import pickle
 from pandarallel import pandarallel
 from patsy.contrasts import Sum
 from sklearn.model_selection import GroupKFold
-from jax_model_classes import ConditionalLogisticRegressionEvaluator
+from jax_model_classes import ConditionalLogisticRegressor, ConditionalLogisticRegressionPredictor
 from config import MOD_OUTPUT_PATH, MOD_PROJECT_PATH
 import variable_configuration
 
@@ -23,7 +24,9 @@ RIGHT_NUC_MOTIF_COUNT = int(sys.argv[4])
 MODEL_TYPE = sys.argv[5]
 L2 = sys.argv[6]
 L2 = (L2.lower() == 'true')
-NCPU = int(sys.argv[7])
+L2reg = float(sys.argv[7])
+PROP = sys.argv[8]
+NCPU = int(sys.argv[9])
 
 # initialize parallelized pandas
 pandarallel.initialize(nb_workers=NCPU, progress_bar=True)
@@ -48,23 +51,41 @@ model_params = variable_configuration.model_specific_parameters(param_config,
 model_params = model_params.process_model_parameters()
 print('loaded parameters')
 
-# load trained model and evaluate losses
-processed_data_filename = params.R_processed_data_path()
-processed_data = pd.read_csv(processed_data_filename, sep = '\t')
-print('read in training data')
+# read in data
+processed_data_path = params.R_subsampling_processed_data_path(PROP)
+pattern = f"{processed_data_path}/*.tsv"
+files_list = glob.glob(pattern)
 
-model_filename = params.model_output_path(L2)
-evaluator = ConditionalLogisticRegressionEvaluator(model_filename, training_df=processed_data)
+all_coefs = pd.DataFrame()
 
-result = evaluator.compile_evaluation_results_df(params.left_nuc_motif_count,
-                                                 params.right_nuc_motif_count,
-                                                 params.motif_type,
-                                                 params.gene_weight_type,
-                                                 params.upper_trim_bound,
-                                                 params.lower_trim_bound,
-                                                 params.insertions,
-                                                 params.model_type,
-                                                 10)
+for file in files_list:
+    index = files_list.index(file)
+    print(f"starting experiment {index} of {len(files_list)}")
+    processed_data = pd.read_csv(file, sep = '\t')
+    print('read in data')
 
-path = params.model_eval_results_path(L2)
-result.to_csv(path, sep='\t', index=False)
+    # initialize model 
+    model = ConditionalLogisticRegressor(training_df = processed_data,
+                                         variable_colnames = model_params.variable_colnames,
+                                         count_colname = model_params.count_colname,
+                                         group_colname = model_params.group_colname,
+                                         repeat_obs_colname = model_params.repeat_obs_colname,
+                                         choice_colname = model_params.choice_colname)
+    print('initialized model')
+
+    # train model
+    model = model.train_model(l2=L2, l2reg_value=L2reg, maxiter=10000, tolerance=1e-8)
+    print('trained model')
+
+    # get coefficients
+    coefs = model.get_coefficients_df()
+    coefs['iteration'] = index
+    all_coefs = pd.concat([all_coefs, coefs], ignore_index=True)
+    print('finished processing model coefficients')
+
+coefs_filename = params.subsampling_coefs_path(PROP, L2)
+all_coefs.to_csv(coefs_filename, sep='\t', index=False)
+
+# removing all temporary files
+for file in files_list:
+    os.remove(file)

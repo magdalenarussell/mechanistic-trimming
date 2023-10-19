@@ -66,10 +66,6 @@ print('initialized model')
 model = model.train_model(l2=L2, maxiter=20000, tolerance=1e-8)
 print('trained model')
 
-# save trained model
-model_filename = params.model_output_path(L2)
-model.save_model(model_filename)
-
 # make predictions on full training dataset
 predictor = ConditionalLogisticRegressionPredictor(model=model,
                                                    new_df=processed_data,
@@ -85,8 +81,12 @@ predictions_filename = params.predictions_data_path(L2)
 training_pred.to_csv(predictions_filename, sep='\t', index=False)
 
 if MODEL_TYPE != 'null':
-    coefs = predictor.get_coefficients_df()
+    coefs = model.get_coefficients_df()
     coefs_filename = params.trained_coefs_path(L2)
     coefs.to_csv(coefs_filename, sep='\t', index=False)
 print('finished processing model predictions')
+
+# save trained model
+model_filename = params.model_output_path(L2)
+model.save_model(model_filename)
 
