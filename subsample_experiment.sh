@@ -13,7 +13,7 @@ L2=$7
 L2_REG=$8
 PROP=$9
 
-Rscript $PWD/mechanistic-trimming/scripts/process_data_for_subsampling_experiment.R $ANNOTATION_TYPE $PARAM_GROUP $NCPU $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $PROP
+Rscript $PWD/mechanistic-trimming/analysis_scripts/process_data_for_subsampling_experiment.R $ANNOTATION_TYPE $PARAM_GROUP $NCPU $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $PROP
 echo "finished processing data for experiment"
 
 python -i $PWD/mechanistic-trimming/jax_scripts/subsampling_experiment.py $ANNOTATION_TYPE $PARAM_GROUP $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $L2 $L2_REG $PROP $NCPU

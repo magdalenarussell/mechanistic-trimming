@@ -2,13 +2,13 @@
 _ignore/
 _ignore_old_R/
 slurm*
+.nfs*
 general_cluster_submit*
 plots/
 temp_*
 analysis/
 core
 __pycache__
-trained_models/*
 
 # History files
 .Rhistory
