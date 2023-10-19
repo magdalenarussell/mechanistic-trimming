@@ -404,6 +404,13 @@ processed_data_path <- function(){
     return(filename)
 }
 
+subsampling_processed_data_path <- function(prop, iter){
+    output_location = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, PARAM_GROUP, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), paste0(LEFT_NUC_MOTIF_COUNT, '_', RIGHT_NUC_MOTIF_COUNT, '_', MODEL_TYPE), 'temp_subsampling_exp', paste0('prop', prop))
+    dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
+    filename = file.path(output_location, paste0('processed_data_', iter, '.tsv'))
+    return(filename)
+}
+
 subset_processed_data <- function(data, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
     trims = get_trim_order(trim_type)
     genes = get_gene_order(gene_type)

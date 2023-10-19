@@ -288,41 +288,39 @@ get_coef_pvalues <- function(bootstrap_results, original_model_results){
 }
 
 subsample <- function(motif_data, prop, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
-    stopifnot(TRIM_TYPE %in% c('v_trim', 'j_trim'))
-    stopifnot(MODEL_TYPE == 'motif_two-side-base-count-beyond')
     genes = get_gene_order(gene_type)
     trims = get_trim_order(trim_type)
 
-    # sample size is the number of gene, subject combos
+    # sample size is the number of gene combos
     if (length(genes) == 1){
-        motif_data$cluster = interaction(motif_data$subject, motif_data[[paste0(gene_type, '_group')]])
+        motif_data$cluster = motif_data[[paste0(gene_type, '_group')]]
     } else if (length(genes) == 2){
-        motif_data$cluster = interaction(motif_data$subject, motif_data[[paste0(genes[1], '_group')]], motif_data[[paste0(genes[2], '_group')]])
+        motif_data$cluster = interaction(motif_data[[paste0(genes[1], '_group')]], motif_data[[paste0(genes[2], '_group')]])
     }
 
-    # sample proportion of individuals
-    size = ceiling(prop * length(unique(motif_data$subject)))
-    sample_subj = sample(unique(motif_data$subject), size, replace = FALSE)
-    subj_subset_orig = motif_data[subject %in% sample_subj]
-
     # sample proportion of sequences for each individual
-    subj_subset_orig[, subsample_total_tcr := ceiling(total_tcr*prop)]
-    cols = c(paste0(genes, '_group'), trims, paste0(trim_type, '_observed'), paste0(trims, '_5end_base_count_AT'), paste0(trims, '_5end_base_count_GC'), paste0(trims, '_3end_base_count_AT'), paste0(trims, '_3end_base_count_GC'), paste0(trims, '_motif'), paste0(trims, '_motif_5end_pos1'), paste0(trims, '_motif_3end_pos1'), paste0(trims, '_motif_3end_pos2'), 'subject', 'count', 'subsample_total_tcr', 'cluster')
-    subj_subset_orig[, row := seq(1, .N), by = .(subject)]
-    subj_subset = subj_subset_orig[subj_subset_orig[, sample(.I, subsample_total_tcr, replace = TRUE, prob = count), by = subject]$V1]
-    subj_subset[, count := .N, by = .(subject, row)]
-    subj_subset_final = unique(subj_subset[, ..cols])
+    size = ceiling(unique(motif_data$total_tcr)*prop)
+    motif_data[, subsample_total_tcr := size]
+    vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_prop'],
+             colnames(motif_data)[colnames(motif_data) %like% 'base_count'],
+             colnames(motif_data)[colnames(motif_data) %like% 'motif'])
+
+    cols = c(paste0(genes, '_group'), trims, vars, 'count', 'subsample_total_tcr', 'cluster')
+    motif_data[, row := seq(1, .N)]
+    subset = motif_data[motif_data[, sample(.I, size, replace = TRUE, prob = count)]]
+    subset[, count := .N, by = .(row)]
+    subset_final = unique(subset[, ..cols])
 
     # fill in unobserved seq cases
-    subj_subset_orig_small = subj_subset_orig[, ..cols][, -c('count')]
-    subj_subset_final_small = subj_subset_final[, ..cols][, -c('count')]
-    unsampled = fsetdiff(subj_subset_orig_small, subj_subset_final_small) 
+    subset_orig_small = motif_data[, ..cols][, -c('count')]
+    subset_final_small = subset_final[, ..cols][, -c('count')]
+    unsampled = fsetdiff(subset_orig_small, subset_final_small) 
     unsampled$count = 0
-    subj_subset_final = rbind(subj_subset_final, unsampled)
+    subset_final = rbind(subset_final, unsampled)
 
     # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
     source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
-    sample_data = calculate_subject_gene_weight(subj_subset_final, gene_type = gene_type, trim_type = trim_type)
+    sample_data = calculate_subject_gene_weight(subset_final, gene_type = gene_type, trim_type = trim_type)
     return(sample_data)
 }
 
