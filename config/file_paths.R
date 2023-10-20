@@ -33,6 +33,15 @@ get_model_eval_file_path <- function(L2, model_type=NULL){
     return(file_name)
 }
 
+get_subsample_file_path <- function(L2, model_type=NULL){
+    if (is.null(model_type)){
+        model_type = MODEL_TYPE
+    }
+    path = python_output_path(model_type)
+    path = file.path(path, 'subsampling_experiment')
+    return(path)
+}
+
 get_manuscript_path <- function(){
     path = file.path(MOD_PROJECT_PATH, 'plots', ANNOTATION_TYPE, PARAM_GROUP, paste0(TRIM_TYPE, '_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND), 'manuscript')
     dir.create(path, recursive = TRUE)
