@@ -13,6 +13,7 @@ PROJECT_PATH <<- ROOT_PATH
 
 TCR_REPERTOIRE_DATA_adaptive_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/heikkila_alpha/adaptive/')
 TCR_REPERTOIRE_DATA_igor_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/heikkila_alpha/igor/')
+TCR_REPERTOIRE_DATA_igor_sim_alpha = paste0(MOD_PROJECT_PATH, '/_ignore/igor_sim_alpha/')
 
 
 # (required) TRB gene names and germline sequences from IMGT

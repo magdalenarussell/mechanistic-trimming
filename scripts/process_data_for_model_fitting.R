@@ -15,7 +15,7 @@ blas_set_num_threads(1)
 args = commandArgs(trailingOnly=TRUE)
 
 ANNOTATION_TYPE <<- args[1]
-stopifnot(ANNOTATION_TYPE %in% c('igor_alpha', 'igor_beta', 'adaptive_alpha', 'adaptive_beta'))
+stopifnot(ANNOTATION_TYPE %in% c('igor_alpha', 'igor_sim_alpha', 'igor_beta', 'adaptive_alpha', 'adaptive_beta'))
 
 PARAM_GROUP <<- args[2]
 param_types = list.files(path = paste0(MOD_PROJECT_PATH, '/scripts/param_groups/'))

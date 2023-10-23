@@ -42,11 +42,11 @@ filename = processed_data_path()
 motif_data = fread(filename)
 
 registerDoParallel(cores=NCPU)
-foreach(iter = seq(20)) %dopar% {
+foreach(iter = seq(50)) %dopar% {
     temp = subsample(motif_data, PROP)
     name = subsampling_processed_data_path(PROP, iter)
     fwrite(temp, name, sep = '\t')
-    print(paste0('finished with ', iter, ' of 20'))
+    print(paste0('finished with ', iter, ' of 50'))
 }
 stopImplicitCluster()
 
