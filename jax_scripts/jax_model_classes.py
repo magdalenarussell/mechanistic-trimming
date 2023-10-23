@@ -191,6 +191,16 @@ class DataPreprocessor():
                 self.variable_colnames = self.variable_colnames
                 print('removing ' + col + ' from model due to insufficient within-choice set variance')
 
+    def remove_zero_set_counts(self, training_df):
+        count_sums = training_df.groupby([self.group_colname])[self.count_colname].sum()
+        if 0 in count_sums.unique():
+            zeros = count_sums[count_sums == 0]
+            zero_groups = list(zeros.index)
+            training_df = training_df[~training_df[self.group_colname].isin(zero_groups)]
+            print('removing ' + str(zero_groups) + ' groups from model due to zero counts')
+        return(training_df)
+
+
 
 
 class DataTransformer(DataPreprocessor):
@@ -255,9 +265,13 @@ class DataTransformer(DataPreprocessor):
         Returns:
             pd.DataFrame: The preprocessed training DataFrame.
         """
-        # Transform group and choice column lists into strings
+        # Transform group column lists into strings
         df = self.expand_multivariable(df, "original_group_colname", "group_colname")
+        # remove zero counts
+        df = self.remove_zero_set_counts(df)
         df = self.transform_categorical_response_vars(df, "original_group_colname", "group_colname")
+
+        # Transform choice column lists into strings
         df = self.expand_multivariable(df, "original_choice_colname", "choice_colname")
         nonrepeat_groups = self.group_colname
 
