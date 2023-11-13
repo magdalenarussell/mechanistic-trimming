@@ -62,9 +62,9 @@ condensed[coefficient == 'mh_prop', nice_param := paste0(side, ' MH prop, ', sub
 condensed[coefficient == 'base_count', nice_param := paste0(side, ' ', base, ' base-count beyond, ', toupper(substring(trim_type, 1, 1)), '-gene')]
 condensed[coefficient == 'motif', nice_param := paste0(side, ' motif pos ', substring(position, 4, 4), ', ', base, ' nt, ', toupper(substring(trim_type, 1, 1)), '-gene')]
 
-condensed$nice_param = factor(condensed$nice_param, levels = condensed[prop == 0.8][order(variance)]$nice_param)
+condensed$nice_param = factor(condensed$nice_param, levels = condensed[prop == 0.5][order(variance)]$nice_param)
 
-label_data = condensed[prop == 0.8]
+label_data = condensed[prop == 0.5]
 color_palette = set_color_palette(unique(condensed$coefficient))
 
 require(ggrepel)
@@ -78,10 +78,10 @@ plot = ggplot(condensed[order(match(nice_param, levels(condensed$nice_param)))])
     background_grid(major = 'xy') + 
     panel_border(color = 'gray60', size = 1.5) +
     theme(legend.position = 'none', text = element_text(size = 45), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 40), plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm"))+
-    scale_x_discrete(expand = expansion(add = c(0.1, 2))) +
+    scale_x_discrete(expand = expansion(add = c(0.1, 3))) +
     scale_color_manual(values = color_palette)
 
 
 file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/subsampling_experiment/subsample.pdf')
 
-ggsave(file_name, plot = plot, width = 23, height = 22, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = plot, width = 25, height = 22, units = 'in', dpi = 750, device = cairo_pdf)
