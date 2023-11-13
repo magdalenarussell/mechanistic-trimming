@@ -306,6 +306,7 @@ compile_data_for_subject <- function(file_path=NULL, dataset=NULL, write = TRUE,
         temp_data = temp_data[d_gene != '-']
     }
 
+
     temp_data = filter_by_productivity(temp_data)    
     temp_data = adaptive_data_filtering(temp_data)
     output_location = get_subject_motif_output_location() 

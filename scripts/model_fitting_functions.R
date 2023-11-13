@@ -41,6 +41,12 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
         file_data
     }
     
+    weighted_together = inner_aggregation_processing(together, gene_type, trim_type)
+    stopImplicitCluster()
+    return(weighted_together)
+}
+
+inner_aggregation_processing <- function(together, gene_type, trim_type){
     if (MODEL_TYPE %like% 'dna_shape') {
         together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
         processed_motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
@@ -56,7 +62,6 @@ aggregate_all_subject_data <- function(directory = get_subject_motif_output_loca
     motif_data = motif_data[, ..cols]
     together_pos = split_motif_column_by_motif_position(motif_data, trim_type = trim_type) 
     weighted_together = calculate_subject_gene_weight(together_pos, gene_type = gene_type, trim_type = trim_type)
-    stopImplicitCluster()
     return(weighted_together)
 }
 
