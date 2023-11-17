@@ -62,6 +62,11 @@ filename = processed_data_path()
 fwrite(compiled_processed, filename, sep = '\t')
 
 
+ANNOTATION_TYPE <<- 'igor_sim_alpha'
+
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+
 # Second, generate dataset where trimming distributions for each V-gene and J-gene are shuffled
 vcols = c('v_gene')
 jcols = c('j_gene')
@@ -90,4 +95,15 @@ trim_compiled_processed = subset_processed_data(trim_compiled_processed, trim_ty
 filename = processed_data_path()
 fwrite(trim_compiled_processed, filename, sep = '\t')
 
+ANNOTATION_TYPE <<- 'igor_sim_random_sequence'
 
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
+
+rand = compile_data_for_subject(dataset=all_data, write = FALSE)
+rand_processed = inner_aggregation_processing(rand, gene_type=GENE_NAME, trim_type=TRIM_TYPE)
+
+rand_processed = subset_processed_data(rand_processed, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
+
+filename = processed_data_path()
+fwrite(rand_processed, filename, sep = '\t')
