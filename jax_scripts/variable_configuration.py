@@ -109,16 +109,32 @@ class model_specific_parameters():
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
 
+    def get_all_base_prop_variables(self):
+        assert 'base_count_prop' in self.variable_colnames, "base_count_prop is not a variable colname"
+        self.variable_colnames.remove('base_count_prop')
+        sides = ['5end', '3end']
+        bases = ['AT_prop', 'GC_prop']
+        trims = self.choice_colname
+        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for side in sides for base in bases if base + side != 'AT_prop5end']
+        self.variable_colnames = self.variable_colnames + base_vars
+        return(self.variable_colnames)
+
     def get_all_motif_variables(self):
         assert 'motif' in self.variable_colnames, "motif is not a variable colname"
         assert self.left_nuc_motif_count > 0, "left motif size must be greater than zero"
         assert self.right_nuc_motif_count > 0, "right motif size must be greater than zero"
-
         self.variable_colnames.remove('motif')
         trims = self.choice_colname
         motif_vars_5 = [trim + '_motif_5end_pos' + str(pos) for trim in trims for pos in range(self.left_nuc_motif_count, 0, -1)]
         motif_vars_3 = [trim + '_motif_3end_pos' + str(pos) for trim in trims for pos in range(1, self.right_nuc_motif_count+1)]
         self.variable_colnames = self.variable_colnames + motif_vars_5 + motif_vars_3
+        return(self.variable_colnames)
+
+    def get_all_length_variables(self):
+        assert 'length' in self.variable_colnames, "length is not a variable colname"
+        self.variable_colnames.remove('length')
+        trims = self.choice_colname
+        self.variable_colnames = self.variable_colnames + trims
         return(self.variable_colnames)
 
     def process_model_parameters(self):
@@ -128,6 +144,10 @@ class model_specific_parameters():
             self.variable_colnames = self.get_all_mh_variables()
         if 'base_count' in self.variable_colnames:
             self.variable_colnames = self.get_all_base_variables()
+        if 'base_count_prop' in self.variable_colnames:
+            self.variable_colnames = self.get_all_base_prop_variables()
         if 'motif' in self.variable_colnames:
             self.variable_colnames = self.get_all_motif_variables()
+        if 'length' in self.variable_colnames:
+            self.variable_colnames = self.get_all_length_variables()
         return(self)

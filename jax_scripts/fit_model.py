@@ -46,7 +46,7 @@ model_params = variable_configuration.model_specific_parameters(param_config,
                                                                 LEFT_NUC_MOTIF_COUNT,
                                                                 RIGHT_NUC_MOTIF_COUNT)
 model_params = model_params.process_model_parameters()
-print('oaded parameters')
+print('loaded parameters')
 
 # read in data
 processed_data_filename = params.R_processed_data_path()

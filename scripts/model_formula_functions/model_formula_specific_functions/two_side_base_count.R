@@ -95,6 +95,7 @@ process_for_two_side_base_count <- function(motif_data, left_nuc_count = LEFT_SI
             motif_data = merge(motif_data, base_counts, by = col)
         }
     }
+
     cols = colnames(motif_data)[!(colnames(motif_data) %like% '_seq')]
     return(motif_data[, ..cols])
 }
