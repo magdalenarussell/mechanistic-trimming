@@ -99,23 +99,55 @@ class model_specific_parameters():
         self.variable_colnames = self.variable_colnames + mh_vars
         return(self.variable_colnames)
 
-    def get_all_base_variables(self):
-        assert 'base_count' in self.variable_colnames, "base_count is not a variable colname"
-        self.variable_colnames.remove('base_count')
-        sides = ['5end', '3end']
+    def get_all_mh_length_interaction_variables(self, overlap_list=[0,1,2,3,4]):
+        assert 'mh_length_interaction' in self.variable_colnames, "mh_length_interaction is not a variable column"
+        self.variable_colnames.remove('mh_length_interaction')
+
+        pos = ['up', 'down']
+        lengths = ['j_length', 'v_length']
+        mh_vars = []
+        for o in overlap_list:
+            for i in range(len(pos)):
+                var = f'mh_prop_{pos[i]}_overlap_{o}_{lengths[i]}_interaction'
+                mh_vars.append(var)
+
+        self.variable_colnames = self.variable_colnames + mh_vars
+        return(self.variable_colnames)
+
+    def get_all_base_count_length_interaction_variables(self, side):
+        assert side + '_base_count_length_interaction' in self.variable_colnames, "base_count_length_interaction is not a variable column"
+        self.variable_colnames.remove(side + '_base_count_length_interaction')
+
         bases = ['AT', 'GC']
         trims = self.choice_colname
-        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for side in sides for base in bases if base + side != 'AT5end']
+        base_vars = [trim + '_' + side + '_base_count_' + base + '_prop' for trim in trims for base in bases if base + side != 'AT' + side]
+
+        interactions = []
+        for var in base_vars:
+            if 'v_trim' in var:
+                var = var + '_v_length_interaction'
+                interactions.append(var)
+            elif 'j_trim' in var:
+                var = var + '_j_length_interaction'
+                interactions.append(var)
+        self.variable_colnames = self.variable_colnames + interactions
+        return(self.variable_colnames)
+
+    def get_all_base_variables(self, side):
+        assert side + '_base_count' in self.variable_colnames, "base_count is not a variable colname"
+        self.variable_colnames.remove(side + '_base_count')
+        bases = ['AT', 'GC']
+        trims = self.choice_colname
+        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT' + side]
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
 
-    def get_all_base_prop_variables(self):
-        assert 'base_count_prop' in self.variable_colnames, "base_count_prop is not a variable colname"
-        self.variable_colnames.remove('base_count_prop')
-        sides = ['5end', '3end']
+    def get_all_base_prop_variables(self, side):
+        assert side + '_base_count_prop' in self.variable_colnames, "base_count_prop is not a variable colname"
+        self.variable_colnames.remove(side + '_base_count_prop')
         bases = ['AT_prop', 'GC_prop']
         trims = self.choice_colname
-        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for side in sides for base in bases if base + side != 'AT_prop5end']
+        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT_prop' + side]
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
 
@@ -133,7 +165,9 @@ class model_specific_parameters():
     def get_all_length_variables(self):
         assert 'length' in self.variable_colnames, "length is not a variable colname"
         self.variable_colnames.remove('length')
-        trims = self.choice_colname
+        trims = []
+        for c in self.choice_colname:
+            trims.append(c[0] + '_length')
         self.variable_colnames = self.variable_colnames + trims
         return(self.variable_colnames)
 
@@ -142,12 +176,28 @@ class model_specific_parameters():
         self.group_colname = self.process_group_colnames()
         if 'mh' in self.variable_colnames:
             self.variable_colnames = self.get_all_mh_variables()
-        if 'base_count' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_variables()
-        if 'base_count_prop' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_prop_variables()
+        if '5end_base_count' in self.variable_colnames:
+            self.variable_colnames = self.get_all_base_variables('5end')
+
+        if '3end_base_count' in self.variable_colnames:
+            self.variable_colnames = self.get_all_base_variables('3end')
+
+        if '5end_base_count_prop' in self.variable_colnames:
+            self.variable_colnames = self.get_all_base_prop_variables('5end')
+
+        if '3end_base_count_prop' in self.variable_colnames:
+            self.variable_colnames = self.get_all_base_prop_variables('3end')
+
         if 'motif' in self.variable_colnames:
             self.variable_colnames = self.get_all_motif_variables()
+
         if 'length' in self.variable_colnames:
             self.variable_colnames = self.get_all_length_variables()
+
+        if 'mh_length_interaction' in self.variable_colnames:
+            self.variable_colnames = self.get_all_mh_length_interaction_variables()
+
+        if '3end_base_count_length_interaction' in self.variable_colnames:
+            self.variable_colnames = self.get_all_base_count_length_interaction_variables('3end')
+
         return(self)

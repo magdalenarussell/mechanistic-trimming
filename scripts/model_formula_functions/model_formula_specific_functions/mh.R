@@ -40,6 +40,21 @@ get_all_mh_prop_variables <- function(overlap_vector){
     return(vars)
 }
 
+get_all_mh_prop_length_interaction_variables <- function(overlap_vector){
+    pos = c('up', 'down')
+    lengths = c('j_length', 'v_length')
+    vars = c()
+    for (o in overlap_vector){
+        for (index in seq(pos)){
+            p = pos[index]
+            len = lengths[index]
+            var = paste0('mh_prop_', p, '_overlap_', o, '_', len, '_interaction') 
+            vars = c(vars, var)
+        }
+    }
+    return(vars)
+}
+
 get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, overlap_count, pnucs = 2){
     j_gene_bottom_seq = reorient_j_bottom_strand(j_gene_bottom_seq)
 

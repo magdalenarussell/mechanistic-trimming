@@ -63,7 +63,7 @@ model = ConditionalLogisticRegressor(training_df = processed_data,
 print('initialized model')
 
 # train model
-model = model.train_model(l2=L2, maxiter=20000, tolerance=1e-8)
+model = model.train_model(l2=L2, maxiter=200000, tolerance=1e-8, step=0.05)
 print('trained model')
 
 # make predictions on full training dataset

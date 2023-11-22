@@ -454,6 +454,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.training_info = None
         self.maxiter = 1000
         self.tolerance = 1e-8
+        self.step = 0.1
         self.l2reg = 0
         self.l2kfold = None
         self.l2reg_grid = None
@@ -500,7 +501,7 @@ class ConditionalLogisticRegressor(DataTransformer):
 
     def l2regularization(self, coefs, size, l2reg):
         """
-        Compute L2 regularization term for only the MH coefficients.
+        Compute L2 regularization term for only non-base-count and non-motif coefficients.
 
         Args:
             coefs (ndarray): Coefficients for the logistic regression model.
@@ -510,7 +511,11 @@ class ConditionalLogisticRegressor(DataTransformer):
         Returns:
             float: L2 regularization term.
         """
-        mh_list = ['mh_prop' in string for string in self.variable_colnames]
+        var_list = [var for var in self.variable_colnames if 'base_count' not in var or 'interaction' in var]
+        var_list = [var for var in var_list if 'motif' not in var]
+
+        mh_list = [var in var_list for var in self.variable_colnames]
+
         if any(mh_list):
             binary_mh_list = [int(b) for b in mh_list]
             binary_mh_jnp = jnp.array(binary_mh_list).reshape(-1, 1)
@@ -541,7 +546,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         loss = self.cross_entropy(probs, counts) + self.l2regularization(coefs, size, l2reg)
         return loss
 
-    def fit(self, variable_matrix, counts_matrix, l2reg, maxiter, tol, initial_coefs):
+    def fit(self, variable_matrix, counts_matrix, l2reg, maxiter, tol, step, initial_coefs):
         """
         Fit the conditional logistic regression model using gradient descent.
 
@@ -557,7 +562,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             OptimizationResult: Result of the optimization process.
         """
         # Create a jaxopt GradientDescent optimizer
-        solver = jaxopt.GradientDescent(fun=self.loss_fn, maxiter=maxiter, tol=tol, implicit_diff=True, verbose=True)
+        solver = jaxopt.GradientDescent(fun=self.loss_fn, maxiter=maxiter, tol=tol, stepsize=step, implicit_diff=True, verbose=True)
 
         # Run gradient descent
         res = solver.run(initial_coefs,
@@ -577,7 +582,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             val_counts = self.reset_weighted_observations(val_counts)
 
             # Train the model on the training data
-            model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.tolerance, self.initial_coefs)
+            model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.tolerance, self.step, self.initial_coefs)
 
             # Compute the loss on the validation data
             loss = self.loss_fn(model.params,
@@ -626,7 +631,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         min_obs = grid[grid.mean_CV_loss == min(grid.mean_CV_loss)]
         return(float(min_obs.l2reg.iloc[0]))
 
-    def train_model(self, l2=False, l2reg_value=None, maxiter=None, tolerance=None):
+    def train_model(self, l2=False, l2reg_value=None, maxiter=None, tolerance=None, step=None):
         """
         Train the conditional logistic regression model with optional L2 regularization.
 
@@ -656,17 +661,24 @@ class ConditionalLogisticRegressor(DataTransformer):
         else:
             self.tolerance = tolerance
 
+        if step is None:
+            step = self.step
+        else:
+            self.step = step
+
         res = self.fit(self.variable_matrix,
                        self.counts_matrix,
                        self.l2reg,
                        maxiter,
                        tolerance,
+                       step,
                        self.initial_coefs)
 
         self.coefs = res.params
         self.training_info = res
         self.maxiter = maxiter
         self.tolerance = tolerance
+        self.step = step
         return self
 
     def save_model(self, file_path):

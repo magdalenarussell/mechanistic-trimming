@@ -5,6 +5,14 @@ get_all_base_variables <- function(side, trim_type = TRIM_TYPE){
     return(vars)
 }
 
+get_all_base_prop_length_interaction_variables <- function(side, trim_type = TRIM_TYPE){
+    stopifnot(side %in% c('5end', '3end'))
+    bases = c('GC', 'AT')
+    length = paste0(substring(trim_type, 1, 1), '_length')
+    vars = paste0(trim_type, '_', side, '_base_count_', bases, '_prop_', length, '_interaction')
+    return(vars)
+}
+
 count_bases_seq_list <- function(seq_list, side, trim_type = TRIM_TYPE){
     subset = unique(seq_list)
     bases = c('A', 'T', 'G', 'C')

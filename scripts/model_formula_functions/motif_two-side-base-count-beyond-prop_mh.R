@@ -68,6 +68,8 @@ process_single_data_for_model_fit <- function(group_motif_data, whole_nucseq = g
         together[((get(gc_temp) + get(at_temp)) > 0), paste(gc_prop_temp) := get(gc_temp)/(get(gc_temp) + get(at_temp))]
         together[((get(gc_temp) + get(at_temp)) > 0), paste(at_prop_temp) := get(at_temp)/(get(gc_temp) + get(at_temp))]
         together[((get(gc_temp) + get(at_temp)) == 0), paste(at_prop_temp) := 0]
+        together[((get(gc_temp) + get(at_temp)) == 0), paste(gc_prop_temp) := 0]
+
         cols = colnames(together)[!(colnames(together) %in% c(gc_temp, at_temp))]
         together = together[, ..cols]
     }
