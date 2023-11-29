@@ -15,18 +15,17 @@ reorient_j_bottom_strand <- function(j_gene_5_3_bottom_strand){
     return(stri_reverse(j_gene_5_3_bottom_strand))
 }
 
-get_overlap_names <- function(overlap_count){
-    names = c(paste0('v_gene_up_overlap_', overlap_count), 
-              paste0('j_gene_up_overlap_', overlap_count), 
-              paste0('j_gene_down_overlap_', overlap_count),
-              paste0('v_gene_down_overlap_', overlap_count),
-              paste0('v_gene_mid_overlap_', overlap_count), 
-              paste0('j_gene_mid_overlap_', overlap_count))
+get_overlap_names <- function(overlap_count, positions){
+    names = c()
+    for (pos in positions){
+        temp = c(paste0('v_gene_', pos, '_overlap_', overlap_count), 
+              paste0('j_gene_', pos, '_overlap_', overlap_count))
+        names = c(names, temp)
+    }
     return(names)
 }
 
-get_all_mh_prop_variables <- function(overlap_vector){
-    pos = c('up', 'mid', 'down')
+get_all_mh_prop_variables <- function(overlap_vector, pos = c('up', 'mid', 'down')){
     vars = c()
     for (o in overlap_vector){
         for (p in pos){
@@ -39,6 +38,21 @@ get_all_mh_prop_variables <- function(overlap_vector){
     }
     return(vars)
 }
+
+get_all_mh_count_variables <- function(overlap_vector, pos = c('up', 'mid', 'down')){
+    vars = c()
+    for (o in overlap_vector){
+        for (p in pos){
+            if (o == 0 & p == 'mid'){
+                next
+            }
+            var = paste0('mh_count_', p, '_overlap_', o) 
+            vars = c(vars, var)
+        }
+    }
+    return(vars)
+}
+
 
 get_all_mh_prop_length_interaction_variables <- function(overlap_vector){
     pos = c('up', 'down')
@@ -55,7 +69,23 @@ get_all_mh_prop_length_interaction_variables <- function(overlap_vector){
     return(vars)
 }
 
-get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, overlap_count, pnucs = 2){
+get_all_mh_count_length_interaction_variables <- function(overlap_vector){
+    pos = c('up', 'down')
+    lengths = c('j_length', 'v_length')
+    vars = c()
+    for (o in overlap_vector){
+        for (index in seq(pos)){
+            p = pos[index]
+            len = lengths[index]
+            var = paste0('mh_count_', p, '_overlap_', o, '_', len, '_interaction') 
+            vars = c(vars, var)
+        }
+    }
+    return(vars)
+}
+
+
+get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, overlap_count, pnucs = 2, positions = c('up', 'mid', 'down')){
     j_gene_bottom_seq = reorient_j_bottom_strand(j_gene_bottom_seq)
 
     require(Biostrings)
@@ -86,8 +116,15 @@ get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j
         j_mid = ""
     }
 
-    overlaps = data.table(vg_jt, jt_vg, jg_vt, vt_jg, v_mid, j_mid)
-    names = get_overlap_names(overlap_count)
+    up = data.table(vg_jt, jt_vg)
+    down = data.table(jg_vt, vt_jg)
+    mid = data.table(v_mid, j_mid)
+
+    overlaps = c()
+    for (pos in positions){
+        overlaps = cbind(overlaps, get(pos))
+    }
+    names = get_overlap_names(overlap_count, positions)
     setnames(overlaps, colnames(overlaps), names)
 
     return(overlaps)
@@ -106,21 +143,28 @@ get_mh_prop <- function(seq1, seq2){
     return(mh_prop)
 }
 
-get_mh_prop_cols <- function(data, overlap_count, keep_gene_seqs = FALSE){
+get_mh_prop_cols <- function(data, overlap_count, keep_gene_seqs = FALSE, prop = TRUE, positions = c('up', 'down', 'mid')){
     # get overlapping regions
-    names = get_overlap_names(overlap_count)
+    names = get_overlap_names(overlap_count, positions)
     if (!all(names %in% colnames(data))){
-        data[, paste(names) := get_overlapping_regions(v_gene_sequence, j_gene_sequence, v_trim, j_trim, overlap_count)]
+        data[, paste(names) := get_overlapping_regions(v_gene_sequence, j_gene_sequence, v_trim, j_trim, overlap_count, positions = positions)]
 
         # get MH
-        for (pos in c('up', 'down', 'mid')){
+        for (pos in positions){
             n = paste0('mh_prop_', pos, '_overlap_', overlap_count)
+            if (isFALSE(prop)){
+                n = paste0('mh_count_', pos, '_overlap_', overlap_count)
+            }
+
             v_seq_col = paste0('v_gene_', pos, '_overlap_', overlap_count)
             j_seq_col = paste0('j_gene_', pos, '_overlap_', overlap_count)
             cols = c(v_seq_col, j_seq_col)
             subset = unique(data[, ..cols])
 
             subset[, paste(n) := get_mh_prop(get(v_seq_col), get(j_seq_col))]
+            if (isFALSE(prop)){
+                subset[, paste(n) := get_mh(get(v_seq_col), get(j_seq_col))]
+            }
             subset[is.na(get(n)), paste(n) := 0]
             data = merge(data, subset, by = cols)
         }
@@ -166,11 +210,11 @@ get_oriented_sequences_for_processed_df <- function(motif_data, whole_nucseq, ge
     return(motif_data)
 }
 
-process_for_mh <- function(motif_data, whole_nucseq = get_oriented_whole_nucseqs(), overlap_vector = c(0, 1, 2, 3, 4), trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+process_for_mh <- function(motif_data, whole_nucseq = get_oriented_whole_nucseqs(), overlap_vector = c(0, 1, 2, 3, 4), trim_type = TRIM_TYPE, gene_type = GENE_NAME, prop = TRUE, positions = c('up', 'down', 'mid')){
     motif_data = get_oriented_sequences_for_processed_df(motif_data, whole_nucseq)
     
     for (overlap in overlap_vector){
-        motif_data = get_mh_prop_cols(motif_data, overlap, keep_gene_seqs = TRUE)
+        motif_data = get_mh_prop_cols(motif_data, overlap, keep_gene_seqs = TRUE, prop = prop, positions = positions)
     }
 
     cols = colnames(motif_data)[!(colnames(motif_data) %like% '_seq')]

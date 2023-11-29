@@ -85,30 +85,44 @@ class model_specific_parameters():
         self.group_colname = [item + '_gene_group' for item in self.group_colname]
         return(self.group_colname)
 
-    def get_all_mh_variables(self, overlap_list=[0,1,2,3,4]):
-        assert 'mh' in self.variable_colnames, "mh is not a variable colname"
-        self.variable_colnames.remove('mh')
-        pos = ['up', 'mid', 'down']
+    def get_all_mh_variables(self, overlap_list=[0,1,2,3,4], prop=True, pos=['up', 'mid', 'down']):
+        if prop is True:
+            self.variable_colnames.remove('mh')
+        elif prop is False:
+            if 'mh_count' in self.variable_colnames:
+                self.variable_colnames.remove('mh_count')
+            elif 'interior_mh_count' in self.variable_colnames:
+                self.variable_colnames.remove('interior_mh_count')
+
         mh_vars = []
         for o in overlap_list:
             for p in pos:
                 if o == 0 and p == 'mid':
                     continue
-                var = f'mh_prop_{p}_overlap_{o}'
+                if prop is True:
+                    var = f'mh_prop_{p}_overlap_{o}'
+                else:
+                    var = f'mh_count_{p}_overlap_{o}'
                 mh_vars.append(var)
         self.variable_colnames = self.variable_colnames + mh_vars
         return(self.variable_colnames)
 
-    def get_all_mh_length_interaction_variables(self, overlap_list=[0,1,2,3,4]):
-        assert 'mh_length_interaction' in self.variable_colnames, "mh_length_interaction is not a variable column"
-        self.variable_colnames.remove('mh_length_interaction')
+    def get_all_mh_length_interaction_variables(self, overlap_list=[0,1,2,3,4], prop=True):
+        assert 'mh_length_interaction' in self.variable_colnames or 'mh_count_length_interaction' in self.variable_colnames, "mh_length_interaction is not a variable column"
+        if prop is True:
+            self.variable_colnames.remove('mh_length_interaction')
+        elif prop is False:
+            self.variable_colnames.remove('mh_count_length_interaction')
 
         pos = ['up', 'down']
         lengths = ['j_length', 'v_length']
         mh_vars = []
         for o in overlap_list:
             for i in range(len(pos)):
-                var = f'mh_prop_{pos[i]}_overlap_{o}_{lengths[i]}_interaction'
+                if prop is True:
+                    var = f'mh_prop_{pos[i]}_overlap_{o}_{lengths[i]}_interaction'
+                else:
+                    var = f'mh_count_{pos[i]}_overlap_{o}_{lengths[i]}_interaction'
                 mh_vars.append(var)
 
         self.variable_colnames = self.variable_colnames + mh_vars
@@ -138,7 +152,7 @@ class model_specific_parameters():
         self.variable_colnames.remove(side + '_base_count')
         bases = ['AT', 'GC']
         trims = self.choice_colname
-        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT' + side]
+        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT5end']
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
 
@@ -147,7 +161,7 @@ class model_specific_parameters():
         self.variable_colnames.remove(side + '_base_count_prop')
         bases = ['AT_prop', 'GC_prop']
         trims = self.choice_colname
-        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT_prop' + side]
+        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT_prop5end']
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
 
@@ -176,6 +190,10 @@ class model_specific_parameters():
         self.group_colname = self.process_group_colnames()
         if 'mh' in self.variable_colnames:
             self.variable_colnames = self.get_all_mh_variables()
+        if 'mh_count' in self.variable_colnames:
+            self.variable_colnames = self.get_all_mh_variables(prop=False)
+        if 'interior_mh_count' in self.variable_colnames:
+            self.variable_colnames = self.get_all_mh_variables(overlap_list=[1, 2, 3, 4], prop=False, pos = ['mid'])
         if '5end_base_count' in self.variable_colnames:
             self.variable_colnames = self.get_all_base_variables('5end')
 
@@ -196,7 +214,8 @@ class model_specific_parameters():
 
         if 'mh_length_interaction' in self.variable_colnames:
             self.variable_colnames = self.get_all_mh_length_interaction_variables()
-
+        if 'mh_count_length_interaction' in self.variable_colnames:
+            self.variable_colnames = self.get_all_mh_length_interaction_variables(prop=False)
         if '3end_base_count_length_interaction' in self.variable_colnames:
             self.variable_colnames = self.get_all_base_count_length_interaction_variables('3end')
 

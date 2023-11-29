@@ -110,31 +110,38 @@ map_positions_to_values <- function(pwm){
     return(pwm)
 }
 
-plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL){
+plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL, prop = FALSE){
     model_coef_matrix = model_coef_matrix[(coefficient %like% 'base_count')]
 
     # convert to log_10
     model_coef_matrix$log_10_pdel = model_coef_matrix$value/log(10)
     
     # order variables
-    unique_bases = unique(model_coef_matrix$base)
+    unique_bases = c('AT', 'GC')
     left_bases = unique(model_coef_matrix[side %like% '5end']$base)
     right_bases = unique(model_coef_matrix[side %like% '3end']$base)
+    trim_type = unique(model_coef_matrix$trim_type)
 
     if (length(left_bases) < 2){
         missing = unique_bases[!(unique_bases == left_bases)]
-        fake_row = data.table(value = rep(NA, length(missing)), coefficient = rep("base_count", length(missing)), base = missing, position = rep('', length(missing)), side = rep('5end', length(missing)), log_10_pdel = rep(NA,length(missing)))
-        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
-    } else if (length(right_bases) < 2){
+        fake_row = data.table(value = rep(NA, length(missing)), coefficient = rep("base_count", length(missing)), base = missing, position = rep('', length(missing)), side = rep('5end', length(missing)), log_10_pdel = rep(NA,length(missing)), trim_type = trim_type)
+        model_coef_matrix = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } 
+    if (length(right_bases) < 2){
         missing = unique_bases[!(unique_bases == right_bases)]
-        fake_row = data.table(value = rep(NA, length(missing)), coefficient = rep("base_count", length(missing)), base = missing, position = rep('', length(missing)), side = rep('3end', length(missing)), log_10_pdel = rep(NA,length(missing)))
-        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
-    } else {
-        extended_data = model_coef_matrix
-    }
+        fake_row = data.table(value = rep(NA, length(missing)), coefficient = rep("base_count", length(missing)), base = missing, position = rep('', length(missing)), side = rep('3end', length(missing)), log_10_pdel = rep(NA,length(missing)), trim_type = trim_type)
+        model_coef_matrix = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } 
+    
+    extended_data = model_coef_matrix
 
     extended_data[, long_name := paste0(side, ' base count')]
     vars = c('5end base count', '3end base count')
+    if (isTRUE(prop)){
+        vars = c('5end base proportion', '3end base proportion')
+        extended_data[, long_name := paste0(side, ' base proportion')]
+    }
+
     extended_data$long_name = factor(extended_data$long_name, levels = vars)
 
     if (is.null(limits)){
@@ -160,14 +167,56 @@ plot_base_count_coefficient_heatmap_single_group <- function(model_coef_matrix, 
     return(plot)
 }
 
-plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL){
+plot_length_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL){
+    model_coef_matrix = model_coef_matrix[(coefficient %like% 'length')]
+    model_coef_matrix = model_coef_matrix[!(coefficient %like% 'interaction')]
+
+    # convert to log_10
+    model_coef_matrix$log_10_pdel = model_coef_matrix$value/log(10)
+
+    if (is.null(limits)){
+        max_val = max(abs(model_coef_matrix$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+    
+    model_coef_matrix$coefficient = 'Trimming length'
+
+    plot = ggplot(model_coef_matrix, aes(x=coefficient, y=1, fill=log_10_pdel)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('') +
+        ylab('') +
+        geom_vline(xintercept = 0.5, size = 3.5, color = 'black') +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits, na.value = 'gray80') + 
+        theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20), legend.position = 'bottom', legend.direction = 'horizontal', legend.justification="center", strip.text.x = element_text(angle = 90), axis.text.y = element_blank()) +
+        guides(fill = guide_colourbar(barwidth = 35, barheight = 2))
+       
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = model_coef_matrix, aes(x = long_name, y = base, label = round(log_10_pdel, 2)))
+    }
+
+    return(plot)
+}
+
+
+
+plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL, interaction_coefs = FALSE){
     model_coef_matrix = model_coef_matrix[(coefficient %like% 'mh_prop')]
 
+    if (isTRUE(interaction_coefs)){
+        model_coef_matrix = model_coef_matrix[(coefficient %like% 'interaction')]
+    } else {
+        model_coef_matrix = model_coef_matrix[!(coefficient %like% 'interaction')]
+    }
     # convert to log_10
     model_coef_matrix$log_10_pdel = model_coef_matrix$value/log(10)
     
     # fill in missing
     fake_row = data.table(value = NA, coefficient = "mh_prop", base = '', position = 'overlap0', side = 'mid', trim_type = '', log_10_pdel = NA)
+    if (isTRUE(interaction_coefs)){
+        fake_row = data.table(value = NA, coefficient = "mh_prop_length_interaction", base = '', position = 'overlap0', side = 'mid', trim_type = '', log_10_pdel = NA)
+    }
     extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
 
     # order variables
@@ -198,6 +247,10 @@ plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_val
             geom_text(data = model_coef_matrix, aes(x = long_name, y = base, label = round(log_10_pdel, 2)))
     }
 
+    if (isTRUE(interaction_coefs)){
+        plot = plot + 
+            xlab('Relative position of MH proportion\ntrimming length interaction')
+    }
     return(plot)
 }
 

@@ -26,7 +26,7 @@ LEFT_NUC_MOTIF_COUNT <<- as.numeric(1)
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- as.numeric(2)
 
-MODEL_TYPE <<- 'motif_two-side-base-count-beyond_mh'
+MODEL_TYPE <<- 'motif_two-side-base-count-beyond-prop_mh_length'
 
 L2 <<- 'True'
 
@@ -49,8 +49,8 @@ v_motif_heatmap = v_motif_heatmap + theme(legend.position = 'none')
 j_motif_heatmap = j_motif_heatmap + theme(legend.position = 'none') 
 
 # plot base count heatmap of coefficients
-v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.316, 0.316))
-j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.316, 0.316))
+v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.316, 0.316), prop = TRUE)
+j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.316, 0.316), prop = TRUE)
 
 v_base_count_heatmap = v_base_count_heatmap + theme(legend.position = 'none') 
 j_base_count_heatmap = j_base_count_heatmap + theme(legend.position = 'none') 
@@ -58,18 +58,25 @@ j_base_count_heatmap = j_base_count_heatmap + theme(legend.position = 'none')
 # plot mh heatmap
 mh_heatmap = plot_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.316, 0.316))
 
+v_length_heatmap = plot_length_coefficient_heatmap_single_group(coefs[coefficient == 'v_length'], with_values = FALSE, limits = c(-0.316, 0.316)) 
+v_length_heatmap = v_length_heatmap + theme(legend.position = 'none')
+
+j_length_heatmap = plot_length_coefficient_heatmap_single_group(coefs[coefficient == 'j_length'], with_values = FALSE, limits = c(-0.316, 0.316)) 
+j_length_heatmap = j_length_heatmap + theme(legend.position = 'none')
+
 # isolate legend
 legend = get_legend(mh_heatmap) 
 mh_heatmap = mh_heatmap + theme(legend.position = 'none')
 
-all = align_plots(v_motif_heatmap, j_motif_heatmap, v_base_count_heatmap, j_base_count_heatmap, mh_heatmap, legend, align = 'vh', axis = 'lbr')
+all = align_plots(v_motif_heatmap, j_motif_heatmap, v_base_count_heatmap, j_base_count_heatmap, v_length_heatmap, j_length_heatmap, mh_heatmap, legend, align = 'vh', axis = 'lbr')
 
 first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, rel_widths = c(1, 1), align = 'h')
 second_grid = plot_grid(all[[3]], all[[4]], nrow = 1, rel_widths = c(1, 1), align = 'h')
-third_grid = plot_grid(NULL, all[[5]], NULL, nrow = 1, rel_widths = c(0.1, 1, 0.1), align = 'h')
-together = plot_grid(first_grid, NULL, second_grid, NULL, third_grid, NULL, legend, nrow = 7, rel_heights = c(1, 0.08, 1, 0.08, 1.5, 0.08, 0.2))
+third_grid = plot_grid(all[[5]], all[[6]], nrow = 1, rel_widths = c(1, 1), align = 'h')
+fourth_grid = plot_grid(NULL, all[[7]], NULL, nrow = 1, rel_widths = c(0.1, 1, 0.1), align = 'h')
+together = plot_grid(first_grid, NULL, second_grid, NULL, third_grid, NULL, fourth_grid, NULL, legend, nrow = 9, rel_heights = c(1, 0.08, 1, 0.08, 1, 0.08, 1.5, 0.08, 0.2))
 
 # save plot
-file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_mh_model_igor_sim_experiment/coef_heatmap.pdf')
+file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_prop_mh_length_model_igor_sim_experiment/coef_heatmap.pdf')
 
-ggsave(file_name, plot = together, width = 18, height = 21.5, units = 'in', dpi = 750, device = cairo_pdf)
+ggsave(file_name, plot = together, width = 18, height = 27.5, units = 'in', dpi = 750, device = cairo_pdf)

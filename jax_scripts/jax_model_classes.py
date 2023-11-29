@@ -360,26 +360,35 @@ class DataTransformer(DataPreprocessor):
         df['base'] = None
         df.loc[df.coefficient.str.contains('motif'), 'base'] = df.coefficient.str.split('_').str[-1]
         df.loc[df.coefficient.str.contains('base_count'), 'base'] = df.coefficient.str.split('_').str[-1]
+        df.loc[df.coefficient.str.contains('base_count') & df.coefficient.str.contains('prop'), 'base'] = df.coefficient.str.split('_').str[-2]
+
 
         # get positions
         df['position'] = None
         df.loc[df.coefficient.str.contains('motif'), 'position'] = df.coefficient.str.split('_').str[-2]
         df.loc[df.coefficient.str.contains('mh_prop'), 'position'] = df.coefficient.str.split('_').str[3] + df.coefficient.str.split('_').str[4]
+        df.loc[df.coefficient.str.contains('mh_count'), 'position'] = df.coefficient.str.split('_').str[3] + df.coefficient.str.split('_').str[4]
+
 
         # get side
         df['side'] = None
         df.loc[df.coefficient.str.contains('motif'), 'side'] = df.coefficient.str.split('_').str[3]
         df.loc[df.coefficient.str.contains('base_count'), 'side'] = df.coefficient.str.split('_').str[2]
         df.loc[df.coefficient.str.contains('mh_prop'), 'side'] = df.coefficient.str.split('_').str[2]
+        df.loc[df.coefficient.str.contains('mh_count'), 'side'] = df.coefficient.str.split('_').str[2]
 
         # fix trimming specific
         df['trim_type'] = None
         df.loc[df.coefficient.str.contains('_trim'), 'trim_type'] = df.coefficient.str.split('_trim').str[0] + '_trim'
+        df.loc[df.coefficient.str.contains('_length'), 'trim_type'] = df.coefficient.str.split('_length').str[0].str.split('_').str[-1] + '_trim'
 
         # simplify coefficients
+        df.loc[df.coefficient.str.contains('interaction') & df.coefficient.str.contains('mh_prop'), 'coefficient'] = 'mh_prop_length_interaction'
+        df.loc[df.coefficient.str.contains('interaction') & df.coefficient.str.contains('mh_count'), 'coefficient'] = 'mh_count_length_interaction'
         df.loc[df.coefficient.str.contains('motif'), 'coefficient'] = 'motif'
         df.loc[df.coefficient.str.contains('base_count'), 'coefficient'] = 'base_count'
-        df.loc[df.coefficient.str.contains('mh_prop'), 'coefficient'] = 'mh_prop'
+        df.loc[df.coefficient.str.contains('mh_prop') & ~df.coefficient.str.contains('interaction'), 'coefficient'] = 'mh_prop'
+        df.loc[df.coefficient.str.contains('mh_count') & ~df.coefficient.str.contains('interaction'), 'coefficient'] = 'mh_count'
 
         return(df)
 
