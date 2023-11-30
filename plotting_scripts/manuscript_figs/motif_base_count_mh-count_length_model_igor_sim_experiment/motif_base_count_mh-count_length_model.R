@@ -41,28 +41,28 @@ coefs = fread(coef_path)
 fwrite(coefs, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_mh_model_igor_sim_experiment/coefs.tsv'), sep = '\t')
 
 # plot motif heatmap of coefficients
-v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.316, 0.316)) + ggtitle('   V-trimming coefficients')
-j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.316, 0.316)) + ggtitle('   J-trimming coefficients')
+v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.27, 0.27)) + ggtitle('   V-trimming coefficients')
+j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.27, 0.27)) + ggtitle('   J-trimming coefficients')
 
 
 v_motif_heatmap = v_motif_heatmap + theme(legend.position = 'none') 
 j_motif_heatmap = j_motif_heatmap + theme(legend.position = 'none') 
 
 # plot base count heatmap of coefficients
-v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.316, 0.316))
-j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.316, 0.316))
+v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.27, 0.27))
+j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.27, 0.27))
 
 v_base_count_heatmap = v_base_count_heatmap + theme(legend.position = 'none') 
 j_base_count_heatmap = j_base_count_heatmap + theme(legend.position = 'none') 
 
 
 # plot mh heatmap
-mh_heatmap = plot_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.316, 0.316))
+mh_heatmap = plot_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.27, 0.27), prop = FALSE)
 
-v_length_heatmap = plot_length_coefficient_heatmap_single_group(coefs[coefficient == 'v_length'], with_values = FALSE, limits = c(-0.316, 0.316)) 
+v_length_heatmap = plot_length_coefficient_heatmap_single_group(coefs[coefficient == 'v_length'], with_values = FALSE, limits = c(-0.27, 0.27)) 
 v_length_heatmap = v_length_heatmap + theme(legend.position = 'none')
 
-j_length_heatmap = plot_length_coefficient_heatmap_single_group(coefs[coefficient == 'j_length'], with_values = FALSE, limits = c(-0.316, 0.316)) 
+j_length_heatmap = plot_length_coefficient_heatmap_single_group(coefs[coefficient == 'j_length'], with_values = FALSE, limits = c(-0.27, 0.27)) 
 j_length_heatmap = j_length_heatmap + theme(legend.position = 'none')
 
 # isolate legend

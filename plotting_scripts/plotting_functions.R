@@ -199,10 +199,14 @@ plot_length_coefficient_heatmap_single_group <- function(model_coef_matrix, with
     return(plot)
 }
 
+plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL, interaction_coefs = FALSE, prop = TRUE, positions = c('up', 'mid', 'down')){
+    if (isTRUE(prop)){
+        mh_var = 'mh_prop'
+    } else {
+        mh_var = 'mh_count'
+    }
 
-
-plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL, interaction_coefs = FALSE){
-    model_coef_matrix = model_coef_matrix[(coefficient %like% 'mh_prop')]
+    model_coef_matrix = model_coef_matrix[(coefficient %like% mh_var)]
 
     if (isTRUE(interaction_coefs)){
         model_coef_matrix = model_coef_matrix[(coefficient %like% 'interaction')]
@@ -213,16 +217,30 @@ plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_val
     model_coef_matrix$log_10_pdel = model_coef_matrix$value/log(10)
     
     # fill in missing
-    fake_row = data.table(value = NA, coefficient = "mh_prop", base = '', position = 'overlap0', side = 'mid', trim_type = '', log_10_pdel = NA)
-    if (isTRUE(interaction_coefs)){
-        fake_row = data.table(value = NA, coefficient = "mh_prop_length_interaction", base = '', position = 'overlap0', side = 'mid', trim_type = '', log_10_pdel = NA)
+    if (all(c('up', 'down') %in% positions)){
+        fake_row = data.table(value = NA, coefficient = mh_var, base = '', position = 'overlap0', side = 'mid', trim_type = '', log_10_pdel = NA)
+        if (isTRUE(interaction_coefs)){
+            fake_row = data.table(value = NA, coefficient = paste0(mh_var, "_length_interaction"), base = '', position = 'overlap0', side = 'mid', trim_type = '', log_10_pdel = NA)
+        }
+        extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
+    } else {
+        extended_data = model_coef_matrix
     }
-    extended_data = rbind(model_coef_matrix, fake_row, fill = TRUE)
 
     # order variables
-    extended_data[side == 'up' | side == 'down', side_long := paste0(side, 'stream')]
-    extended_data[side == 'mid', side_long := paste0(side, 'dle')]
-    extended_data$side_long = factor(extended_data$side_long, levels = c('upstream', 'middle', 'downstream'))
+    levs = c()
+    if ('up' %in% positions){
+        extended_data[side == 'up', side_long := paste0(side, 'stream')]
+        levs = c(levs, 'upstream')
+    } else if ('mid' %in% positions){
+        extended_data[side == 'mid', side_long := paste0(side, 'dle')]
+        levs = c(levs, 'middle')
+    } else if ('up' %in% positions){
+        extended_data[side == 'down', side_long := paste0(side, 'stream')]
+        levs = c(levs, 'downstream')
+    }   
+
+    extended_data$side_long = factor(extended_data$side_long, levels = levs)
     extended_data[, position_value := as.numeric(substring(position, nchar(position), nchar(position)))]
 
     if (is.null(limits)){
@@ -251,6 +269,15 @@ plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_val
         plot = plot + 
             xlab('Relative position of MH proportion\ntrimming length interaction')
     }
+    if (isFALSE(prop)){
+        plot = plot + 
+            xlab('Relative position of MH count')
+    }
+
+    if (positions == c('mid')){
+        plot = plot + geom_vline(xintercept = 0.5, size = 3.5, color = 'black') 
+    }
+
     return(plot)
 }
 
