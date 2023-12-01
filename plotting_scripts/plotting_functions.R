@@ -232,10 +232,12 @@ plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_val
     if ('up' %in% positions){
         extended_data[side == 'up', side_long := paste0(side, 'stream')]
         levs = c(levs, 'upstream')
-    } else if ('mid' %in% positions){
+    }
+    if ('mid' %in% positions){
         extended_data[side == 'mid', side_long := paste0(side, 'dle')]
         levs = c(levs, 'middle')
-    } else if ('up' %in% positions){
+    }
+    if ('down' %in% positions){
         extended_data[side == 'down', side_long := paste0(side, 'stream')]
         levs = c(levs, 'downstream')
     }   
@@ -274,7 +276,7 @@ plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_val
             xlab('Relative position of MH count')
     }
 
-    if (positions == c('mid')){
+    if (length(positions) == 1){
         plot = plot + geom_vline(xintercept = 0.5, size = 3.5, color = 'black') 
     }
 

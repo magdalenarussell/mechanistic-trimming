@@ -14,7 +14,7 @@ library(RhpcBLASctl)
 omp_set_num_threads(1)
 blas_set_num_threads(1)
 
-ANNOTATION_TYPE <<- 'igor_sim_alpha' 
+ANNOTATION_TYPE <<- 'igor_alpha' 
 
 PARAM_GROUP <<- 'nonproductive_v-j_trim'
 source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
@@ -38,7 +38,7 @@ source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
 coef_path = get_model_coef_file_path(L2)
 coefs = fread(coef_path)
 
-fwrite(coefs, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_interior-mh-count_igor_sim_experiment/coefs.tsv'), sep = '\t')
+fwrite(coefs, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_interior-mh-count_model/coefs.tsv'), sep = '\t')
 v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.241, 0.241)) + ggtitle('   V-trimming coefficients')
 j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.241, 0.241)) + ggtitle('   J-trimming coefficients')
 
@@ -68,6 +68,6 @@ third_grid = plot_grid(NULL, all[[5]], NULL, nrow = 1, rel_widths = c(0.1, 1, 0.
 together = plot_grid(first_grid, NULL, second_grid, NULL, third_grid, NULL, legend, nrow = 7, rel_heights = c(1, 0.08, 1, 0.08, 1.5, 0.08, 0.2))
 
 # save plot
-file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_interior-mh-count_igor_sim_experiment/coef_heatmap.pdf')
+file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_interior-mh-count_model/coef_heatmap.pdf')
 
 ggsave(file_name, plot = together, width = 18, height = 21.5, units = 'in', dpi = 750, device = cairo_pdf)

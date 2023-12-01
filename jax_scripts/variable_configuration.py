@@ -87,7 +87,10 @@ class model_specific_parameters():
 
     def get_all_mh_variables(self, overlap_list=[0,1,2,3,4], prop=True, pos=['up', 'mid', 'down']):
         if prop is True:
-            self.variable_colnames.remove('mh')
+            if 'mh' in self.variable_colnames:
+                self.variable_colnames.remove('mh')
+            elif 'interior_mh' in self.variable_colnames:
+                self.variable_colnames.remove('interior_mh')
         elif prop is False:
             if 'mh_count' in self.variable_colnames:
                 self.variable_colnames.remove('mh_count')
@@ -190,6 +193,8 @@ class model_specific_parameters():
         self.group_colname = self.process_group_colnames()
         if 'mh' in self.variable_colnames:
             self.variable_colnames = self.get_all_mh_variables()
+        if 'interior_mh' in self.variable_colnames:
+            self.variable_colnames = self.get_all_mh_variables(overlap_list=[1, 2, 3, 4], pos = ['mid'])
         if 'mh_count' in self.variable_colnames:
             self.variable_colnames = self.get_all_mh_variables(prop=False)
         if 'interior_mh_count' in self.variable_colnames:
