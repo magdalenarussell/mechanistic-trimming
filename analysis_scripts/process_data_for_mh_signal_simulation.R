@@ -20,7 +20,7 @@ NCPU <<- 2
 LEFT_NUC_MOTIF_COUNT <<- 1
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- 2
-MODEL_TYPE <<- 'motif_two-side-base-count-beyond_mh'
+MODEL_TYPE <<- 'motif_two-side-base-count-beyond_interior-mh-count'
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
@@ -33,29 +33,13 @@ motif_data = fread(filename)
 PARAM_GROUP <<- 'nonproductive_v-j_trim_mh_sim'
 source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
 
-# get MH prop quantiles
-motif_data[, mh_prop_mid_sum := mh_prop_mid_overlap_1 + mh_prop_mid_overlap_2 + mh_prop_mid_overlap_3 + mh_prop_mid_overlap_4]
-motif_data[, mh_prop_mid_quantile := cut(mh_prop_mid_sum, quantile(mh_prop_mid_sum, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE), labels = c("Q1", "Q2", "Q3", "Q4"))]
-
-motif_data[, mh_prop_outer_sum := mh_prop_up_overlap_1 + mh_prop_up_overlap_2 + mh_prop_up_overlap_3 + mh_prop_up_overlap_4 + mh_prop_down_overlap_1 + mh_prop_down_overlap_2 + mh_prop_down_overlap_3 + mh_prop_down_overlap_4]
-motif_data[, mh_prop_outer_quantile := cut(mh_prop_outer_sum, quantile(mh_prop_outer_sum, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE), labels = c("Q1", "Q2", "Q3", "Q4"))]
-
-# define conditions
-motif_data[, very_high_mh_condition := (mh_prop_mid_quantile %in% c('Q4')) & (motif_data$mh_prop_outer_quantile %in% c('Q1'))]
-
-motif_data[, high_mh_condition := (mh_prop_mid_quantile %in% c('Q3', 'Q4')) & (motif_data$mh_prop_outer_quantile %in% c('Q1', 'Q2') & very_high_mh_condition == FALSE)]
-
-motif_data[, low_mh_condition := (mh_prop_mid_quantile %in% c('Q1', 'Q2')) & (motif_data$mh_prop_outer_quantile %in% c('Q3', 'Q4') & very_high_mh_condition == FALSE & high_mh_condition == FALSE)]
-
-motif_data[, other_mh_condition := !(very_high_mh_condition == TRUE | high_mh_condition == TRUE | low_mh_condition == TRUE)]
+# get MH count quantiles
+motif_data[, mh_count_mid_sum := mh_count_mid_overlap_1 + mh_count_mid_overlap_2 + mh_count_mid_overlap_3 + mh_count_mid_overlap_4]
 
 # assign sample probabilities based on these conditions
-motif_data[, mh_prob := 0]
-motif_data[very_high_mh_condition == TRUE, mh_prob := 1]
-motif_data[high_mh_condition == TRUE, mh_prob := 0.8]
-motif_data[other_mh_condition == TRUE, mh_prob := 0.1]
-motif_data[low_mh_condition == TRUE, mh_prob := 0.05]
-
+a = 2
+tot = sum(log(1+ seq(max(motif_data$mh_count_mid_sum), min(motif_data$mh_count_mid_sum))) + a)
+motif_data[, mh_prob := (log(1 + mh_count_mid_sum) + a)/tot]
 
 # resample counts based on conditions
 genes = get_gene_order(GENE_NAME)
@@ -67,14 +51,15 @@ motif_data$cluster = interaction(motif_data[[paste0(genes[1], '_group')]], motif
 # sample proportion of sequences for each individual
 size = unique(motif_data$total_tcr)
 motif_data[, subsample_total_tcr := size]
-vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_prop'],
+vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_count'],
          colnames(motif_data)[colnames(motif_data) %like% 'base_count'],
          colnames(motif_data)[colnames(motif_data) %like% 'motif'], 
          colnames(motif_data)[colnames(motif_data) %like% 'condition'])
 
 cols = c(paste0(genes, '_group'), trims, vars, 'count', 'subsample_total_tcr', 'cluster')
+motif_data[, gene_pair_count := sum(count), by = cluster]
 motif_data[, row := seq(1, .N)]
-subset = motif_data[motif_data[, sample(.I, size, replace = TRUE, prob = mh_prob)]]
+subset = motif_data[motif_data[, .(sampled_rows = sample(.I, size = gene_pair_count[1L], replace = TRUE, prob = mh_prob)), by = cluster]$sampled_rows]
 subset[, count := .N, by = .(row)]
 subset_final = unique(subset[, ..cols])
 

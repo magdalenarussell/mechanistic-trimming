@@ -306,7 +306,7 @@ subsample <- function(motif_data, prop, trim_type = TRIM_TYPE, gene_type = GENE_
     # sample proportion of sequences for each individual
     size = ceiling(unique(motif_data$total_tcr)*prop)
     motif_data[, subsample_total_tcr := size]
-    vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_prop'],
+    vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_'],
              colnames(motif_data)[colnames(motif_data) %like% 'base_count'],
              colnames(motif_data)[colnames(motif_data) %like% 'motif'])
 

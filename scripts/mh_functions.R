@@ -35,27 +35,28 @@ get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j
 get_mh <- function(seq1, seq2, aligning_trim){
     stopifnot(aligning_trim %in% c('j_trim', 'v_trim'))
     stopifnot(all(nchar(seq1) == nchar(seq2)))
+    
     compl = c('A' = 'T', 'T' = 'A', 'G' = 'C', 'C' = 'G')
     match = c('A' = 'A/T', 'T' = 'A/T', 'C' = 'G/C', 'G' = 'G/C')
     
     max_len = nchar(seq1)
-
-    if (nchar(seq1) == 0 | nchar(seq2) == 0){
-        mh = data.table() 
+    
+    if (max_len == 0 | nchar(seq2) == 0){
+        mh = data.table()
     } else {
         names = get_mh_colnames(aligning_trim, max_len)
-        mh = as.data.table(matrix(ncol = nchar(seq1)))
+        
+        # Precompute constant values
+        seq1_compl = compl[as.character(strsplit(seq1, NULL)[[1]])]
+        seq1_match = match[as.character(strsplit(seq1, NULL)[[1]])]
+        
+        # Use vectorized operations to create the matrix
+        mh_matrix = matrix('-', ncol = max_len)
+        mh_matrix[, seq1_compl == strsplit(seq2, NULL)[[1]]] = seq1_match[seq1_compl == strsplit(seq2, NULL)[[1]]]
+        
+        # Convert the matrix to data.table
+        mh = as.data.table(mh_matrix)
         colnames(mh) = names
-
-        for (index in seq(nchar(seq1))){
-            seq1_nt = substring(seq1, index, index) 
-            seq2_nt = substring(seq2, index, index) 
-            if (seq1_nt == compl[seq2_nt]){
-                mh[, index] = match[seq1_nt]
-            } else {
-                mh[, index] = '-'
-            }
-        }
     }
     return(mh)
 }
@@ -93,10 +94,14 @@ get_mh_dataframe <- function(data, aligning_trim, aligning_gene){
     stopifnot(col1 %in% colnames(data))
     stopifnot(col2 %in% colnames(data))
 
-    max = max(nchar(data[[col1]]), nchar(data[[col2]]))
+    cols = c(col1, col2)
+    subset = unique(data[, ..cols]) 
+    max = max(nchar(subset[[col1]]), nchar(subset[[col2]]))
     names = get_mh_colnames(aligning_trim, max)
 
-    data[, paste0(names) := as.data.table(apply(t(mapply(get_mh_and_fill, get(col1), get(col2), aligning_trim, max)), 2, unlist))]
+    subset[, paste0(names) := as.data.table(apply(t(mapply(get_mh_and_fill, get(col1), get(col2), aligning_trim, max)), 2, unlist))]
+
+    data = merge(data, subset, by = cols)
     return(data)
 }
 
@@ -155,4 +160,23 @@ count_mh_bordering_trim <- function(mh_data){
     mh_data[total_bordering_mh > 0, bordering_mh_v_index_start := v_trim + bordering_mh_j_trim]
     mh_data[total_bordering_mh > 0, bordering_mh_v_index_end := v_trim - bordering_mh_v_trim + 1]
     return(mh_data)
+}
+
+reassign_trimming_sites_with_mh <- function(mh_data){
+    mh_data[, adjusted_v_trim := v_trim - bordering_mh_v_trim]
+    mh_data[, adjusted_j_trim := j_trim - bordering_mh_j_trim]
+    mh_data[, ligation_mh := total_bordering_mh]
+    return(mh_data)
+}
+
+backfill_configs_without_mh_ligation <- function(mh_data){
+    temp = mh_data[ligation_mh > 0]
+    temp[, adjusted_v_trim := v_trim]
+    temp[, adjusted_j_trim := j_trim]
+    temp[, ligation_mh := 0]
+    temp[, added := TRUE]
+    mh_data[, added := FALSE]
+
+    tog = rbind(mh_data, temp, fill = TRUE)
+    return(tog)
 }
