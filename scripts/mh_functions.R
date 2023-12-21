@@ -9,7 +9,7 @@ get_pnucs <- function(whole_gene_nucseq, orient, pnuc_count){
     return(possible_pnucs)
 }
 
-get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, pnucs = 2){
+get_overlapping_regions_ligation_mh <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, pnucs = 2){
     require(Biostrings)
     v_pnucs = get_pnucs(v_gene_top_seq, 'top', pnucs)    
     j_pnucs = get_pnucs(j_gene_bottom_seq, 'bottom', pnucs)    
@@ -32,7 +32,7 @@ get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j
     return(data.table('v_gene.j_trimmed' = vg_jt, 'j_trimmed.v_gene' = jt_vg, 'j_gene.v_trimmed' = jg_vt, 'v_trimmed.j_gene' = vt_jg))
 }
 
-get_mh <- function(seq1, seq2, aligning_trim){
+get_mh_ligation_mh <- function(seq1, seq2, aligning_trim){
     stopifnot(aligning_trim %in% c('j_trim', 'v_trim'))
     stopifnot(all(nchar(seq1) == nchar(seq2)))
     
@@ -85,7 +85,7 @@ fill_in_missing_mh_positions <- function(mh_dt, max_len, aligning_trim){
 }
 
 get_mh_and_fill <- function(seq1, seq2, aligning_trim, max_len){
-    return(fill_in_missing_mh_positions(get_mh(seq1, seq2, aligning_trim), max_len, aligning_trim)) 
+    return(fill_in_missing_mh_positions(get_mh_ligation_mh(seq1, seq2, aligning_trim), max_len, aligning_trim)) 
 }
 
 get_mh_dataframe <- function(data, aligning_trim, aligning_gene){
@@ -118,7 +118,7 @@ get_possible_mh <- function(data, keep_gene_seqs = FALSE){
     data[, j_gene_sequence := as.character(complement(DNAStringSet(j_gene_sequence)))]
 
     # get overlapping regions
-    data[, c("v_gene.j_trimmed", "j_trimmed.v_gene", "j_gene.v_trimmed", "v_trimmed.j_gene") := get_overlapping_regions(v_gene_sequence, j_gene_sequence, v_trim, j_trim)]
+    data[, c("v_gene.j_trimmed", "j_trimmed.v_gene", "j_gene.v_trimmed", "v_trimmed.j_gene") := get_overlapping_regions_ligation_mh(v_gene_sequence, j_gene_sequence, v_trim, j_trim)]
 
     # get MH
     data = get_mh_dataframe(data, aligning_trim = 'j_trim', aligning_gene = 'v_gene')
@@ -167,16 +167,4 @@ reassign_trimming_sites_with_mh <- function(mh_data){
     mh_data[, adjusted_j_trim := j_trim - bordering_mh_j_trim]
     mh_data[, ligation_mh := total_bordering_mh]
     return(mh_data)
-}
-
-backfill_configs_without_mh_ligation <- function(mh_data){
-    temp = mh_data[ligation_mh > 0]
-    temp[, adjusted_v_trim := v_trim]
-    temp[, adjusted_j_trim := j_trim]
-    temp[, ligation_mh := 0]
-    temp[, added := TRUE]
-    mh_data[, added := FALSE]
-
-    tog = rbind(mh_data, temp, fill = TRUE)
-    return(tog)
 }

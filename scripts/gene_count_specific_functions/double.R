@@ -11,13 +11,11 @@ get_oriented_full_sequences <- function(subject_data, whole_nucseq = get_oriente
         gene_groups = get_common_genes_from_seqs(gene_seqs, g)
         together = merge(together, gene_groups, by = g)
     }
+    if ('j_gene_sequence.x' %in% colnames(together)){
+        cols = colnames(together)[!(colnames(together) %like% '.x')]
+        together = together[, ..cols]
+        cols = str_remove(cols, '.y') 
+        colnames(together) = cols
+    }
     return(together)
-}
-
-# TODO complete this...this should only be necessary if INSERTIONS == FALSE
-filter_motif_data_for_possible_sites <- function(motif_data){
-    # if (JOINING_INSERT == 'vj_insert'){
-        # frame_data = get_frames_data()
-    # }
-    return(motif_data)
 }

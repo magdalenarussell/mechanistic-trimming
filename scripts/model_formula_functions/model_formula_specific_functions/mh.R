@@ -1,13 +1,4 @@
-get_pnucs <- function(whole_gene_nucseq, orient, pnuc_count){
-    whole_gene_nucseq = DNAStringSet(whole_gene_nucseq)
-    stopifnot(orient %in% c('top', 'bottom'))
-    if (orient == 'top'){
-        possible_pnucs = substring(as.character(reverseComplement(whole_gene_nucseq)),1, pnuc_count) 
-    } else {
-        possible_pnucs = substring(as.character(reverseComplement(whole_gene_nucseq)), nchar(whole_gene_nucseq) - pnuc_count + 1, nchar(whole_gene_nucseq))
-    }
-    return(possible_pnucs)
-}
+source(paste0(MOD_PROJECT_PATH,'/scripts/mh_functions.R'))
 
 reorient_j_bottom_strand <- function(j_gene_5_3_bottom_strand){
     # return j_gene bottom strand (which was previously oriented 5' > 3' for consistency with the v_gene) to be 3' > 5'

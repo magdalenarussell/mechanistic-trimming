@@ -1,5 +1,5 @@
 stopifnot(LEFT_NUC_MOTIF_COUNT > 0 | RIGHT_NUC_MOTIF_COUNT > 0)
-stopifnot(TRIM_TYPE == 'v-j_trim')
+stopifnot(TRIM_TYPE %like% 'v-j_trim')
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 

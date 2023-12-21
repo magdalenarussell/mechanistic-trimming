@@ -2,6 +2,9 @@ calculate_subject_gene_weight <- function(compiled_data, gene_type = GENE_NAME, 
     genes = get_gene_order(gene_type)
     trims = get_trim_order(trim_type)
 
+    # make sure data is adequately filtered!
+    compiled_data = filter_motif_data_for_possible_sites(compiled_data, gene_type = gene_type)
+
     if ('subject' %in% colnames(compiled_data)){
         params = get_parameter_vector(trims, genes)
         cols = c(paste0(genes, '_group'), trims, params)

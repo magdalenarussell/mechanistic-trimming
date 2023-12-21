@@ -5,7 +5,3 @@ get_oriented_full_sequences <- function(subject_data, whole_nucseq = get_oriente
     together = merge(temp_data, gene_groups, by = gene_type)
     return(together)
 }
-
-filter_motif_data_for_possible_sites <- function(motif_data){
-    return(motif_data)
-}
