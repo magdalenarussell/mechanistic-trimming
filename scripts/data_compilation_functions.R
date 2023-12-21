@@ -2,6 +2,7 @@ source(paste0(MOD_PROJECT_PATH, '/scripts/motif_class_functions/', MOTIF_TYPE, '
 source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/', ANNOTATION_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_formula_functions/', MODEL_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
 
 REQUIRED_COMMON_NUCS_5 <<- UPPER_TRIM_BOUND + 10 
 
@@ -354,15 +355,6 @@ split_motif_column_by_motif_position <- function(aggregated_subject_data, trim_t
     return(aggregated_subject_data)
 }
 
-set_contrasts <- function(group_motif_data, ref_base = 'A', trim_type = TRIM_TYPE){
-    trims = get_trim_order(trim_type)
-
-    for (i in seq(length(trims))){
-        group_motif_data = single_set_contrasts(group_motif_data, ref_base, trims[i])
-    }
-    return(group_motif_data)
-}
-
 compile_data_for_subject <- function(file_path=NULL, dataset=NULL, write = TRUE, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     # Validate that either file_path or dataset is provided, but not both
     stopifnot(!(is.null(file_path)) | !(is.null(dataset)))
@@ -568,4 +560,117 @@ subset_processed_data <- function(data, trim_type = TRIM_TYPE, gene_type = GENE_
     other = c(paste0(genes, '_group'), trim_vars, 'weighted_observation', 'count', 'total_tcr')
     cols = c(other, params)
     return(data[, ..cols])
+}
+
+get_positions <- function(trim_type = TRIM_TYPE){
+    trims = get_trim_order(trim_type)
+
+    if (LEFT_NUC_MOTIF_COUNT > 0){
+        left = c()
+        for (i in seq(length(trims))){
+            left = c(left, paste0(trims[i], '_motif_5end_pos', seq(LEFT_NUC_MOTIF_COUNT, 1)))
+        }
+    } else {
+        left = c()
+    } 
+    if (RIGHT_NUC_MOTIF_COUNT > 0){
+        right = c()
+        for (i in seq(length(trims))){
+            right = c(right, paste0(trims[i], '_motif_3end_pos', seq(1, RIGHT_NUC_MOTIF_COUNT)))
+        }
+    } else {
+        right = c()
+    }
+    positions = c(left, right)
+    return(positions)
+}
+
+aggregate_all_subject_data <- function(directory = get_subject_motif_output_location(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
+    stopifnot(LEFT_NUC_MOTIF_COUNT <= 10)
+    stopifnot(LEFT_SIDE_TERMINAL_MELT_LENGTH <= 10 | is.na(LEFT_SIDE_TERMINAL_MELT_LENGTH))
+    desired_file_count = length(list.files(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE))))
+    if (!dir.exists(directory) | !(length(list.files(directory)) == desired_file_count)) {
+        print('compiling motif data, first')
+        compile_all_data(get(paste0('TCR_REPERTOIRE_DATA_', ANNOTATION_TYPE)), gene_type = gene_type, trim_type = trim_type) 
+    }  
+    
+    files = fs::dir_ls(path = directory)
+    registerDoParallel(cores=NCPU)
+    together = foreach(file = files, .combine=rbind) %dopar% {
+        file_data = fread(file)
+        print(paste(file))
+        file_data
+    }
+    
+    weighted_together = inner_aggregation_processing(together, gene_type, trim_type)
+    stopImplicitCluster()
+    return(weighted_together)
+}
+
+inner_aggregation_processing <- function(together, gene_type, trim_type){
+    if (MODEL_TYPE %like% 'dna_shape') {
+        together = convert_data_to_motifs(together, left_window_size = LEFT_NUC_MOTIF_COUNT + 2, right_window_size = RIGHT_NUC_MOTIF_COUNT + 2)
+        processed_motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
+        motif_data = convert_data_to_motifs(processed_motif_data)
+    } else {
+        together = convert_data_to_motifs(together)
+        motif_data = process_data_for_model_fit(together, gene_type = gene_type, trim_type = trim_type)
+    }
+
+    cols = colnames(motif_data)[!(colnames(motif_data) %like% 'left_nucs')]
+    cols = cols[!(cols %like% 'right_nucs')]
+
+    motif_data = motif_data[, ..cols]
+    together_pos = split_motif_column_by_motif_position(motif_data, trim_type = trim_type) 
+    weighted_together = calculate_subject_gene_weight(together_pos, gene_type = gene_type, trim_type = trim_type)
+    return(weighted_together)
+}
+
+get_coef_pvalues <- function(bootstrap_results, original_model_results){
+    sd_coeff = bootstrap_results[, sd(coefficient), by = .(parameter, base)]
+    setnames(sd_coeff, 'V1', 'sd')
+
+    together = merge(original_model_results, sd_coeff)
+
+    together[, zstat := coefficient/sd]
+    together[, pvalue := 2*pnorm(-abs(zstat))]
+    together$iterations = max(bootstrap_results$iteration)
+    return(together)
+}
+
+subsample <- function(motif_data, prop, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    genes = get_gene_order(gene_type)
+    trims = get_trim_order(trim_type)
+
+    # sample size is the number of gene combos
+    if (length(genes) == 1){
+        motif_data$cluster = motif_data[[paste0(gene_type, '_group')]]
+    } else if (length(genes) == 2){
+        motif_data$cluster = interaction(motif_data[[paste0(genes[1], '_group')]], motif_data[[paste0(genes[2], '_group')]])
+    }
+
+    # sample proportion of sequences for each individual
+    size = ceiling(unique(motif_data$total_tcr)*prop)
+    motif_data[, subsample_total_tcr := size]
+    vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_'],
+             colnames(motif_data)[colnames(motif_data) %like% 'base_count'],
+             colnames(motif_data)[colnames(motif_data) %like% 'motif'])
+
+    cols = c(paste0(genes, '_group'), trims, vars, 'count', 'subsample_total_tcr', 'cluster')
+    motif_data[, row := seq(1, .N)]
+    subset = motif_data[motif_data[, sample(.I, size, replace = TRUE, prob = count)]]
+    subset[, count := .N, by = .(row)]
+    subset_final = unique(subset[, ..cols])
+
+    # fill in unobserved seq cases
+    subset_orig_small = motif_data[, ..cols][, -c('count')]
+    subset_final_small = subset_final[, ..cols][, -c('count')]
+    unsampled = fsetdiff(subset_orig_small, subset_final_small) 
+    unsampled$count = 0
+    subset_final = rbind(subset_final, unsampled)
+
+    # updating the total_tcr, p_gene, gene_weight_type, and weighted_observation variables for the newly sampled datasets
+    source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'), local = TRUE)
+    sample_data = calculate_subject_gene_weight(subset_final, gene_type = gene_type, trim_type = trim_type)
+    return(sample_data)
 }

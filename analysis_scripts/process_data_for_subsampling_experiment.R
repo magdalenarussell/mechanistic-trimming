@@ -35,7 +35,6 @@ MODEL_TYPE <<- args[6]
 PROP <<- as.numeric(args[7])
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 # Read processed data
 filename = processed_data_path()

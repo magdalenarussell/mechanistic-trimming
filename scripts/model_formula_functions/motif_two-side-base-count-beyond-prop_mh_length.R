@@ -3,11 +3,6 @@ stopifnot(TRIM_TYPE %like% 'v-j_trim')
 
 LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 
-get_start_list <- function(motif_data, trim_type = TRIM_TYPE){
-    start_list = NULL 
-    return(start_list)
-}
-
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/two_side_base_count.R'))
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/mh.R'))
 
@@ -27,30 +22,6 @@ get_parameter_vector <- function(trims, genes){
     }
 
     return(c(motif_positions, left_vars, right_vars, mh_vars, 'v_length', 'j_length'))
-}
-
-get_model_formula <- function(trim_type = TRIM_TYPE, gene_type = GENE_NAME){
-    trims = get_trim_order(trim_type)
-    genes = get_gene_order(gene_type)
-
-    vars = get_parameter_vector(trims, genes)
-
-    trim_vars = paste(trims, collapse = ' + ')
-
-    mh_vars = vars[vars %like% 'mh_prop']
-    mh_vars_collapse = paste(mh_vars, collapse = ' + ')
-
-    base_vars = vars[vars %like% 'base_count']
-    base_vars_collapse = paste(base_vars, collapse = ' + ')
-
-    motif_vars = vars[vars %like% 'motif']
-    motif_positions_together = paste(motif_vars, collapse = ' + ')
-
-    gene_groups = paste(paste0(genes, '_group'), collapse = ' ,')
-
-    formula = formula(paste0('cbind(weighted_observation, interaction(', gene_groups, ')) ~ ', base_vars_collapse, ' + ', motif_positions_together, ' + ', mh_vars_collapse, ' + ', trim_vars))
-
-    return(formula)
 }
 
 process_single_data_for_model_fit <- function(group_motif_data, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){

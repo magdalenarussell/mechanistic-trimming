@@ -23,7 +23,6 @@ RIGHT_NUC_MOTIF_COUNT <<- 2
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond_interior-mh-count'
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 # Read processed data
 filename = processed_data_path()

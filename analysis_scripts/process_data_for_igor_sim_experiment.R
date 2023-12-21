@@ -23,7 +23,6 @@ RIGHT_NUC_MOTIF_COUNT <<- 2
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond_mh'
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 # Read raw data
 require(vroom)
@@ -54,7 +53,6 @@ compiled_processed = inner_aggregation_processing(compiled, gene_type=GENE_NAME,
 
 ANNOTATION_TYPE <<- 'igor_sim_alpha_independent_vj_choice'
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 compiled_processed = subset_processed_data(compiled_processed, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 
@@ -65,7 +63,6 @@ fwrite(compiled_processed, filename, sep = '\t')
 ANNOTATION_TYPE <<- 'igor_sim_alpha'
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 # Second, generate dataset where trimming distributions for each V-gene and J-gene are shuffled
 vcols = c('v_gene')
@@ -88,7 +85,6 @@ trim_compiled_processed = inner_aggregation_processing(trim_compiled, gene_type=
 
 ANNOTATION_TYPE <<- 'igor_sim_alpha_shuffled_trimming'
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 trim_compiled_processed = subset_processed_data(trim_compiled_processed, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 
@@ -98,7 +94,6 @@ fwrite(trim_compiled_processed, filename, sep = '\t')
 ANNOTATION_TYPE <<- 'igor_sim_random_sequence'
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 rand = compile_data_for_subject(dataset=all_data, write = FALSE)
 rand_processed = inner_aggregation_processing(rand, gene_type=GENE_NAME, trim_type=TRIM_TYPE)

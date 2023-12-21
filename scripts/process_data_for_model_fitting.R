@@ -33,7 +33,6 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(args[5])
 MODEL_TYPE <<- args[6]
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 
 # Compile data for all subjects
 motif_data = aggregate_all_subject_data(trim_type = TRIM_TYPE)
