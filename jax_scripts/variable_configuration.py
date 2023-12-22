@@ -74,9 +74,13 @@ class model_specific_parameters():
         self.choice_colname = getattr(self.param_config, "TRIM_TYPE")
 
     def process_choice_colnames(self):
-        self.choice_colname = self.choice_colname.split('_')[0]
-        self.choice_colname = self.choice_colname.split('-')
-        self.choice_colname = [item + '_trim' for item in self.choice_colname]
+        trims = self.choice_colname.replace('_ligation-mh', '')
+        trims = trims.split('_')[0]
+        trims = trims.split('-')
+        trims = [item + '_trim' for item in trims]
+        if 'ligation-mh' in self.choice_colname:
+            trims.append('ligation_mh')
+        self.choice_colname = trims
         return(self.choice_colname)
 
     def process_group_colnames(self):
@@ -136,7 +140,7 @@ class model_specific_parameters():
         self.variable_colnames.remove(side + '_base_count_length_interaction')
 
         bases = ['AT', 'GC']
-        trims = self.choice_colname
+        trims = [t for t in self.choice_colname if 'trim' in t]
         base_vars = [trim + '_' + side + '_base_count_' + base + '_prop' for trim in trims for base in bases if base + side != 'AT' + side]
 
         interactions = []
@@ -154,7 +158,7 @@ class model_specific_parameters():
         assert side + '_base_count' in self.variable_colnames, "base_count is not a variable colname"
         self.variable_colnames.remove(side + '_base_count')
         bases = ['AT', 'GC']
-        trims = self.choice_colname
+        trims = [t for t in self.choice_colname if 'trim' in t]
         base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT5end']
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
@@ -163,7 +167,7 @@ class model_specific_parameters():
         assert side + '_base_count_prop' in self.variable_colnames, "base_count_prop is not a variable colname"
         self.variable_colnames.remove(side + '_base_count_prop')
         bases = ['AT_prop', 'GC_prop']
-        trims = self.choice_colname
+        trims = [t for t in self.choice_colname if 'trim' in t]
         base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT_prop5end']
         self.variable_colnames = self.variable_colnames + base_vars
         return(self.variable_colnames)
@@ -173,17 +177,22 @@ class model_specific_parameters():
         assert self.left_nuc_motif_count > 0, "left motif size must be greater than zero"
         assert self.right_nuc_motif_count > 0, "right motif size must be greater than zero"
         self.variable_colnames.remove('motif')
-        trims = self.choice_colname
+        trims = [t for t in self.choice_colname if 'trim' in t]
         motif_vars_5 = [trim + '_motif_5end_pos' + str(pos) for trim in trims for pos in range(self.left_nuc_motif_count, 0, -1)]
         motif_vars_3 = [trim + '_motif_3end_pos' + str(pos) for trim in trims for pos in range(1, self.right_nuc_motif_count+1)]
         self.variable_colnames = self.variable_colnames + motif_vars_5 + motif_vars_3
+        return(self.variable_colnames)
+
+    def get_ligation_mh_variables(self):
+        assert 'ligation_mh' in self.variable_colnames, "ligation_mh is not a varaible colname"
         return(self.variable_colnames)
 
     def get_all_length_variables(self):
         assert 'length' in self.variable_colnames, "length is not a variable colname"
         self.variable_colnames.remove('length')
         trims = []
-        for c in self.choice_colname:
+        choices = [t for t in self.choice_colname if 'trim' in t]
+        for c in choices:
             trims.append(c[0] + '_length')
         self.variable_colnames = self.variable_colnames + trims
         return(self.variable_colnames)
@@ -223,5 +232,7 @@ class model_specific_parameters():
             self.variable_colnames = self.get_all_mh_length_interaction_variables(prop=False)
         if '3end_base_count_length_interaction' in self.variable_colnames:
             self.variable_colnames = self.get_all_base_count_length_interaction_variables('3end')
+        if 'ligation_mh' in self.variable_colnames:
+            self.variable_colnames = self.get_ligation_mh_variables()
 
         return(self)
