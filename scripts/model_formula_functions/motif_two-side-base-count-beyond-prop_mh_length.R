@@ -7,6 +7,7 @@ source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/mh.R'))
 
 get_parameter_vector <- function(trims, genes){
+    trims = trims[trims %like% 'trim']
     motif_positions = c()
     for (i in seq(length(trims))){
         motif_positions = c(motif_positions, get_positions(trims[i]))

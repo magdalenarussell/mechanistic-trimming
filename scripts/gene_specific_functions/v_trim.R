@@ -12,3 +12,12 @@ filter_motif_data_for_possible_sites <- function(motif_data){
 adjust_trimming_sites_for_ligation_mh <- function(motif_data){
     return(motif_data)
 }
+
+get_all_possible_sites <- function(gene_type = GENE_NAME){
+    return(NULL)
+}
+
+get_missing_possible_sites <- function(possible_sites, filtered_motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    unobserved = data.table()
+    return(unobserved)
+}

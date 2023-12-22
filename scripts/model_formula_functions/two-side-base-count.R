@@ -5,6 +5,7 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- 10
 source(paste0(MOD_PROJECT_PATH, '/scripts/model_formula_functions/model_formula_specific_functions/two_side_base_count.R'))
 
 get_parameter_vector <- function(trims, genes){
+    trims = trims[trims %like% 'trim']
     left_vars = c()
     right_vars = c()
     for (i in seq(length(trims))){

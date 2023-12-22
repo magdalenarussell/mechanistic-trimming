@@ -169,6 +169,16 @@ get_unobserved_nuc_context <- function(tcr_dataframe, gene_type = GENE_NAME, tri
     unobserved_cols = cols[cols != 'ligation_mh']
     unobserved = desired_obs[!tcr_dataframe_observed, on = unobserved_cols]
 
+    unobserved = inner_unobserved_nucleotide_context_function(unobserved, trim_type, gene_type)
+    return(unobserved)
+}
+
+inner_unobserved_nucleotide_context_function <- function(unobserved, trim_type=TRIM_TYPE, gene_type=GENE_NAME){
+    # Retrieve trim and gene orders based on type
+    trims = get_trim_order(trim_type)
+    trim_vars = get_trim_vars(trim_type)
+    genes = get_gene_order(gene_type)
+
     # Calculate unobserved nucleotide context
     for (i in seq(length(trims))){
         u_cols = c(paste0(genes[i], '_whole_seq'), paste0(genes[i], '_group'), trims[i])
@@ -179,7 +189,7 @@ get_unobserved_nuc_context <- function(tcr_dataframe, gene_type = GENE_NAME, tri
 
     # Initialize count and ligation mismatch (if applicable) to zero
     unobserved$count = 0
-    if ('ligation_mh' %in% trim_vars){
+    if (!('ligation_mh' %in% colnames(unobserved))){
         unobserved$ligation_mh = 0
     }
     return(unobserved)
@@ -401,7 +411,7 @@ compile_data_for_subject <- function(file_path=NULL, dataset=NULL, write = TRUE,
     }
 
     # Filter motif data for possible sites
-    motif_data = filter_motif_data_for_possible_sites(motif_data, gene_type = gene_type)
+    motif_data = filter_motif_data_for_possible_sites(motif_data, gene_type = gene_type, trim_type = trim_type)
 
     # Write or return motif data
     if (isTRUE(write)){
@@ -475,7 +485,7 @@ get_frames_data <- function(){
     return(final)
 }
 
-get_stop_codon_positions <- function(adjusted_data, trim_type = TRIM_TYPE, gene_type = GENE_TYPE){
+get_stop_codon_positions <- function(adjusted_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
     # Retrieve trim and gene orders
     trims = get_trim_order(trim_type)
     genes = get_gene_order(gene_type)
@@ -556,7 +566,7 @@ subset_processed_data <- function(data, trim_type = TRIM_TYPE, gene_type = GENE_
     trim_vars = get_trim_vars(trim_type)
     genes = get_gene_order(gene_type)
 
-    params = get_parameter_vector(trims, genes)
+    params = get_parameter_vector(trim_vars, genes)
     other = c(paste0(genes, '_group'), trim_vars, 'weighted_observation', 'count', 'total_tcr')
     cols = c(other, params)
     return(data[, ..cols])

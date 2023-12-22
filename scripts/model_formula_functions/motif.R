@@ -4,6 +4,7 @@ LEFT_SIDE_TERMINAL_MELT_LENGTH <<- NA
 
 get_parameter_vector <- function(trims, genes){
     motif_positions = c()
+    trims = trims[trims %like% 'trim']
     for (i in seq(length(trims))){
         motif_positions = c(motif_positions, get_positions(trims[i]))
     }

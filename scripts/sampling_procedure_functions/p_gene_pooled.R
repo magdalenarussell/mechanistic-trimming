@@ -1,13 +1,15 @@
 calculate_subject_gene_weight <- function(compiled_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     genes = get_gene_order(gene_type)
-    trims = get_trim_order(trim_type)
+    trims = get_trim_vars(trim_type)
 
     # make sure data is adequately filtered!
-    compiled_data = filter_motif_data_for_possible_sites(compiled_data, gene_type = gene_type)
+    possible_sites = get_all_possible_sites(gene_type)
+    missing = get_missing_possible_sites(possible_sites, compiled_data, trim_type, gene_type)
+    stopifnot(nrow(missing) == 0)
 
     if ('subject' %in% colnames(compiled_data)){
         params = get_parameter_vector(trims, genes)
-        cols = c(paste0(genes, '_group'), trims, params)
+        cols = unique(c(paste0(genes, '_group'), trims, params))
         compiled_data = compiled_data[, sum(count), by = cols]
         setnames(compiled_data, 'V1', 'count')
     }
