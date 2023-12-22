@@ -294,7 +294,7 @@ class DataTransformer(DataPreprocessor):
         return(df)
 
     def reset_weighted_observations(self, counts_mat):
-        mat_sum = jnp.sum(counts_mat)
+        mat_sum = jnp.nansum(counts_mat)
         reset_mat = counts_mat/mat_sum
         return(reset_mat)
 
@@ -327,9 +327,15 @@ class DataTransformer(DataPreprocessor):
             nonrepeat_groups_mat[i,] = pd.unique(temp1[nonrepeat_groups])
             for j in choices:
                 temp2 = temp1[temp1[self.choice_colname] == j]
-                counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
+                if temp2.shape[0] == 0:
+                    counts_mat[i, j, 0] = None
+                else:
+                    counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
                 for k in var_mapping.keys():
-                    mat[i, j, k] = float(temp2[var_mapping[k]].iloc[0])
+                    if temp2.shape[0] == 0:
+                        mat[i, j, k] = None
+                    else:
+                        mat[i, j, k] = float(temp2[var_mapping[k]].iloc[0])
         return mat, counts_mat, nonrepeat_groups_mat
 
     def get_coefficients(self, coefs=None):
@@ -487,6 +493,9 @@ class ConditionalLogisticRegressor(DataTransformer):
         cov = jnp.dot(variables, coefs)
         reshape = jnp.squeeze(cov)
 
+        # replace missing choices with -INF so that they will not count towards probability
+        reshape = jnp.where(jnp.isnan(reshape), jnp.NINF, reshape)
+
         # Calculate the probability of the observed choices
         # Dimensions of this matrix are groups x choices
         probs = jax.nn.softmax(reshape)
@@ -505,7 +514,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             float: Cross-entropy loss.
         """
         counts_reshape = jnp.squeeze(counts)
-        loss = -jnp.sum(jnp.log(probs) * counts_reshape)
+        loss = -jnp.nansum(jnp.log(probs) * counts_reshape)
         return loss
 
     def l2regularization(self, coefs, size, l2reg):
@@ -529,7 +538,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             binary_mh_list = [int(b) for b in mh_list]
             binary_mh_jnp = jnp.array(binary_mh_list).reshape(-1, 1)
             coef_subset = coefs * binary_mh_jnp
-            c = jnp.sum(coef_subset**2)
+            c = jnp.nansum(coef_subset**2)
         else:
             c = 0
         return(0.5*(1/size)*l2reg*c)
