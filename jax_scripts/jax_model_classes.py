@@ -298,7 +298,7 @@ class DataTransformer(DataPreprocessor):
         reset_mat = counts_mat/mat_sum
         return(reset_mat)
 
-    def get_matrices(self, df):
+    def get_matrices(self, df, replace_object=None):
         """
         Prepares data matrices for modeling.
 
@@ -328,14 +328,18 @@ class DataTransformer(DataPreprocessor):
             for j in choices:
                 temp2 = temp1[temp1[self.choice_colname] == j]
                 if temp2.shape[0] == 0:
-                    counts_mat[i, j, 0] = None
+                    counts_mat[i, j, 0] = 0
                 else:
                     counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
                 for k in var_mapping.keys():
                     if temp2.shape[0] == 0:
-                        mat[i, j, k] = None
+                        mat[i, j, k] = 0
                     else:
                         mat[i, j, k] = float(temp2[var_mapping[k]].iloc[0])
+
+        if replace_object is not None:
+            setattr(self, replace_object, df)
+
         return mat, counts_mat, nonrepeat_groups_mat
 
     def get_coefficients(self, coefs=None):
@@ -463,7 +467,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.input_variable_colnames = variable_colnames
         self.input_group_colname = group_colname
         self.input_choice_colname = choice_colname
-        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix = self.get_matrices(training_df)
+        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix = self.get_matrices(training_df, replace_object='training_df')
         self.initial_coefs = self.get_random_coefs()
         self.coefs = None
         self.training_info = None
@@ -493,12 +497,10 @@ class ConditionalLogisticRegressor(DataTransformer):
         cov = jnp.dot(variables, coefs)
         reshape = jnp.squeeze(cov)
 
-        # replace missing choices with -INF so that they will not count towards probability
-        reshape = jnp.where(jnp.isnan(reshape), jnp.NINF, reshape)
-
         # Calculate the probability of the observed choices
         # Dimensions of this matrix are groups x choices
-        probs = jax.nn.softmax(reshape)
+        # replace missing choices with -INF so that they will not count towards probability
+        probs = jnp.where(reshape == 0, 0, jax.nn.softmax(jnp.where(reshape==0, jnp.NINF, reshape)))
         return probs
 
     # Get cross-entropy loss
@@ -514,7 +516,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             float: Cross-entropy loss.
         """
         counts_reshape = jnp.squeeze(counts)
-        loss = -jnp.nansum(jnp.log(probs) * counts_reshape)
+        loss = -jnp.sum(jnp.log(jnp.where(probs==0, 1, probs)) * counts_reshape)
         return loss
 
     def l2regularization(self, coefs, size, l2reg):
@@ -749,7 +751,7 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
         self.input_variable_colnames = variable_colnames
         self.input_group_colname = group_colname
         self.input_choice_colname = choice_colname
-        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix = self.get_matrices(new_df)
+        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix = self.get_matrices(new_df, replace_object='new_df')
 
     # get probability for input parameters given coefficients
     def predict(self):
