@@ -29,8 +29,9 @@ filename = processed_data_path()
 motif_data = fread(filename)
 
 # simulate data to replicate what an expected MH signal would yield
-PARAM_GROUP <<- 'nonproductive_v-j_trim_mh_sim'
-source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
+ANNOTATION_TYPE <<- 'igor_mh_sim_alpha'
+
+source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 
 # get MH count quantiles
 motif_data[, mh_count_mid_sum := mh_count_mid_overlap_1 + mh_count_mid_overlap_2 + mh_count_mid_overlap_3 + mh_count_mid_overlap_4]
