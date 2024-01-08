@@ -12,7 +12,7 @@ import pickle
 from pandarallel import pandarallel
 from patsy.contrasts import Sum
 from sklearn.model_selection import GroupKFold
-from jax_model_classes import ConditionalLogisticRegressor, ConditionalLogisticRegressionPredictor
+from jax_model_classes import ConditionalLogisticRegressor, ConditionalLogisticRegressionPredictor, ConditionalLogisticRegressionEvaluator
 from config import MOD_OUTPUT_PATH, MOD_PROJECT_PATH
 import variable_configuration
 
@@ -57,6 +57,7 @@ print('read in data')
 # validate model
 model_filename = params.model_output_path(L2)
 evaluator = ConditionalLogisticRegressionEvaluator(model_filename,
+                                                   params,
                                                    processed_data)
 
 result = evaluator.compile_results_df(params.left_nuc_motif_count,
@@ -83,3 +84,18 @@ if os.path.isfile(path):
 result.to_csv(path, sep='\t', index=False)
 print('finished validating model')
 
+# make predictions on validation dataset
+predictor = ConditionalLogisticRegressionPredictor(model=evaluator.model,
+                                                   variable_colnames = model_params.variable_colnames,
+                                                   count_colname = model_params.count_colname,
+                                                   group_colname = model_params.group_colname,
+                                                   repeat_obs_colname = model_params.repeat_obs_colname,
+                                                   choice_colname = model_params.choice_colname,
+                                                   params = params)
+
+
+# write predictions and coefficients
+training_pred = predictor.predict(new_df=processed_data)
+predictions_filename = params.validation_predictions_data_path(L2)
+training_pred.to_csv(predictions_filename, sep='\t', index=False)
+print('finished making predictions with validation data')

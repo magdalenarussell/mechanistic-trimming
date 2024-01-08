@@ -71,6 +71,9 @@ get_missing_possible_sites <- function(possible_sites, filtered_motif_data, trim
 }
 
 fill_in_missing_possible_sites <- function(possible_sites, filtered_motif_data, trim_type = TRIM_TYPE, gene_type = GENE_NAME){
+    trims = get_trim_order(trim_type)
+    genes = get_gene_order(gene_type)
+
     # get unobserved scenarios
     unobserved = get_missing_possible_sites(possible_sites, filtered_motif_data, trim_type, gene_type)
 
@@ -87,7 +90,7 @@ fill_in_missing_possible_sites <- function(possible_sites, filtered_motif_data, 
     unobserved[[paste0(trim_type, '_observed')]] = FALSE
     unobserved$count = 0
 
-    together = rbind(filtered_motif_data, unobserved)
+    together = rbind(filtered_motif_data, unobserved, fill = TRUE)
     return(together)
 }
 

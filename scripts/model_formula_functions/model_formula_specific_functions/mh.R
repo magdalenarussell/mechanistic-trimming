@@ -75,58 +75,6 @@ get_all_mh_count_length_interaction_variables <- function(overlap_vector){
     return(vars)
 }
 
-
-get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, overlap_count, pnucs = 2, positions = c('up', 'mid', 'down')){
-    j_gene_bottom_seq = reorient_j_bottom_strand(j_gene_bottom_seq)
-
-    require(Biostrings)
-    v_pnucs = get_pnucs(v_gene_top_seq, 'top', pnucs)    
-    j_pnucs = get_pnucs(j_gene_bottom_seq, 'bottom', pnucs)    
-    
-    v_gene_top_seq_p = paste0(v_gene_top_seq, v_pnucs)
-    j_gene_bottom_seq_p = paste0(j_pnucs, j_gene_bottom_seq)
-    
-    # get overlapping seqs when aligning trim sites
-    v_overlap = substring(v_gene_top_seq_p, nchar(v_gene_top_seq_p) - (2*pnucs + v_trim + j_trim + overlap_count) + 1 , nchar(v_gene_top_seq_p))
-    j_overlap = substring(j_gene_bottom_seq_p, 1, (2*pnucs + v_trim + j_trim + overlap_count))
-
-    # get v_gene.j_trimmed overlaps
-    vg_jt = substring(v_overlap, 1, pnucs+j_trim)
-    jt_vg = substring(j_overlap, 1, pnucs+j_trim)
-
-    # get j_gene.v_trimmed overlaps
-    jg_vt = substring(j_overlap, pnucs+j_trim + 1 + overlap_count)
-    vt_jg = substring(v_overlap, pnucs+j_trim + 1 + overlap_count)
-
-    # get overlaps
-    if (overlap_count > 0){
-        v_mid = substring(v_overlap, pnucs + j_trim + 1, pnucs + j_trim + overlap_count)
-        j_mid = substring(j_overlap, pnucs + j_trim + 1, pnucs + j_trim + overlap_count)
-    } else {
-        v_mid = ""
-        j_mid = ""
-    }
-
-    up = data.table(vg_jt, jt_vg)
-    down = data.table(jg_vt, vt_jg)
-    mid = data.table(v_mid, j_mid)
-
-    overlaps = c()
-    for (pos in positions){
-        overlaps = cbind(overlaps, get(pos))
-    }
-    names = get_overlap_names(overlap_count, positions)
-    setnames(overlaps, colnames(overlaps), names)
-
-    return(overlaps)
-}
-
-get_mh <- function(seq1, seq2){
-    seq2_comp = as.character(complement(DNAStringSet(seq2)))
-    mh = mcmapply(function(X,Y) sum(str_count(X,Y)), strsplit(seq1, ''), strsplit(seq2_comp, ''))
-    return(mh)
-}
-
 get_mh_prop <- function(seq1, seq2){
     mh = get_mh(seq1, seq2)
     lengths = nchar(seq1) 

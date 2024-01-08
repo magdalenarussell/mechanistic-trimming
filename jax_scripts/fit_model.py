@@ -59,7 +59,8 @@ model = ConditionalLogisticRegressor(training_df = processed_data,
                                      count_colname = model_params.count_colname,
                                      group_colname = model_params.group_colname,
                                      repeat_obs_colname = model_params.repeat_obs_colname,
-                                     choice_colname = model_params.choice_colname)
+                                     choice_colname = model_params.choice_colname,
+                                     params = params)
 print('initialized model')
 
 # train model
@@ -68,15 +69,15 @@ print('trained model')
 
 # make predictions on full training dataset
 predictor = ConditionalLogisticRegressionPredictor(model=model,
-                                                   new_df=processed_data,
                                                    variable_colnames = model_params.variable_colnames,
                                                    count_colname = model_params.count_colname,
                                                    group_colname = model_params.group_colname,
                                                    repeat_obs_colname = model_params.repeat_obs_colname,
-                                                   choice_colname = model_params.choice_colname)
+                                                   choice_colname = model_params.choice_colname,
+                                                   params = params)
 
 # write predictions and coefficients
-training_pred = predictor.predict()
+training_pred = predictor.predict(new_df=processed_data)
 predictions_filename = params.predictions_data_path(L2)
 training_pred.to_csv(predictions_filename, sep='\t', index=False)
 

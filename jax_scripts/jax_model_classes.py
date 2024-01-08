@@ -48,13 +48,14 @@ class DataPreprocessor():
         expand_multivariable(training_df, col, new_col):
             Expand multi-variable columns into a single string column.
     """
-    def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname):
+    def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params):
         self.training_df = training_df
         self.variable_colnames = variable_colnames
         self.count_colname = count_colname
         self.group_colname = group_colname
         self.repeat_obs_colname = repeat_obs_colname
         self.choice_colname = choice_colname
+        self.params = params
 
     def get_mapping_dict(self, training_df, col):
         """
@@ -93,7 +94,7 @@ class DataPreprocessor():
             training_df[new_col_name] = training_df[col].map(var_mapping)
         return training_df
 
-    def get_contrast_matrix(self, training_df, col):
+    def get_contrast_matrix(self, training_df, col, pretrain=True):
         """
         Get the contrast matrix for categorical variables.
 
@@ -108,6 +109,9 @@ class DataPreprocessor():
         if not isinstance(first, int) and not isinstance(first, float) and not isinstance(first, np.int64):
             # create sum contrasts matrix
             unique = sorted(list(pd.unique(training_df[col])))
+            if not pretrain:
+                unique = ['-', 'A', 'C', 'G', 'T']
+
             contrast = Sum().code_without_intercept(unique).matrix
 
             # Create an identity matrix with the number of categories
@@ -142,7 +146,7 @@ class DataPreprocessor():
         contrast_vars=[f"{original_col}_{i}" for i in unique]
         return(contrast_vars[:-1], contrast_vars[-1])
 
-    def transform_categorical_vars(self, training_df, col):
+    def transform_categorical_vars(self, training_df, col, pretrain=True):
         """
         Transform categorical variable columns into contrast columns.
 
@@ -156,7 +160,7 @@ class DataPreprocessor():
         assert col in self.variable_colnames, "Input column name is not a variable name"
         first = training_df[col].iloc[0]
         if not isinstance(first, int) and not isinstance(first, float) and not isinstance(first, np.int64):
-            contrast_df = self.get_contrast_matrix(training_df, col)
+            contrast_df = self.get_contrast_matrix(training_df, col, pretrain)
             training_df = pd.merge(training_df, contrast_df, on=col, how='inner')
             new_cols = [x for x in list(contrast_df.columns) if x != col]
             self.variable_colnames = [x for x in self.variable_colnames if x != col] + new_cols
@@ -182,14 +186,19 @@ class DataPreprocessor():
             setattr(self, col, new_col_name)
         return training_df
 
-    def check_within_set_variance(self, training_df):
-        for col in self.variable_colnames:
-            var_counts = training_df.groupby([self.group_colname, col]).size().reset_index(name = 'N')
-            unique_var_counts = var_counts.groupby([self.group_colname]).size().reset_index(name = 'N')
-            if 1 in unique_var_counts.N.unique():
-                self.variable_colnames.remove(col)
-                self.variable_colnames = self.variable_colnames
-                print('removing ' + col + ' from model due to insufficient within-choice set variance')
+    def check_within_set_variance(self, training_df, pretrain=True):
+        if pretrain:
+            for col in self.variable_colnames:
+                var_counts = training_df.groupby([self.group_colname, col]).size().reset_index(name = 'N')
+                unique_var_counts = var_counts.groupby([self.group_colname]).size().reset_index(name = 'N')
+                if 1 in unique_var_counts.N.unique():
+                    self.variable_colnames.remove(col)
+                    self.variable_colnames = self.variable_colnames
+                    print('removing ' + col + ' from model due to insufficient within-choice set variance')
+        else:
+            # remove missing NT variables
+            self.variable_colnames = [var for var in self.variable_colnames if '_-' not in var]
+
 
     def remove_zero_set_counts(self, training_df):
         count_sums = training_df.groupby([self.group_colname])[self.count_colname].sum()
@@ -200,7 +209,26 @@ class DataPreprocessor():
             print('removing ' + str(zero_groups) + ' groups from model due to zero counts')
         return(training_df)
 
+    def filter_input_domain_space(self, df):
+        domain_file = self.params.R_input_domain_data_path()
+        domain_data = pd.read_csv(domain_file, sep = '\t')
 
+        # fill in zeros
+        # Create a DataFrame of all unique pairs
+        unique_genes = domain_data[['v_gene_group', 'j_gene_group']].drop_duplicates()
+        unique_trims = domain_data[['v_trim', 'j_trim']].drop_duplicates()
+
+        unique_pairs = unique_genes.merge(unique_trims, how='cross')
+        unique_pairs['ligation_mh'] = 0
+
+        # merge
+        domain_data_subset = domain_data[unique_pairs.columns]
+        tog = domain_data_subset.merge(unique_pairs, how='outer').drop_duplicates()
+
+        # filter input df
+        filtered_df = pd.merge(tog, df, how='inner', on=tog.columns.tolist())
+
+        return filtered_df
 
 
 class DataTransformer(DataPreprocessor):
@@ -236,8 +264,8 @@ class DataTransformer(DataPreprocessor):
 
     Inherits Attributes and Methods from DataPreprocessor class.
     """
-    def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname):
-        super().__init__(training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname)
+    def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params):
+        super().__init__(training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
         self.original_variable_colnames = variable_colnames
         self.original_group_colname = group_colname
         self.original_choice_colname = choice_colname
@@ -258,17 +286,24 @@ class DataTransformer(DataPreprocessor):
         coefs = jax.random.normal(key, shape=(len(self.variable_colnames), 1))
         return coefs
 
-    def preprocess_data(self, df):
+    def preprocess_data(self, df, pretrain=True):
         """
         Preprocesses the training data, transforming columns as necessary.
 
         Returns:
             pd.DataFrame: The preprocessed training DataFrame.
         """
+        # filter for possible sites
+        if 'ligation_mh' in self.input_choice_colname:
+            df = self.filter_input_domain_space(df)
+
         # Transform group column lists into strings
         df = self.expand_multivariable(df, "original_group_colname", "group_colname")
+
         # remove zero counts
-        df = self.remove_zero_set_counts(df)
+        if pretrain:
+            df = self.remove_zero_set_counts(df)
+
         df = self.transform_categorical_response_vars(df, "original_group_colname", "group_colname")
 
         # Transform choice column lists into strings
@@ -286,10 +321,10 @@ class DataTransformer(DataPreprocessor):
 
         # Transform categorical variable columns into contrast columns
         for col in self.variable_colnames:
-            df = self.transform_categorical_vars(df, col)
+            df = self.transform_categorical_vars(df, col, pretrain)
 
         # check for within-choice-set variance
-        self.check_within_set_variance(df)
+        self.check_within_set_variance(df, pretrain)
 
         return(df)
 
@@ -298,14 +333,14 @@ class DataTransformer(DataPreprocessor):
         reset_mat = counts_mat/mat_sum
         return(reset_mat)
 
-    def get_matrices(self, df, replace_object=None):
+    def get_matrices(self, df, pretrain=True, replace_object=None, return_df=False):
         """
         Prepares data matrices for modeling.
 
         Returns:
             tuple: A tuple containing three data matrices - variables, counts, and non-repeat groups.
         """
-        df = self.preprocess_data(df)
+        df = self.preprocess_data(df, pretrain)
 
         # Create three-dimensional matrix
         groups = pd.unique(df[self.group_colname])
@@ -327,10 +362,13 @@ class DataTransformer(DataPreprocessor):
             nonrepeat_groups_mat[i,] = pd.unique(temp1[nonrepeat_groups])
             for j in choices:
                 temp2 = temp1[temp1[self.choice_colname] == j]
-                if temp2.shape[0] == 0:
-                    counts_mat[i, j, 0] = 0
+                if self.count_colname in temp2.columns:
+                    if temp2.shape[0] == 0:
+                        counts_mat[i, j, 0] = 0
+                    else:
+                        counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
                 else:
-                    counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
+                    counts_mat = None
                 for k in var_mapping.keys():
                     if temp2.shape[0] == 0:
                         mat[i, j, k] = 0
@@ -340,7 +378,10 @@ class DataTransformer(DataPreprocessor):
         if replace_object is not None:
             setattr(self, replace_object, df)
 
-        return mat, counts_mat, nonrepeat_groups_mat
+        if return_df:
+            return mat, counts_mat, nonrepeat_groups_mat, df
+        else:
+            return mat, counts_mat, nonrepeat_groups_mat
 
     def get_coefficients(self, coefs=None):
         if coefs is None:
@@ -459,8 +500,8 @@ class ConditionalLogisticRegressor(DataTransformer):
 
     Inherits Attributes and Methods from DataTransformer class.
     """
-    def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, l2kfold=10):
-        super().__init__(training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname)
+    def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params, l2kfold=10):
+        super().__init__(training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
         self.original_variable_colnames = variable_colnames
         self.original_group_colname = group_colname
         self.original_choice_colname = choice_colname
@@ -581,6 +622,8 @@ class ConditionalLogisticRegressor(DataTransformer):
         Returns:
             OptimizationResult: Result of the optimization process.
         """
+        assert counts_matrix is not None, "counts column is missing"
+
         # Create a jaxopt GradientDescent optimizer
         solver = jaxopt.GradientDescent(fun=self.loss_fn, maxiter=maxiter, tol=tol, stepsize=step, implicit_diff=True, verbose=True)
 
@@ -592,6 +635,8 @@ class ConditionalLogisticRegressor(DataTransformer):
         return(res)
 
     def cv_loss(self, fold_count, l2reg):
+        assert self.counts_matrix is not None, "counts column is needed"
+
         kf = GroupKFold(n_splits=fold_count)
         scores = []
 
@@ -663,6 +708,8 @@ class ConditionalLogisticRegressor(DataTransformer):
         Returns:
             self: The trained ConditionalLogisticRegressor instance.
         """
+        assert self.counts_matrix is not None, "counts column is needed"
+
         if l2 is False:
             self.l2reg = 0
         else:
@@ -718,7 +765,6 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
 
     Args:
         model (ConditionalLogisticRegressor): A trained conditional logistic regression model.
-        new_df (pd.DataFrame): The DataFrame with data for prediction.
         variable_colnames (list): List of variable column names.
         count_colname (str): The column name for the count variable.
         group_colname (list): List of column names representing group identifiers.
@@ -726,7 +772,6 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
 
     Attributes:
         model (ConditionalLogisticRegressor): The trained conditional logistic regression model.
-        new_df (pd.DataFrame): The DataFrame with data for prediction.
         original_variable_colnames (list): List of original variable column names.
         original_group_colname (list): List of original column names representing group identifiers.
         original_choice_colname (list): List of original column names representing choice identifiers.
@@ -739,22 +784,20 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
         compute_loss(): Compute the loss for the given data.
         get_coefficients(): Get the model coefficients as a dictionary.
     """
-    def __init__(self, model, new_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname):
-        super().__init__(new_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname)
+    def __init__(self, model, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params):
+        super().__init__(None, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
         self.model = model
         if not isinstance(model, ConditionalLogisticRegressor):
             raise TypeError("'model' must be a ConditionalLogisticRegressor object")
-        self.new_df = new_df
         self.original_variable_colnames = variable_colnames
         self.original_group_colname = group_colname
         self.original_choice_colname = choice_colname
         self.input_variable_colnames = variable_colnames
         self.input_group_colname = group_colname
         self.input_choice_colname = choice_colname
-        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix = self.get_matrices(new_df, replace_object='new_df')
 
     # get probability for input parameters given coefficients
-    def predict(self):
+    def predict(self, new_df):
         """
         Make predictions using the trained model.
 
@@ -763,14 +806,19 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
         Raises:
             ValueError: If the number of variable columns in the input DataFrame doesn't match the model's coefficients.
         """
-        if not self.variable_matrix.shape[-1] == self.model.coefs.shape[0]:
+        original_new_df = new_df
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix, new_df = self.get_matrices(new_df, pretrain=False, return_df=True)
+
+        if not variable_matrix.shape[-1] == self.model.coefs.shape[0]:
             raise ValueError("Input dataframe variable column count doesn't match the trained model coefficient count")
         # get predicted probabilities
-        probs = self.model.get_prob(self.variable_matrix, self.model.coefs)
+        probs = self.model.get_prob(variable_matrix, self.model.coefs)
         # transform probs to a dataframe
+        choice_cols = self.get_mapping_dict(new_df, self.choice_colname)
+        group_cols = self.get_mapping_dict(new_df, self.group_colname)
+        if len(group_cols) == 1:
+            probs = probs.reshape((len(group_cols), len(choice_cols)))
         prob_df = pd.DataFrame(probs)
-        choice_cols = self.get_mapping_dict(self.new_df, self.choice_colname)
-        group_cols = self.get_mapping_dict(self.new_df, self.group_colname)
         prob_df.columns = list(choice_cols.keys())
         prob_df[self.group_colname] = list(group_cols.keys())
         melted_df = pd.melt(prob_df,
@@ -778,32 +826,43 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
                             var_name=self.choice_colname,
                             value_name='predicted_prob')
         # merge predicted probabilities with original df
-        merged_df = pd.merge(self.new_df, melted_df,
+        merged_df = pd.merge(new_df, melted_df,
                              on=[self.group_colname, self.choice_colname],
                              how='inner')
-        return(merged_df)
 
-    def compute_loss(self):
+        # fill in out of domain values
+        common_cols = list(set(original_new_df) & set(merged_df))
+        final_df = pd.merge(merged_df, original_new_df, how='outer', on=common_cols)
+
+        # Fill missing values with a specified value
+        final_df.fillna(0, inplace=True)
+        return(final_df)
+
+    def compute_loss(self, new_df):
         """
         Compute the loss for the given data.
 
         Returns:
             float: The computed loss.
         """
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(new_df, pretrain=False)
+
+        assert counts_matrix is not None, "counts column is needed"
+
         loss = self.model.loss_fn(self.model.coefs,
-                             self.variable_matrix,
-                             self.counts_matrix)
+                                  variable_matrix,
+                                  counts_matrix)
         return(float(loss))
 
 
 class ConditionalLogisticRegressionEvaluator(DataTransformer):
-    def __init__(self, model_path, training_df = None, validation_df = None):
+    def __init__(self, model_path, params, training_df = None, validation_df = None):
         self.model = self.load_model(model_path)
         self.model.training_df = training_df
         self.validation_df = validation_df
         if not isinstance(self.model, ConditionalLogisticRegressor):
             raise TypeError("'model' must be a ConditionalLogisticRegressor object")
-        super().__init__(self.model.training_df, self.model.input_variable_colnames, self.model.count_colname, self.model.input_group_colname, self.model.repeat_obs_colname, self.model.input_choice_colname)
+        super().__init__(self.model.training_df, self.model.input_variable_colnames, self.model.count_colname, self.model.input_group_colname, self.model.repeat_obs_colname, self.model.input_choice_colname, params)
         self.log_loss = None
         self.expected_log_loss = None
 
@@ -815,7 +874,10 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
 
     def calculate_log_loss(self):
         assert self.model.training_df is not None, 'No input training dataframe provided'
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.model.training_df)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.model.training_df, pretrain=False)
+
+        assert counts_matrix is not None, "counts column is needed"
+
         # Compute the loss on the training data
         loss = self.model.loss_fn(self.model.coefs,
                                   variable_matrix,
@@ -824,7 +886,9 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
 
     def calculate_expected_log_loss(self, fold_count=20):
         assert self.model.training_df is not None, 'No input training dataframe provided'
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.model.training_df)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.model.training_df, pretrain=False)
+
+        assert counts_matrix is not None, "counts column is needed"
 
         # Compute the expected loss on the training data
         self.model.variable_matrix = variable_matrix
@@ -837,7 +901,10 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
 
     def calculate_validation_log_loss(self):
         assert self.validation_df is not None, 'No input validation dataframe provided'
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.validation_df)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.validation_df, pretrain=False)
+
+        assert counts_matrix is not None, "counts column is needed"
+
         loss = self.model.loss_fn(self.model.coefs,
                                   variable_matrix,
                                   counts_matrix)

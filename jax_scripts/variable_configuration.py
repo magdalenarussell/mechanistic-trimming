@@ -27,6 +27,11 @@ class global_paramaters():
         file_name = path + '/processed_data.tsv'
         return(file_name)
 
+    def R_input_domain_data_path(self):
+        path = self.root_path + '/meta_data/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound)
+        file_name = path + '/frame_data.tsv'
+        return(file_name)
+
     def R_subsampling_processed_data_path(self, prop, annotation = None):
         if annotation == None:
             annotation = self.annotation_type
@@ -42,6 +47,11 @@ class global_paramaters():
     def predictions_data_path(self, l2):
         path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type
         file_name = path + '/predicted_dist_data_L2' + str(l2) + '.tsv'
+        return(file_name)
+
+    def validation_predictions_data_path(self, l2, validation_annotation):
+        path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type + '/validation_prediction'
+        file_name = path + '/' + str(validation_annotation) + '_predicted_dist_data_L2' + str(l2) + '.tsv'
         return(file_name)
 
     def trained_coefs_path(self, l2):
