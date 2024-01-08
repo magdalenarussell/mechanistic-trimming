@@ -198,6 +198,37 @@ plot_length_coefficient_heatmap_single_group <- function(model_coef_matrix, with
     return(plot)
 }
 
+plot_ligation_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL){
+    model_coef_matrix = model_coef_matrix[(coefficient %like% 'ligation_mh')]
+
+    # convert to log_10
+    model_coef_matrix$log_10_pdel = model_coef_matrix$value/log(10)
+
+    if (is.null(limits)){
+        max_val = max(abs(model_coef_matrix$log_10_pdel))
+        limits = c(-max_val, max_val)
+    }
+    
+    model_coef_matrix$coefficient = 'Ligation MH count'
+
+    plot = ggplot(model_coef_matrix, aes(x=coefficient, y=1, fill=log_10_pdel)) +
+        geom_tile() +
+        theme_cowplot(font_family = 'Arial') + 
+        xlab('') +
+        ylab('') +
+        scale_fill_distiller(palette = 'PuOr', name = 'log10(probability of deletion)', limits = limits, na.value = 'gray80') + 
+        theme(text = element_text(size = 30), axis.line = element_blank(), axis.ticks = element_blank(), axis.text = element_text(size = 20), legend.position = 'bottom', legend.direction = 'horizontal', legend.justification="center", strip.text.x = element_text(angle = 90), axis.text.y = element_blank()) +
+        guides(fill = guide_colourbar(barwidth = 35, barheight = 2))
+       
+    if (with_values == TRUE){
+        plot = plot +
+            geom_text(data = model_coef_matrix, aes(x = long_name, y = base, label = round(log_10_pdel, 2)))
+    }
+
+    return(plot)
+}
+
+
 plot_mh_coefficient_heatmap_single_group <- function(model_coef_matrix, with_values = FALSE, limits = NULL, interaction_coefs = FALSE, prop = TRUE, positions = c('up', 'mid', 'down')){
     if (isTRUE(prop)){
         mh_var = 'mh_prop'
