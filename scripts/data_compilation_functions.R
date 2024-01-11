@@ -531,7 +531,7 @@ get_stop_positions_with_frame <- function(framed_data){
 }
 
 frame_data_path <- function(){
-    output_location = file.path(MOD_OUTPUT_PATH, 'meta_data', paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    output_location = file.path(MOD_OUTPUT_PATH, 'meta_data', ANNOTATION_TYPE, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     filename = file.path(output_location, 'frame_data.tsv')
     return(filename)

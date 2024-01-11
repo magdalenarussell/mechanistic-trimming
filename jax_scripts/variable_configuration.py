@@ -28,7 +28,7 @@ class global_paramaters():
         return(file_name)
 
     def R_input_domain_data_path(self):
-        path = self.root_path + '/meta_data/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound)
+        path = self.root_path + '/meta_data/' + self.annotation_type + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound)
         file_name = path + '/frame_data.tsv'
         return(file_name)
 
