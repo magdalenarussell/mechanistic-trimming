@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 import jaxopt
 import patsy
+import dill
 import pickle
 from pandarallel import pandarallel
 from patsy.contrasts import Sum
@@ -756,7 +757,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.nonrepeat_grp_matrix = None
         with open(file_path, 'wb') as file:
             # Serialize and save the object to the file
-            pickle.dump(self, file)
+            dill.dump(self, file)
 
 
 class ConditionalLogisticRegressionPredictor(DataTransformer):
@@ -868,7 +869,7 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
 
     def load_model(self, file_path):
         with open(file_path, 'rb') as file:
-            model = pickle.load(file)
+            model = dill.load(file)
         assert model.coefs is not None, "model is not trained"
         return(model)
 

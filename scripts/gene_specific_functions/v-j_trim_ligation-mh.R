@@ -77,21 +77,25 @@ fill_in_missing_possible_sites <- function(possible_sites, filtered_motif_data, 
     # get unobserved scenarios
     unobserved = get_missing_possible_sites(possible_sites, filtered_motif_data, trim_type, gene_type)
 
-    # get NT context for these scenarios
-    for (i in seq(length(trims))){
-        cols = c(paste0(genes[i], '_group'), trims[i], paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs'))
-        common_cols = c(paste0(genes[i], '_group'), trims[i])
-        subset = unique(filtered_motif_data[, ..cols])
-        unobserved = merge(unobserved, subset, by = common_cols, all.x = TRUE)
+    if (nrow(unobserved) == 0){
+        return(filtered_motif_data)
+    } else {
+        # get NT context for these scenarios
+        for (i in seq(length(trims))){
+            cols = c(paste0(genes[i], '_group'), trims[i], paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs'))
+            common_cols = c(paste0(genes[i], '_group'), trims[i])
+            subset = unique(filtered_motif_data[, ..cols])
+            unobserved = merge(unobserved, subset, by = common_cols, all.x = TRUE)
+        }
+
+        unobserved$subject = unique(filtered_motif_data$subject)
+        unobserved$gene_type = unique(filtered_motif_data$gene_type)
+        unobserved[[paste0(trim_type, '_observed')]] = FALSE
+        unobserved$count = 0
+
+        together = rbind(filtered_motif_data, unobserved, fill = TRUE)
+        return(together)
     }
-
-    unobserved$subject = unique(filtered_motif_data$subject)
-    unobserved$gene_type = unique(filtered_motif_data$gene_type)
-    unobserved[[paste0(trim_type, '_observed')]] = FALSE
-    unobserved$count = 0
-
-    together = rbind(filtered_motif_data, unobserved, fill = TRUE)
-    return(together)
 }
 
 adjust_trimming_sites_for_ligation_mh <- function(tcr_dataframe){

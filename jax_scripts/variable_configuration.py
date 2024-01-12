@@ -51,6 +51,7 @@ class global_paramaters():
 
     def validation_predictions_data_path(self, l2, validation_annotation):
         path = self.root_path + '/' + self.annotation_type + '/' + self.param_group + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound) + '/' + str(self.left_nuc_motif_count) + '_' + str(self.right_nuc_motif_count) + '_' + self.model_type + '/validation_prediction'
+        os.makedirs(path, exist_ok=True)
         file_name = path + '/' + str(validation_annotation) + '_predicted_dist_data_L2' + str(l2) + '.tsv'
         return(file_name)
 
