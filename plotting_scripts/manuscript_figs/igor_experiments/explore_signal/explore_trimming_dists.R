@@ -62,6 +62,15 @@ filename = processed_data_path()
 random_seq = fread(filename)
 random_seq = random_seq[, -23]
 
+ANNOTATION_TYPE <<- 'no_mh_model_sim_alpha'
+
+source(paste0(MOD_PROJECT_PATH, '/scripts/data_compilation_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
+
+filename = processed_data_path()
+no_mh_sim = fread(filename)
+no_mh_sim = no_mh_sim[, -23]
+
 # plot original with shuffled genes--V-genes
 shuffled_genes_cond_v = shuffled_genes[, sum(count), by = .(v_gene_group, v_trim, ligation_mh)]
 processed_cond_v = processed[, sum(count), by = .(v_gene_group, v_trim, ligation_mh)]
@@ -135,3 +144,8 @@ plot = ggplot(tog_cond[ligation_mh > 0]) +
 
 file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/igor_experiments/explore_signal/trimming_dists_random_seq_nonzero_mh.pdf')
 ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
+
+# plot trimming dists and ligationMH
+no_mh_sim[, scenario_freq_no_mh_sim := count/sum(count), by = .(v_gene_group, j_gene_group)]
+
+tog = merge(processed, no_mh_sim, by = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh'))
