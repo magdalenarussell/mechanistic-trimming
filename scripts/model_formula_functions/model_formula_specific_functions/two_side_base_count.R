@@ -44,9 +44,9 @@ get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMI
     together[[trim_type]] = rep(trims, length(genes))
     together = merge(together, whole_nucseq, by = 'gene')
 
-    map = get_common_genes_from_seqs(together, gene_type = gene_type)
-    together = merge(together, map, by = gene_type)
-    cols = c(trim_type,paste0(gene_type, '_sequence') , paste0(gene_type, '_group'))
+    setnames(together, 'gene', gene_type)
+
+    cols = c(trim_type, paste0(gene_type, '_sequence') , paste0(gene_type))
     together = together[, ..cols]
 
     if ('name' %in% colnames(together)){
@@ -88,7 +88,7 @@ get_left_right_seq_vars <- function(motif_data, left_nuc_count = LEFT_SIDE_TERMI
     }
    
     cols = colnames(together)[!(colnames(together) %like% '_sequence')]
-    motif_data_together = merge(motif_data, unique(together[, ..cols]), by = c(paste0(gene_type, '_group'), trim_type))
+    motif_data_together = merge(motif_data, unique(together[, ..cols]), by = c(paste0(gene_type), trim_type))
     return(motif_data_together)
 }
 

@@ -97,7 +97,7 @@ class model_specific_parameters():
     def process_group_colnames(self):
         self.group_colname = self.group_colname.split('_')[0]
         self.group_colname = self.group_colname.split('-')
-        self.group_colname = [item + '_gene_group' for item in self.group_colname]
+        self.group_colname = [item + '_gene' for item in self.group_colname]
         return(self.group_colname)
 
     def get_all_mh_variables(self, overlap_list=[0,1,2,3,4], prop=True, pos=['up', 'mid', 'down']):

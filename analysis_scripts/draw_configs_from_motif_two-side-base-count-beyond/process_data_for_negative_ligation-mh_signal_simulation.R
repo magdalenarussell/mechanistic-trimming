@@ -37,21 +37,20 @@ all_subset = all_subset[, ..cols]
 genes = get_gene_order(GENE_NAME)
 whole_nucseq = get_oriented_whole_nucseqs()
 seqs = data.table()
-for (g in genes) {
+for (g in genes){
     gene_seqs = whole_nucseq[substring(gene, 4, 4) %in% toupper(substring(g, 1, 1))]
-    gene_groups = get_common_genes_from_seqs(gene_seqs, g)
-    gene_groups = merge(gene_groups, whole_nucseq, by.x = g, by.y = 'gene')
-    seqs = rbind(seqs, gene_groups, fill = TRUE)
+    colnames(gene_seqs) = c(g, paste0(g, '_sequence'))
+    seqs = rbind(seqs, tog, fill = TRUE)
 }
 
-v_seqs = seqs[is.na(j_gene_group), v_ind := 1:.N, by = .(v_gene_group)][,-c('j_gene', 'j_gene_sequence', 'j_gene_group')]
-v_seqs = v_seqs[v_ind == 1][!is.na(v_gene_group)][, -c('v_ind', 'j_ind', 'v_gene')]
+v_seqs = seqs[is.na(j_gene), v_ind := 1:.N, by = .(v_gene)][,-c('j_gene', 'j_gene_sequence', 'j_gene')]
+v_seqs = v_seqs[v_ind == 1][!is.na(v_gene)][, -c('v_ind', 'j_ind', 'v_gene')]
 
-j_seqs = seqs[is.na(v_gene_group), j_ind := 1:.N, by = .(j_gene_group)][,-c('v_gene', 'v_gene_sequence', 'v_gene_group')]
-j_seqs = j_seqs[j_ind == 1][!is.na(j_gene_group)][, -c('j_ind', 'v_ind', 'j_gene')]
+j_seqs = seqs[is.na(v_gene), j_ind := 1:.N, by = .(j_gene)][,-c('v_gene', 'v_gene_sequence', 'v_gene')]
+j_seqs = j_seqs[j_ind == 1][!is.na(j_gene)][, -c('j_ind', 'v_ind', 'j_gene')]
 
-all_subset = merge(all_subset, v_seqs, by = 'v_gene_group')
-all_subset = merge(all_subset, j_seqs, by = 'j_gene_group')
+all_subset = merge(all_subset, v_seqs, by = 'v_gene')
+all_subset = merge(all_subset, j_seqs, by = 'j_gene')
 
 # get NT context
 all_subset$vj_insert = 0

@@ -7,7 +7,7 @@ get_oriented_whole_nucseqs <- function(whole_nucseq = get_whole_nucseqs()){
 
 source(paste0(MOD_PROJECT_PATH,'/scripts/gene_count_specific_functions/single.R'))
 
-filter_motif_data_for_possible_sites <- function(motif_data){
+filter_motif_data_for_possible_sites <- function(motif_data, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     return(motif_data)
 }
 

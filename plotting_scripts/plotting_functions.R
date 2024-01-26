@@ -25,8 +25,7 @@ get_gene_sequence <- function(gene_name, gene_seq_length, pnuc_count = 2, gene_t
     temp_data = whole_nucseq[toupper(substring(gene, 4, 4)) == toupper(substring(gene_type, 1,1))]
     setnames(whole_nucseq, 'gene', gene_type)
     colnames(temp_data) = c(gene_type, paste0(gene_type, '_sequence'))
-    gene_groups = get_common_genes_from_seqs(temp_data, gene_type = gene_type)
-    together = unique(merge(temp_data, gene_groups, by.x = gene_type, by.y = 'gene')[, c('gene', paste0(gene_type, '_sequence'))]) 
+    together = unique(temp_data[, c('gene', paste0(gene_type, '_sequence'))])
     gene = together[gene == gene_type][1]
 
     # get sequence

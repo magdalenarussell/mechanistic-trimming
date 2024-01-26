@@ -78,19 +78,15 @@ temp_data_filled = merge(temp_data_filled, igor_params, by = c('v_gene', 'j_gene
 # Adjust trimming sites if necessary based on MH ligation
 temp_data_adjusted = adjust_trimming_sites_for_ligation_mh(temp_data_filled)
 
-# not going to group genes by common sequence since igor parameters don't do this
-temp_data_adjusted$v_gene_group = temp_data_adjusted$v_gene
-temp_data_adjusted$j_gene_group = temp_data_adjusted$j_gene
-
 # get gene sequences
 whole_nucseq = get_oriented_whole_nucseqs()
-temp_data_adjusted = merge(temp_data_adjusted, whole_nucseq[, c('gene', 'v_gene_sequence')], by.x = 'v_gene_group', by.y = 'gene')
-temp_data_adjusted = merge(temp_data_adjusted, whole_nucseq[, c('gene', 'j_gene_sequence')], by.x = 'j_gene_group', by.y = 'gene')
+temp_data_adjusted = merge(temp_data_adjusted, whole_nucseq[, c('gene', 'v_gene_sequence')], by.x = 'v_gene', by.y = 'gene')
+temp_data_adjusted = merge(temp_data_adjusted, whole_nucseq[, c('gene', 'j_gene_sequence')], by.x = 'j_gene', by.y = 'gene')
 setnames(temp_data_adjusted, 'v_gene_sequence', 'v_gene_whole_seq')
 setnames(temp_data_adjusted, 'j_gene_sequence', 'j_gene_whole_seq')
 
 # re-condense
-cols = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh', 'v_trim_prob', 'j_trim_prob', 'v_gene_whole_seq', 'j_gene_whole_seq', 'vj_insert')
+cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh', 'v_trim_prob', 'j_trim_prob', 'v_gene_whole_seq', 'j_gene_whole_seq', 'vj_insert')
 temp_data_adjusted_cond = temp_data_adjusted[, sum(count), by = cols]
 setnames(temp_data_adjusted_cond, 'V1', 'count')
 
@@ -110,7 +106,7 @@ if (length(trims) > 1){
 # Extract motifs for observed trims
 motif_dataframe = temp_data_adjusted_cond
 for (i in seq(length(trims))){
-    u_cols = c(paste0(genes[i], '_whole_seq'), paste0(genes[i], '_group'), trims[i])
+    u_cols = c(paste0(genes[i], '_whole_seq'), paste0(genes[i]), trims[i])
     subset = unique(motif_dataframe[, ..u_cols])
     subset = subset[, c(paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs')):= get_nuc_context(get(paste0(genes[i], '_whole_seq')), get(trims[i]))] 
     motif_dataframe = merge(motif_dataframe, subset, by = u_cols)
@@ -145,11 +141,9 @@ all = unique(all[, ..cols])
 adjusted_all = adjust_trimming_sites_for_ligation_mh(all)
 
 # Get oriented full sequences and group genes by common features, also subset columns again
-cols2 = c('v_gene_group', 'j_gene_group', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim', 'ligation_mh', 'v_gene_sequence', 'j_gene_sequence')
-adjusted_all$v_gene_group = adjusted_all$v_gene
-adjusted_all$j_gene_group = adjusted_all$j_gene
-adjusted_all = merge(adjusted_all, whole_nucseq[, c('gene', 'v_gene_sequence')], by.x = 'v_gene_group', by.y = 'gene')
-adjusted_all = merge(adjusted_all, whole_nucseq[, c('gene', 'j_gene_sequence')], by.x = 'j_gene_group', by.y = 'gene')
+cols2 = c('v_gene', 'j_gene', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim', 'ligation_mh', 'v_gene_sequence', 'j_gene_sequence')
+adjusted_all = merge(adjusted_all, whole_nucseq[, c('gene', 'v_gene_sequence')], by.x = 'v_gene', by.y = 'gene')
+adjusted_all = merge(adjusted_all, whole_nucseq[, c('gene', 'j_gene_sequence')], by.x = 'j_gene', by.y = 'gene')
 
 adjusted_grouped = unique(adjusted_all[, ..cols2])
 
@@ -167,7 +161,7 @@ adjusted_grouped[, frame_type := fifelse(overall_frame == 0, 'In', 'Out')]
 adjusted_grouped = get_stop_positions_with_frame(adjusted_grouped)
 
 # Subset data by columns
-cols3 = c('v_gene_group', 'j_gene_group', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim', 'ligation_mh', 'overall_frame', 'frame_type', 'frame_stop')
+cols3 = c('v_gene', 'j_gene', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim', 'ligation_mh', 'overall_frame', 'frame_type', 'frame_stop')
 frame_data = adjusted_grouped[, ..cols3]
 
 # Define frame-related columns
@@ -186,11 +180,11 @@ genes = get_gene_order(GENE_NAME)
 possible_sites = frame_data[frame_type == 'Out' | frame_stop == TRUE] 
 
 # Define columns for filtering possible sites
-cols = c(paste0(genes, '_group'), 'frame_type', 'overall_frame', 'frame_stop', 'v_trim', 'j_trim', 'ligation_mh')
+cols = c(paste0(genes), 'frame_type', 'overall_frame', 'frame_stop', 'v_trim', 'j_trim', 'ligation_mh')
 possible_sites_subset = unique(possible_sites[, ..cols])
 
 # Merge motif data with possible sites subset
-cols2 = c(paste0(genes, '_group'), 'v_trim', 'j_trim', 'ligation_mh')
+cols2 = c(paste0(genes), 'v_trim', 'j_trim', 'ligation_mh')
 tog = merge(motif_dataframe, possible_sites_subset, by = cols2)
 
 # fill in remaining unobserved, but possible sites 
@@ -203,7 +197,7 @@ motif_data = tog
 
 # get scenario weight
 motif_data[, total_tcr := sum(count)]
-col = c(paste0(genes, '_group'))
+col = genes
 motif_data[, paste0(GENE_NAME, '_count') := sum(count), by = col]
 motif_data[[paste0('p_', GENE_NAME)]] = motif_data[[paste0(GENE_NAME, '_count')]]/motif_data$total_tcr
 motif_data[[paste0('p_', TRIM_TYPE, '_given_', GENE_NAME)]] = motif_data$count/motif_data[[paste0(GENE_NAME, '_count')]]
@@ -212,7 +206,7 @@ motif_data$gene_weight_type = 'p_gene_pooled'
 
 
 # subset data cols
-cols = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh', 'v_trim_prob', 'j_trim_prob', 'weighted_observation', 'count', 'total_tcr')
+cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh', 'v_trim_prob', 'j_trim_prob', 'weighted_observation', 'count', 'total_tcr')
 weighted_together_subset = motif_data[, ..cols]
 
 fwrite(weighted_together_subset, filename, sep = '\t')
@@ -232,7 +226,7 @@ MODEL_TYPE <<- 'baseline_igor_ligation-mh'
 filename = processed_data_path()
 
 baseline = weighted_together_subset[, -c('v_trim_prob', 'j_trim_prob')]
-baseline = merge(baseline, igor_params, by.x = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim'), by.y = c('v_gene', 'j_gene', 'v_trim', 'j_trim'))
+baseline = merge(baseline, igor_params, by.x = c('v_gene', 'j_gene', 'v_trim', 'j_trim'), by.y = c('v_gene', 'j_gene', 'v_trim', 'j_trim'))
 
 fwrite(baseline, filename, sep = '\t')
 

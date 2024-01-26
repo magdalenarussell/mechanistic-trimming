@@ -28,7 +28,7 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 # get predictions (i.e. probabilities) from no-MH model
 probs_path = get_validation_predictions_file_path(L2='False', validation_annotation='pre_simulation')
 probs = fread(probs_path)
-not_cols = c('count', 'weighted_observation', 'total_tcr', 'v_gene_group_j_gene_group_int', 'v_trim_j_trim_ligation_mh', 'v_trim_j_trim_ligation_mh_int', 'v_gene_group_j_gene_group')
+not_cols = c('count', 'weighted_observation', 'total_tcr', 'v_gene_j_gene_int', 'v_trim_j_trim_ligation_mh', 'v_trim_j_trim_ligation_mh_int', 'v_gene_j_gene')
 cols = colnames(probs)[!(colnames(probs) %in% not_cols)]
 cols = cols[!(cols %like% 'pos1_')]
 cols = cols[!(cols %like% 'pos2_')]
@@ -43,45 +43,44 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 total = 1700000
 
 # get V and J gene sequences
-vgenes = unique(probs$v_gene_group)
-jgenes = unique(probs$j_gene_group)
+vgenes = unique(probs$v_gene)
+jgenes = unique(probs$j_gene)
 
 # simulate single sequence
 set.seed(123) 
 
-sim_data = data.table(v_gene_group = sample(vgenes, total, replace = TRUE),
-                      j_gene_group = sample(jgenes, total, replace = TRUE))
+sim_data = data.table(v_gene = sample(vgenes, total, replace = TRUE),
+                      j_gene = sample(jgenes, total, replace = TRUE))
 sim_data[, row_id := .I]
 
 # Join the data.tables
-joined = sim_data[probs, on = .(v_gene_group, j_gene_group), allow.cartesian=TRUE]
+joined = sim_data[probs, on = .(v_gene, j_gene), allow.cartesian=TRUE]
 
 sample_trimming_configuration <- function(subset_dt, cols) {
   subset_dt[sample(.N, size = 1, prob = predicted_prob), ..cols]
 }
 
 # Apply the function to each group and get the results
-sampled = joined[, sample_trimming_configuration(.SD, c('v_trim', 'j_trim', 'ligation_mh')), by = .(v_gene_group, j_gene_group, row_id)]
+sampled = joined[, sample_trimming_configuration(.SD, c('v_trim', 'j_trim', 'ligation_mh')), by = .(v_gene, j_gene, row_id)]
 
 # get oriented full sequences
 genes = get_gene_order(GENE_NAME)
 whole_nucseq = get_oriented_whole_nucseqs()
 seqs = data.table()
-for (g in genes) {
+for (g in genes){
     gene_seqs = whole_nucseq[substring(gene, 4, 4) %in% toupper(substring(g, 1, 1))]
-    gene_groups = get_common_genes_from_seqs(gene_seqs, g)
-    gene_groups = merge(gene_groups, whole_nucseq, by.x = g, by.y = 'gene')
-    seqs = rbind(seqs, gene_groups, fill = TRUE)
+    colnames(gene_seqs) = c(g, paste0(g, '_sequence'))
+    seqs = rbind(seqs, tog, fill = TRUE)
 }
 
-v_seqs = seqs[is.na(j_gene_group), v_ind := 1:.N, by = .(v_gene_group)][,-c('j_gene', 'j_gene_sequence', 'j_gene_group')]
-v_seqs = v_seqs[v_ind == 1][!is.na(v_gene_group)][, -c('v_ind', 'j_ind', 'v_gene')]
+v_seqs = seqs[is.na(j_gene), v_ind := 1:.N, by = .(v_gene)][,-c('j_gene', 'j_gene_sequence', 'j_gene')]
+v_seqs = v_seqs[v_ind == 1][!is.na(v_gene)][, -c('v_ind', 'j_ind', 'v_gene')]
 
-j_seqs = seqs[is.na(v_gene_group), j_ind := 1:.N, by = .(j_gene_group)][,-c('v_gene', 'v_gene_sequence', 'v_gene_group')]
-j_seqs = j_seqs[j_ind == 1][!is.na(j_gene_group)][, -c('j_ind', 'v_ind', 'j_gene')]
+j_seqs = seqs[is.na(v_gene), j_ind := 1:.N, by = .(j_gene)][,-c('v_gene', 'v_gene_sequence', 'v_gene')]
+j_seqs = j_seqs[j_ind == 1][!is.na(j_gene)][, -c('j_ind', 'v_ind', 'j_gene')]
 
-sampled = merge(sampled, v_seqs, by = 'v_gene_group')
-sampled = merge(sampled, j_seqs, by = 'j_gene_group')
+sampled = merge(sampled, v_seqs, by = 'v_gene')
+sampled = merge(sampled, j_seqs, by = 'j_gene')
 
 sampled$vj_insert = 0
 motif_data = get_all_nuc_contexts(sampled, subject_id=NULL, gene_type = GENE_NAME, trim_type = TRIM_TYPE)

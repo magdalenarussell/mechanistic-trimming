@@ -72,12 +72,12 @@ no_mh_sim = fread(filename)
 no_mh_sim = no_mh_sim[, -23]
 
 # plot original with shuffled genes--V-genes
-shuffled_genes_cond_v = shuffled_genes[, sum(count), by = .(v_gene_group, v_trim, ligation_mh)]
-processed_cond_v = processed[, sum(count), by = .(v_gene_group, v_trim, ligation_mh)]
-shuffled_genes_cond_v[, scenario_freq_shuffled_genes := V1/sum(V1), by = .(v_gene_group)]
-processed_cond_v[, scenario_freq := V1/sum(V1), by = .(v_gene_group)]
+shuffled_genes_cond_v = shuffled_genes[, sum(count), by = .(v_gene, v_trim, ligation_mh)]
+processed_cond_v = processed[, sum(count), by = .(v_gene, v_trim, ligation_mh)]
+shuffled_genes_cond_v[, scenario_freq_shuffled_genes := V1/sum(V1), by = .(v_gene)]
+processed_cond_v[, scenario_freq := V1/sum(V1), by = .(v_gene)]
 
-tog_cond_v = merge(processed_cond_v, shuffled_genes_cond_v, by = c('v_gene_group', 'v_trim', 'ligation_mh'), all = TRUE)
+tog_cond_v = merge(processed_cond_v, shuffled_genes_cond_v, by = c('v_gene', 'v_trim', 'ligation_mh'), all = TRUE)
 tog_cond_v[is.na(tog_cond_v)] <- 0
 
 plot = ggplot(tog_cond_v) +
@@ -88,12 +88,12 @@ file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/igor_exp
 ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
 # plot original with shuffled genes--J-genes
-shuffled_genes_cond_j = shuffled_genes[, sum(count), by = .(j_gene_group, j_trim, ligation_mh)]
-processed_cond_j = processed[, sum(count), by = .(j_gene_group, j_trim, ligation_mh)]
-shuffled_genes_cond_j[, scenario_freq_shuffled_genes := V1/sum(V1), by = .(j_gene_group)]
-processed_cond_j[, scenario_freq := V1/sum(V1), by = .(j_gene_group)]
+shuffled_genes_cond_j = shuffled_genes[, sum(count), by = .(j_gene, j_trim, ligation_mh)]
+processed_cond_j = processed[, sum(count), by = .(j_gene, j_trim, ligation_mh)]
+shuffled_genes_cond_j[, scenario_freq_shuffled_genes := V1/sum(V1), by = .(j_gene)]
+processed_cond_j[, scenario_freq := V1/sum(V1), by = .(j_gene)]
 
-tog_cond_j = merge(processed_cond_j, shuffled_genes_cond_j, by = c('j_gene_group', 'j_trim', 'ligation_mh'), all = TRUE)
+tog_cond_j = merge(processed_cond_j, shuffled_genes_cond_j, by = c('j_gene', 'j_trim', 'ligation_mh'), all = TRUE)
 tog_cond_j[is.na(tog_cond_j)] <- 0
 
 plot = ggplot(tog_cond_j) +
@@ -104,10 +104,10 @@ file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/igor_exp
 ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
 # plot original with shuffled trims
-shuffled_trims[, scenario_freq_shuffled_trims := count/sum(count), by = .(j_gene_group, v_gene_group)]
-processed[, scenario_freq := count/sum(count), by = .(v_gene_group, j_gene_group)]
+shuffled_trims[, scenario_freq_shuffled_trims := count/sum(count), by = .(j_gene, v_gene)]
+processed[, scenario_freq := count/sum(count), by = .(v_gene, j_gene)]
 
-tog_cond = merge(processed, shuffled_trims, by = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh'), all = TRUE)
+tog_cond = merge(processed, shuffled_trims, by = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh'), all = TRUE)
 tog_cond[is.na(tog_cond)] <- 0
 
 plot = ggplot(tog_cond) +
@@ -125,10 +125,10 @@ file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/igor_exp
 ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
 # plot original with random_seq
-random_seq[, scenario_freq_random_seq := count/sum(count), by = .(j_gene_group, v_gene_group)]
-processed[, scenario_freq := count/sum(count), by = .(v_gene_group, j_gene_group)]
+random_seq[, scenario_freq_random_seq := count/sum(count), by = .(j_gene, v_gene)]
+processed[, scenario_freq := count/sum(count), by = .(v_gene, j_gene)]
 
-tog_cond = merge(processed, random_seq, by = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh'), all = TRUE)
+tog_cond = merge(processed, random_seq, by = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh'), all = TRUE)
 tog_cond[is.na(tog_cond)] <- 0
 
 plot = ggplot(tog_cond) +
@@ -146,6 +146,6 @@ file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/igor_exp
 ggsave(file_name, plot = plot, width = 10, height = 10, units = 'in', dpi = 750, device = cairo_pdf)
 
 # plot trimming dists and ligationMH
-no_mh_sim[, scenario_freq_no_mh_sim := count/sum(count), by = .(v_gene_group, j_gene_group)]
+no_mh_sim[, scenario_freq_no_mh_sim := count/sum(count), by = .(v_gene, j_gene)]
 
-tog = merge(processed, no_mh_sim, by = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh'))
+tog = merge(processed, no_mh_sim, by = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh'))

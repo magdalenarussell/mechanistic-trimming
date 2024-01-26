@@ -37,7 +37,7 @@ source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
 # Read in dist data
 predicted_trims_path = get_model_predictions_file_path(L2)
 predicted_trims = fread(predicted_trims_path) 
-predicted_trims[, gene_pair := paste0(v_gene_group, ' + ', j_gene_group)]
+predicted_trims[, gene_pair := paste0(v_gene, ' + ', j_gene)]
 
 # subset to top genes
 predicted_trims[, p_gene_pair := sum(count)/total_tcr, by = .(gene_pair)]

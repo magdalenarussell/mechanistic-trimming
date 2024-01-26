@@ -32,7 +32,7 @@ filter_motif_data_for_possible_sites <- function(motif_data, whole_nucseq = get_
     possible_sites_subset = get_all_possible_sites(gene_type)
 
     # Merge motif data with possible sites subset
-    cols2 = c(paste0(genes, '_group'), 'v_trim', 'j_trim', 'ligation_mh')
+    cols2 = c(paste0(genes), 'v_trim', 'j_trim', 'ligation_mh')
     tog = merge(motif_data, possible_sites_subset, by = cols2)
 
     # fill in remaining unobserved, but possible sites 
@@ -51,7 +51,7 @@ get_all_possible_sites <- function(gene_type = GENE_NAME){
     possible_sites = frame_data[frame_type == 'Out' | frame_stop == TRUE] 
 
     # Define columns for filtering possible sites
-    cols = c(paste0(genes, '_group'), 'frame_type', 'overall_frame', 'frame_stop', 'v_trim', 'j_trim', 'ligation_mh')
+    cols = c(paste0(genes), 'frame_type', 'overall_frame', 'frame_stop', 'v_trim', 'j_trim', 'ligation_mh')
     possible_sites_subset = unique(possible_sites[, ..cols])
     return(possible_sites_subset)
 }
@@ -61,9 +61,9 @@ get_missing_possible_sites <- function(possible_sites, filtered_motif_data, trim
     trims = get_trim_order(trim_type)
 
     # Get observed sets of gene pairs
-    possible_sites$gene_pairs = paste0(possible_sites$v_gene_group, '_', possible_sites$j_gene_group)
-    filtered_motif_data$gene_pairs = paste0(filtered_motif_data$v_gene_group, '_', filtered_motif_data$j_gene_group) 
-    possible_sites_subset = possible_sites[gene_pairs %in% unique(filtered_motif_data$gene_pairs)]
+    possible_sites$gene_pair = paste0(possible_sites$v_gene, '_', possible_sites$j_gene)
+    filtered_motif_data$gene_pair = paste0(filtered_motif_data$v_gene, '_', filtered_motif_data$j_gene) 
+    possible_sites_subset = possible_sites[gene_pair %in% unique(filtered_motif_data$gene_pair)]
 
     # get unobserved scenarios
     unobserved = possible_sites_subset[!filtered_motif_data, on = colnames(possible_sites_subset)]
@@ -82,8 +82,8 @@ fill_in_missing_possible_sites <- function(possible_sites, filtered_motif_data, 
     } else {
         # get NT context for these scenarios
         for (i in seq(length(trims))){
-            cols = c(paste0(genes[i], '_group'), trims[i], paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs'))
-            common_cols = c(paste0(genes[i], '_group'), trims[i])
+            cols = c(paste0(genes[i]), trims[i], paste0(trims[i], '_left_nucs'), paste0(trims[i], '_right_nucs'))
+            common_cols = c(paste0(genes[i]), trims[i])
             subset = unique(filtered_motif_data[, ..cols])
             unobserved = merge(unobserved, subset, by = common_cols, all.x = TRUE)
         }

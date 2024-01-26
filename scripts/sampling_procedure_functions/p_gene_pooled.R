@@ -9,12 +9,12 @@ calculate_subject_gene_weight <- function(compiled_data, gene_type = GENE_NAME, 
 
     if ('subject' %in% colnames(compiled_data)){
         params = get_parameter_vector(trims, genes)
-        cols = unique(c(paste0(genes, '_group'), trims, params))
+        cols = unique(c(paste0(genes), trims, params))
         compiled_data = compiled_data[, sum(count), by = cols]
         setnames(compiled_data, 'V1', 'count')
     }
     compiled_data[, total_tcr := sum(count)]
-    col = c(paste0(genes, '_group'))
+    col = c(paste0(genes))
     compiled_data[, paste0(gene_type, '_count') := sum(count), by = col]
     compiled_data[[paste0('p_', gene_type)]] = compiled_data[[paste0(gene_type, '_count')]]/compiled_data$total_tcr
     compiled_data[[paste0('p_', trim_type, '_given_', gene_type)]] = compiled_data$count/compiled_data[[paste0(gene_type, '_count')]]

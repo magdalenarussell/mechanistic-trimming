@@ -216,7 +216,7 @@ class DataPreprocessor():
 
         # fill in zeros
         # Create a DataFrame of all unique pairs
-        unique_genes = domain_data[['v_gene_group', 'j_gene_group']].drop_duplicates()
+        unique_genes = domain_data[['v_gene', 'j_gene']].drop_duplicates()
         unique_trims = domain_data[['v_trim', 'j_trim']].drop_duplicates()
 
         unique_pairs = unique_genes.merge(unique_trims, how='cross')

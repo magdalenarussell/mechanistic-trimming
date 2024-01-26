@@ -115,8 +115,8 @@ processed = fread(filename)
 ANNOTATION_TYPE <<- 'igor_sim_alpha_shuffled_adjusted_trimming'
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 
-vcols = c('v_gene_group')
-jcols = c('j_gene_group')
+vcols = c('v_gene')
+jcols = c('j_gene')
 
 v = unique(processed[, ..vcols])
 j = unique(processed[, ..jcols])
@@ -124,13 +124,13 @@ j = unique(processed[, ..jcols])
 colnames(v) = 'old_v_gene'
 colnames(j) = 'old_j_gene'
 
-v[, v_gene_group := sample(old_v_gene, replace = FALSE)]
-j[, j_gene_group := sample(old_j_gene, replace = FALSE)]
+v[, v_gene := sample(old_v_gene, replace = FALSE)]
+j[, j_gene := sample(old_j_gene, replace = FALSE)]
 
-trim_compiled = merge(v, processed, by.x = 'old_v_gene', by.y = 'v_gene_group')
-trim_compiled = merge(j, trim_compiled, by.x = 'old_j_gene', by.y = 'j_gene_group')
+trim_compiled = merge(v, processed, by.x = 'old_v_gene', by.y = 'v_gene')
+trim_compiled = merge(j, trim_compiled, by.x = 'old_j_gene', by.y = 'j_gene')
 
-cols = c('v_gene_group', 'j_gene_group', 'v_trim', 'j_trim', 'ligation_mh', 'count', 'total_tcr')
+cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh', 'count', 'total_tcr')
 trim_compiled_subset = trim_compiled[, ..cols]
 trim_compiled_subset$vj_insert = 0
 
@@ -140,23 +140,22 @@ whole_nucseq = get_oriented_whole_nucseqs()
 final = data.table()
 for (g in genes){
     gene_seqs = whole_nucseq[substring(gene, 4, 4) %in% toupper(substring(g, 1, 1))]
-    gene_groups = get_common_genes_from_seqs(gene_seqs, g)
-    tog = merge(whole_nucseq, gene_groups, by.x = 'gene', by.y = g)
+    colnames(gene_seqs) = c(g, paste0(g, '_sequence'))
     final = rbind(final, tog, fill = TRUE)
 }
-gcols = c('v_gene_group', 'j_gene_group', 'v_gene_sequence', 'j_gene_sequence')
+gcols = c('v_gene', 'j_gene', 'v_gene_sequence', 'j_gene_sequence')
 final = unique(final[, ..gcols])
 
-v_groups = final[!is.na(v_gene_group)]
-non_vdup = !duplicated(v_groups$v_gene_group)
+v_groups = final[!is.na(v_gene)]
+non_vdup = !duplicated(v_groups$v_gene)
 v_groups = v_groups[non_vdup, ]
 
-j_groups = final[!is.na(j_gene_group)]
-non_jdup = !duplicated(j_groups$j_gene_group)
+j_groups = final[!is.na(j_gene)]
+non_jdup = !duplicated(j_groups$j_gene)
 j_groups = j_groups[non_jdup, ]
 
-trim_compiled_subset = merge(trim_compiled_subset, v_groups[, c('v_gene_group', 'v_gene_sequence')], by = 'v_gene_group')
-trim_compiled_subset = merge(trim_compiled_subset, j_groups[, c('j_gene_group', 'j_gene_sequence')], by = 'j_gene_group')
+trim_compiled_subset = merge(trim_compiled_subset, v_groups[, c('v_gene', 'v_gene_sequence')], by = 'v_gene')
+trim_compiled_subset = merge(trim_compiled_subset, j_groups[, c('j_gene', 'j_gene_sequence')], by = 'j_gene')
 
 # Get NT context for each scenario
 motif_data = get_all_nuc_contexts(trim_compiled_subset, NULL, gene_type = GENE_NAME, trim_type = TRIM_TYPE)

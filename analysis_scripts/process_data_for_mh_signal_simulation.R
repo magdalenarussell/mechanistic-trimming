@@ -46,7 +46,7 @@ genes = get_gene_order(GENE_NAME)
 trims = get_trim_order(TRIM_TYPE)
 
 # sample size is the number of gene combos
-motif_data$cluster = interaction(motif_data[[paste0(genes[1], '_group')]], motif_data[[paste0(genes[2], '_group')]])
+motif_data$cluster = interaction(motif_data[[paste0(genes[1])]], motif_data[[paste0(genes[2])]])
 
 # sample proportion of sequences for each individual
 size = unique(motif_data$total_tcr)
@@ -56,7 +56,7 @@ vars = c(colnames(motif_data)[colnames(motif_data) %like% 'mh_count'],
          colnames(motif_data)[colnames(motif_data) %like% 'motif'], 
          colnames(motif_data)[colnames(motif_data) %like% 'condition'])
 
-cols = c(paste0(genes, '_group'), trims, vars, 'count', 'subsample_total_tcr', 'cluster')
+cols = c(paste0(genes), trims, vars, 'count', 'subsample_total_tcr', 'cluster')
 motif_data[, gene_pair_count := sum(count), by = cluster]
 motif_data[, row := seq(1, .N)]
 subset = motif_data[motif_data[, .(sampled_rows = sample(.I, size = gene_pair_count[1L], replace = TRUE, prob = mh_prob)), by = cluster]$sampled_rows]

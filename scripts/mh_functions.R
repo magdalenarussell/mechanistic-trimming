@@ -1,6 +1,8 @@
 get_pnucs <- function(whole_gene_nucseq, orient, pnuc_count){
     whole_gene_nucseq = DNAStringSet(whole_gene_nucseq)
     stopifnot(orient %in% c('top', 'bottom'))
+    # top means top strand oriented 5 > 3
+    # bottom means bottom strand oriented 3 > 5
     if (orient == 'top'){
         possible_pnucs = substring(as.character(reverseComplement(whole_gene_nucseq)),1, pnuc_count) 
     } else {
@@ -185,14 +187,13 @@ get_mh <- function(seq1, seq2){
 
 get_fully_contiguous_mh <- function(seq1, seq2){
     noncontig_mh = get_mh(seq1, seq2)
-    if (noncontig_mh == nchar(seq1)){
-        return(noncontig_mh)
-    } else {
-        return(0)
-    }
+    contig_mh = ifelse(noncontig_mh == nchar(seq1), noncontig_mh, 0)
+    return(contig_mh)
 }
 
 get_overlapping_regions <- function(v_gene_top_seq, j_gene_bottom_seq, v_trim, j_trim, overlap_count, pnucs = 2, positions = c('up', 'mid', 'down')){
+    # j_gene_bottom_seq is the bottom strand oriented 5 > 3
+    # this reorientation will orient the bottom strand 3 > 5 so that it is complementary to the V-gene top strand
     j_gene_bottom_seq = reorient_j_bottom_strand(j_gene_bottom_seq)
 
     require(Biostrings)

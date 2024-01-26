@@ -117,40 +117,8 @@ get_mh_prop_cols <- function(data, overlap_count, keep_gene_seqs = FALSE, prop =
     return(data)
 }
 
-get_oriented_sequences_for_processed_df <- function(motif_data, whole_nucseq, gene_type = GENE_NAME){
-    genes = get_gene_order(gene_type)
-
-    for (g in genes){
-        temp = copy(whole_nucseq)
-        temp_conversion = get_common_genes_from_seqs(temp, g)
-        temp_conversion = temp_conversion[substring(get(g), 4, 4) == toupper(substring(g, 1, 1))]
-        whole_nucseq = merge(whole_nucseq, temp_conversion, by.x = 'gene', by.y = g, all = TRUE)
-    }
-    
-    cols = c(paste0(genes, '_group'), paste0(genes, '_sequence'))
-    gene_cols = c(paste0(genes, '_group'))
-    subset_seqs = unique(whole_nucseq[, ..cols])
-    subset_seqs[, N := .N, by = gene_cols]
-
-    for (gr in unique(subset_seqs[N > 1]$v_gene_group)){
-        temp = subset_seqs[v_gene_group == gr]$v_gene_sequence
-        subset_seqs[v_gene_group == gr, v_gene_sequence := temp[1]]
-    }
-    
-    for (gr in unique(subset_seqs[N > 1]$j_gene_group)){
-        temp = subset_seqs[j_gene_group == gr]$j_gene_sequence
-        subset_seqs[j_gene_group == gr, j_gene_sequence := temp[1]]
-    }
-
-    subset_seqs = unique(subset_seqs)
-
-    motif_data = merge(motif_data, subset_seqs[, c('v_gene_group', 'v_gene_sequence')], by = 'v_gene_group')
-    motif_data = merge(motif_data, subset_seqs[, c('j_gene_group', 'j_gene_sequence')], by = 'j_gene_group')
-    return(motif_data)
-}
-
 process_for_mh <- function(motif_data, whole_nucseq = get_oriented_whole_nucseqs(), overlap_vector = c(0, 1, 2, 3, 4), trim_type = TRIM_TYPE, gene_type = GENE_NAME, prop = TRUE, positions = c('up', 'down', 'mid')){
-    motif_data = get_oriented_sequences_for_processed_df(motif_data, whole_nucseq)
+    motif_data = get_oriented_full_sequences(motif_data, whole_nucseq, gene_type)
     
     for (overlap in overlap_vector){
         motif_data = get_mh_prop_cols(motif_data, overlap, keep_gene_seqs = TRUE, prop = prop, positions = positions)

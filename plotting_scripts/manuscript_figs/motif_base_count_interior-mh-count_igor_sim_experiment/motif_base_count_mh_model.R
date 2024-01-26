@@ -31,7 +31,6 @@ MODEL_TYPE <<- 'motif_two-side-base-count-beyond_interior-mh-count'
 L2 <<- 'True'
 
 source(paste0(MOD_PROJECT_PATH, '/scripts/data_compilation_functions.R'))
-source(paste0(MOD_PROJECT_PATH,'/scripts/model_fitting_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
 
 # Read in model coefficient data 
