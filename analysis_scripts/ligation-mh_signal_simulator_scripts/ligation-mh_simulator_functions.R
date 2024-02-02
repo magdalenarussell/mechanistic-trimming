@@ -50,7 +50,7 @@ get_trimming_probs <- function(type){
 
 get_ligation_probabilities <- function(lig_param, possible_ligs){
     stopifnot(lig_param >= 1)
-    starting_prob = 0.25
+    starting_prob = 1
     lig_probs = rep(starting_prob, length(possible_ligs))
     names(lig_probs) = possible_ligs    
     if (lig_param > 1){
@@ -60,7 +60,7 @@ get_ligation_probabilities <- function(lig_param, possible_ligs){
     }
     lig_probs[names(lig_probs) > 0] = lig_probs[names(lig_probs) > 0]*scale
     lig_probs[names(lig_probs) == 0] = lig_probs[names(lig_probs) == 0]* (1/lig_param)
-    lig_probs['no_ligation'] = starting_prob - .1
+    lig_probs['no_ligation'] = 0.01
     prob_sum = sum(lig_probs)
     lig_probs = lig_probs/prob_sum
     return(lig_probs)

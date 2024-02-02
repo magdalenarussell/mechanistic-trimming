@@ -1,0 +1,25 @@
+model_type	ligation_param	trimming_prob_model	trimming parameter	MH parameter	long_type
+baseline_igor_norm_ligation-mh	1.5	igor	1.03891071425735	0.0681217342662629	"trims drawn from IGoR,
+training IGoR + MH model"
+motif_two-side-base-count-beyond_ligation-mh	1.5	igor	2.36786865053806	0.0623721824278415	"trims drawn from IGoR,
+training motif + base-count-beyond + MH model"
+baseline_igor_norm_ligation-mh	1.5	motif_two-side-base-count-beyond	0.444319353798202	0.074497985397754	"trims drawn from motif + base-count-beyond,
+training IGoR + MH model"
+motif_two-side-base-count-beyond_ligation-mh	1.5	motif_two-side-base-count-beyond	2.12169141619362	0.0744358655452738	"trims drawn from motif + base-count-beyond,
+training motif + base-count-beyond + MH model"
+baseline_igor_norm_ligation-mh	1.25	igor	1.06611609038446	0.0202122219236915	"trims drawn from IGoR,
+training IGoR + MH model"
+motif_two-side-base-count-beyond_ligation-mh	1.25	igor	2.35537941544887	0.0136296385923267	"trims drawn from IGoR,
+training motif + base-count-beyond + MH model"
+baseline_igor_norm_ligation-mh	1.25	motif_two-side-base-count-beyond	0.461124550318654	0.028662002214803	"trims drawn from motif + base-count-beyond,
+training IGoR + MH model"
+motif_two-side-base-count-beyond_ligation-mh	1.25	motif_two-side-base-count-beyond	2.1194917272108	0.0267559423272402	"trims drawn from motif + base-count-beyond,
+training motif + base-count-beyond + MH model"
+baseline_igor_norm_ligation-mh	1	igor	1.092159134762	0.115631041449215	"trims drawn from IGoR,
+training IGoR + MH model"
+motif_two-side-base-count-beyond_ligation-mh	1	igor	2.3526002525894	0.123351117325685	"trims drawn from IGoR,
+training motif + base-count-beyond + MH model"
+baseline_igor_norm_ligation-mh	1	motif_two-side-base-count-beyond	0.486217799689509	0.102430809006647	"trims drawn from motif + base-count-beyond,
+training IGoR + MH model"
+motif_two-side-base-count-beyond_ligation-mh	1	motif_two-side-base-count-beyond	2.14204601836887	0.108900456711843	"trims drawn from motif + base-count-beyond,
+training motif + base-count-beyond + MH model"

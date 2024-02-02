@@ -221,7 +221,7 @@ plot_igor_coefficient_heatmap_single_group <- function(model_coef_matrix, with_v
        
     if (with_values == TRUE){
         plot = plot +
-            geom_text(data = model_coef_matrix, aes(x = long_name, y = base, label = round(log_10_pdel, 2)))
+            geom_text(data = model_coef_matrix, aes(x = coefficient, y = 1, label = round(log_10_pdel, 2)), size = 10)
     }
 
     return(plot)
@@ -252,7 +252,7 @@ plot_ligation_mh_coefficient_heatmap_single_group <- function(model_coef_matrix,
        
     if (with_values == TRUE){
         plot = plot +
-            geom_text(data = model_coef_matrix, aes(x = long_name, y = base, label = round(log_10_pdel, 2)))
+            geom_text(data = model_coef_matrix, aes(x = coefficient, y = 1, label = round(log_10_pdel, 2)), size = 10)
     }
 
     return(plot)

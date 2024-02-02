@@ -1,6 +1,7 @@
 import pygor3 as p3
 import sys
 import pandas as pd
+import numpy as np
 
 MOD_OUTPUT_PATH=sys.argv[1]
 
@@ -34,7 +35,11 @@ v_df = pd.DataFrame(vchoice)
 path=MOD_OUTPUT_PATH + '/meta_data/igor_alpha_vchoice_params.tsv'
 v_df.to_csv(path, sep='\t', index=False)
 
-jchoice = {'j_gene':mdl_hb['j_choice'].lbl__j_choice.values, 'j_gene_prob':mdl_hb['j_choice'].values.sum(axis = 0)}
+vchoice_reshaped = mdl_hb['v_choice'].values[:, np.newaxis]
+jprobs = vchoice_reshaped*mdl_hb['j_choice'].values
+jprobs = jprobs.sum(axis=0)
+
+jchoice = {'j_gene':mdl_hb['j_choice'].lbl__j_choice.values, 'j_gene_prob':jprobs}
 j_df = pd.DataFrame(jchoice)
 prob_sum = j_df.j_gene_prob.sum()
 j_df['j_gene_prob'] = j_df.j_gene_prob/prob_sum

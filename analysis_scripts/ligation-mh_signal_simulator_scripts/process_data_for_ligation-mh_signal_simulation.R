@@ -145,3 +145,21 @@ file.copy(from = file_name, to = frame_file_name)
 
 filename = processed_data_path()
 fwrite(processed, filename, sep = '\t')
+
+MODEL_TYPE <<- 'baseline_igor_norm_ligation-mh'
+LEFT_NUC_MOTIF_COUNT <<- 0
+# 3' motif nucleotide count
+RIGHT_NUC_MOTIF_COUNT <<- 0 
+
+if (length(colnames(processed)[colnames(processed) %like% 'ligation']) > 1){
+    processed = processed[, -23]
+}
+
+baseline = merge(processed, trim_probs$v_trim, by = c('v_gene', 'v_trim'))
+baseline = merge(baseline, trim_probs$j_trim, by = c('j_gene', 'j_trim'))
+
+filename = processed_data_path()
+
+baseline[, j_trim_prob_norm := (j_trim_prob*8)/1]
+baseline[, v_trim_prob_norm := (v_trim_prob*8)/1]
+fwrite(baseline, filename, sep = '\t')
