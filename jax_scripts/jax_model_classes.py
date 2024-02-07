@@ -659,7 +659,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             scores.append(float(loss))
         return(scores)
 
-    def grid_search_cv(self, l2kfold, l2reg_values=[10**i for i in range(-2, 10)] + [0]):
+    def grid_search_cv(self, l2kfold, l2reg_values=[10**i for i in range(-5, 5)] + [0]):
         """
         Perform grid search cross-validation for hyperparameter tuning.
 

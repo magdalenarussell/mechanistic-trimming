@@ -27,6 +27,6 @@ get_parameter_vector <- function(trims, genes){
 
 process_single_data_for_model_fit <- function(group_motif_data, whole_nucseq = get_oriented_whole_nucseqs(), gene_type = GENE_NAME, trim_type = TRIM_TYPE){
     together = process_for_two_side_base_count(group_motif_data, beyond_motif = TRUE, whole_nucseq = whole_nucseq, gene_type = gene_type, trim_type = trim_type)
-    together = process_for_mh(together, whole_nucseq = whole_nucseq, overlap_vector = c(1, 2, 3, 4), trim_type = trim_type, gene_type = gene_type, prop = FALSE, positions = c('mid'))
+    together = process_for_mh(together, whole_nucseq = whole_nucseq, overlap_vector = c(1, 2, 3, 4), trim_type = TRIM_TYPE, gene_type = GENE_NAME, prop = FALSE, positions = c('mid'))
     return(together)
 }
