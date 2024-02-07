@@ -1,0 +1,4 @@
+value	coefficient	base	position	side	trim_type
+1.45302522182465	v_trim_prob_norm				v_trim
+1.43343424797058	j_trim_prob_norm				j_trim
+0.116331689059734	ligation_mh				""
