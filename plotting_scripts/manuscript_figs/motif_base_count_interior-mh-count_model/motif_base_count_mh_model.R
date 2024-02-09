@@ -38,22 +38,22 @@ coef_path = get_model_coef_file_path(L2)
 coefs = fread(coef_path)
 
 fwrite(coefs, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/motif_base_count_interior-mh-count_model/coefs.tsv'), sep = '\t')
-v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.241, 0.241)) + ggtitle('   V-trimming coefficients')
-j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.241, 0.241)) + ggtitle('   J-trimming coefficients')
+v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.435, 0.435)) + ggtitle('   V-trimming coefficients')
+j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.435, 0.435)) + ggtitle('   J-trimming coefficients')
 
 
 v_motif_heatmap = v_motif_heatmap + theme(legend.position = 'none') 
 j_motif_heatmap = j_motif_heatmap + theme(legend.position = 'none') 
 
 # plot base count heatmap of coefficients
-v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.241, 0.241))
-j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.241, 0.241))
+v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.435, 0.435))
+j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.435, 0.435))
 
 v_base_count_heatmap = v_base_count_heatmap + theme(legend.position = 'none') 
 j_base_count_heatmap = j_base_count_heatmap + theme(legend.position = 'none') 
 
 # plot mh heatmap
-mh_heatmap = plot_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.241, 0.241), prop = FALSE, positions = c('mid'))
+mh_heatmap = plot_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.435, 0.435), prop = FALSE, positions = c('mid'))
 
 # isolate legend
 legend = get_legend(mh_heatmap) 
