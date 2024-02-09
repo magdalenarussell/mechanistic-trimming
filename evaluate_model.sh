@@ -10,6 +10,7 @@ LEFT_MOTIF_COUNT=$4
 RIGHT_MOTIF_COUNT=$5
 MODEL_TYPE=$6
 L2=$7
+CALCULATE_EXPECTED_LOSS=$8
 
-python -i $PWD/mechanistic-trimming/jax_scripts/evaluate_model.py $ANNOTATION_TYPE $PARAM_GROUP $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $L2 $NCPU
-echo "finished evaluating model"
+python -i $PWD/mechanistic-trimming/jax_scripts/validate_model.py $ANNOTATION_TYPE $PARAM_GROUP $LEFT_MOTIF_COUNT $RIGHT_MOTIF_COUNT $MODEL_TYPE $L2 $NCPU $ANNOTATION_TYPE $CALCULATE_EXPECTED_LOSS
+echo "finished model validation"

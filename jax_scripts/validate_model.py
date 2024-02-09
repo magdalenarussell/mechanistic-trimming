@@ -25,6 +25,8 @@ L2 = sys.argv[6]
 L2 = (L2.lower() == 'true')
 NCPU = int(sys.argv[7])
 ANNOTATION_TYPE_VALIDATION = sys.argv[8]
+CALCULATE_EXPECTED_LOSS = sys.argv[9]
+CALCULATE_EXPECTED_LOSS = (CALCULATE_EXPECTED_LOSS.lower() == 'true')
 
 # initialize parallelized pandas
 pandarallel.initialize(nb_workers=NCPU, progress_bar=True)
@@ -54,22 +56,20 @@ processed_data_filename = params.R_processed_data_path(annotation = ANNOTATION_T
 processed_data = pd.read_csv(processed_data_filename, sep = '\t')
 print('read in data')
 
+if ANNOTATION_TYPE_VALIDATION == ANNOTATION_TYPE:
+    train_df=processed_data
+else:
+    train_df=None
+
 # validate model
 model_filename = params.model_output_path(L2)
 evaluator = ConditionalLogisticRegressionEvaluator(model_filename,
                                                    params,
-                                                   processed_data)
+                                                   training_df=train_df,
+                                                   validation_df=processed_data)
 
-result = evaluator.compile_results_df(params.left_nuc_motif_count,
-                                      params.right_nuc_motif_count,
-                                      params.motif_type,
-                                      params.gene_weight_type,
-                                      params.upper_trim_bound,
-                                      params.lower_trim_bound,
-                                      params.insertions,
-                                      params.model_type,
-                                      10,
-                                      True)
+result = evaluator.compile_evaluation_results_df(True,
+                                                 CALCULATE_EXPECTED_LOSS)
 
 result['validation_data_type'] = ANNOTATION_TYPE_VALIDATION
 
@@ -85,17 +85,20 @@ result.to_csv(path, sep='\t', index=False)
 print('finished validating model')
 
 # make predictions on validation dataset
-predictor = ConditionalLogisticRegressionPredictor(model=evaluator.model,
-                                                   variable_colnames = model_params.variable_colnames,
-                                                   count_colname = model_params.count_colname,
-                                                   group_colname = model_params.group_colname,
-                                                   repeat_obs_colname = model_params.repeat_obs_colname,
-                                                   choice_colname = model_params.choice_colname,
-                                                   params = params)
+if ANNOTATION_TYPE_VALIDATION != ANNOTATION_TYPE:
+    predictor = ConditionalLogisticRegressionPredictor(model=evaluator.model,
+                                                       variable_colnames = model_params.variable_colnames,
+                                                       count_colname = model_params.count_colname,
+                                                       group_colname = model_params.group_colname,
+                                                       repeat_obs_colname = model_params.repeat_obs_colname,
+                                                       choice_colname = model_params.choice_colname,
+                                                       params = params)
 
 
-# write predictions and coefficients
-training_pred = predictor.predict(new_df=processed_data)
-predictions_filename = params.validation_predictions_data_path(L2)
-training_pred.to_csv(predictions_filename, sep='\t', index=False)
-print('finished making predictions with validation data')
+    # write predictions and coefficients
+    training_pred = predictor.predict(new_df=processed_data)
+    predictions_filename = params.validation_predictions_data_path(L2)
+    training_pred.to_csv(predictions_filename, sep='\t', index=False)
+    print('finished making predictions with validation data')
+
+print('done')

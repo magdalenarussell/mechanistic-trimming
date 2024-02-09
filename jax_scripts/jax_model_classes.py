@@ -366,6 +366,8 @@ class DataTransformer(DataPreprocessor):
                 if self.count_colname in temp2.columns:
                     if temp2.shape[0] == 0:
                         counts_mat[i, j, 0] = 0
+                    elif np.isnan(temp2[self.count_colname].iloc[0]):
+                        counts_mat[i, j, 0] = 0
                     else:
                         counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
                 else:
@@ -514,7 +516,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.coefs = None
         self.training_info = None
         self.maxiter = 1000
-        self.tolerance = 1e-8
+        self.tolerance = 1e-6
         self.step = 0.1
         self.l2reg = 0
         self.l2kfold = None
@@ -911,40 +913,40 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
                                   counts_matrix)
         return(loss)
 
-    def compile_evaluation_results_df(self, left_nuc_count, right_nuc_count, motif_type, gene_weight_type, upper_trim_bound, lower_trim_bound, insertion_bound, model_type, base_count_5end_length, calculate_validation_loss = False):
-        result = {'motif_length_5_end':[left_nuc_count],
-                  'motif_length_3_end':[right_nuc_count],
-                  'motif_type':[motif_type],
-                  'gene_weight_type':[gene_weight_type],
-                  'upper_bound':[upper_trim_bound],
-                  'lower_bound':[lower_trim_bound],
-                  'insertion_bound':[insertion_bound],
-                  'model_type':[model_type],
-                  'base_count_5end_length':[base_count_5end_length],
+    def compile_evaluation_results_df(self, calculate_validation_loss = False, calculate_expected_loss=False):
+        result = {'training_annotation_type':[self.params.annotation_type],
+                  'productivity':[self.params.productivity],
+                  'motif_length_5_end':[self.params.left_nuc_motif_count],
+                  'motif_length_3_end':[self.params.right_nuc_motif_count],
+                  'motif_type':[self.params.motif_type],
+                  'gene_weight_type':[self.params.gene_weight_type],
+                  'upper_bound':[self.params.upper_trim_bound],
+                  'lower_bound':[self.params.lower_trim_bound],
+                  'insertion_bound':[self.params.insertions],
+                  'model_type':[self.params.model_type],
+                  'base_count_5end_length':[10],
                   'model_parameter_count':[len(self.model.coefs)]}
 
         results_df = pd.DataFrame(result)
 
-        if calculate_validation_loss is False:
-            self.log_loss = self.calculate_log_loss()
-            self.expected_log_loss = self.calculate_expected_log_loss()
+        final = pd.DataFrame()
 
-            # add loss result
-            l = results_df.copy()
-            l['loss_type'] = 'Log loss on training data'
-            l['log_loss'] = self.log_loss
+        if calculate_expected_loss is True:
+            self.expected_log_loss = self.calculate_expected_log_loss()
 
             # add expected loss result
             e = results_df.copy()
             e['loss_type'] = 'Expected log loss across training data'
             e['log_loss'] = self.expected_log_loss
 
-            final = pd.concat([l, e], axis = 0)
-        else:
+            final = pd.concat([final, e], axis = 0)
+
+        if calculate_validation_loss is True:
             val_loss = self.calculate_validation_log_loss()
-            final = result.copy()
-            final['loss type'] = 'Log loss on validation data'
-            final['log_loss'] = val_loss
+            val = results_df.copy()
+            val['loss type'] = 'Log loss on validation data'
+            val['log_loss'] = val_loss
+
+            final = pd.concat([final, val], axis = 0)
+
         return(final)
-
-
