@@ -1,0 +1,7 @@
+annotation_type	full_model	sub_model	full_model_logLik	sub_model_logLik	LRT_test_statistic	LRT_pval	MH_param	trimming_prob_model
+igor_mh_sim_alpha_from_igor_MHprob0_always-ligate	motif_two-side-base-count-beyond_ligation-mh	motif_two-side-base-count-beyond	-12242688.7352408	-12279988.9634328	74600.4563840479	0	0	igor
+igor_mh_sim_alpha_from_igor_MHprob1_always-ligate	motif_two-side-base-count-beyond_ligation-mh	motif_two-side-base-count-beyond	-11928479.2897907	-11931870.8360006	6783.09241978452	0	1	igor
+igor_mh_sim_alpha_from_igor_MHprob10_always-ligate	motif_two-side-base-count-beyond_ligation-mh	motif_two-side-base-count-beyond	-11450287.4256752	-11454260.9912161	7947.13108187914	0	10	igor
+igor_mh_sim_alpha_from_motif_two-side-base-count-beyond_MHprob0_always-ligate	motif_two-side-base-count-beyond_ligation-mh	motif_two-side-base-count-beyond	-12285327.3045941	-12318303.7873356	65952.9654829688	0	0	motif_two-side-base-count-beyond
+igor_mh_sim_alpha_from_motif_two-side-base-count-beyond_MHprob1_always-ligate	motif_two-side-base-count-beyond_ligation-mh	motif_two-side-base-count-beyond	-11981399.9553937	-11983400.1086787	4000.30656998232	0	1	motif_two-side-base-count-beyond
+igor_mh_sim_alpha_from_motif_two-side-base-count-beyond_MHprob10_always-ligate	motif_two-side-base-count-beyond_ligation-mh	motif_two-side-base-count-beyond	-11507590.8774621	-11513864.2591539	12546.7633835562	0	10	motif_two-side-base-count-beyond

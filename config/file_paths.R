@@ -39,6 +39,14 @@ get_model_eval_file_path <- function(L2, model_type=NULL){
     return(file_name)
 }
 
+get_LRT_file_path <- function(L2){
+    path = file.path(MOD_OUTPUT_PATH, ANNOTATION_TYPE, PARAM_GROUP, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+
+    file_name = paste0(path, '/model_LRT_results_L2', L2, '.tsv')
+    return(file_name)
+}
+
+
 get_subsample_file_path <- function(L2, model_type=NULL){
     if (is.null(model_type)){
         model_type = MODEL_TYPE

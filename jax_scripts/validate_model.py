@@ -79,7 +79,7 @@ path = params.model_eval_results_path(L2)
 if os.path.isfile(path):
     # Read the file as a Pandas DataFrame
     df = pd.read_csv(path)
-    result = pd.concat([df, result], axis = 0, fill_value = 'NA')
+    result = pd.concat([df, result], axis = 0)
 
 result.to_csv(path, sep='\t', index=False)
 print('finished validating model')
