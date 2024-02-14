@@ -8,3 +8,4 @@ INSERTIONS = 'zero'
 MODEL_GROUP = 'all_subjects'
 GENE_WEIGHT_TYPE = 'p_gene_pooled'
 REPEAT_OBS_COLNAME = None
+CHAIN_TYPE = 'TRA'

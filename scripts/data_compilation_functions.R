@@ -3,6 +3,7 @@ source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/', ANNOTA
 source(paste0(MOD_PROJECT_PATH,'/scripts/gene_specific_functions/', TRIM_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/model_formula_functions/', MODEL_TYPE, '.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/sampling_procedure_functions/', GENE_WEIGHT_TYPE, '.R'))
+source(paste0(MOD_PROJECT_PATH, '/scripts/mh_functions.R'))
 
 REQUIRED_COMMON_NUCS_5 <<- UPPER_TRIM_BOUND + 10 
 
@@ -16,7 +17,11 @@ get_trim_order <- function(trim_type){
     trim_type_subset = str_remove(trim_type, '_ligation-mh')
     trims = strsplit(trim_type_subset, '_')[[1]][1]
     trims = strsplit(trims, '-')[[1]]
-    return(c(paste0(trims, '_trim')))
+    final = c(paste0(trims, '_trim')) 
+    if (trim_type %like% 'adjusted_mh'){
+        final = paste0(final, '_adjusted_mh')
+    }
+    return(final)
 }
 
 get_trim_vars <- function(trim_type){
@@ -394,23 +399,38 @@ get_frames_data <- function(){
     gene_pairs = merge(v, j, by = 'dummy', allow.cartesian = TRUE)
 
     # Get all trimming sites
-    trims = data.table(expand.grid(v_trim = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND + 10), 
-                                   j_trim = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND + 10)))
+    trims = data.table(expand.grid(v_trim = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND), 
+                                   j_trim = seq(LOWER_TRIM_BOUND, UPPER_TRIM_BOUND)))
     trims$dummy = 1
 
     # Merge genes and trims
     all = merge(gene_pairs, trims, by = 'dummy', allow.cartesian = TRUE)[, -c('dummy')]
     # Get sequence lengths and subset data to necessary columns
     all[, c('v_seq_len', 'j_seq_len') := .(nchar(v_seq), nchar(j_seq))]
-    cols = c('v_gene', 'j_gene', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim')
+
+    cols = c('v_gene', 'j_gene', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim', 'v_gene_sequence', 'j_gene_sequence')
+    all = get_oriented_full_sequences(all)
     all = unique(all[, ..cols])
 
-    # Adjust trimming sites based on ligation MH
-    adjusted_all = adjust_trimming_sites_for_ligation_mh(all)
+    # get possible ligation mh
+    lig_mat = matrix(0, nrow = nrow(all), ncol = length(seq(1, 15)))
+
+    for (overlap in seq(ncol(lig_mat))){
+        lig = get_possible_ligation_mh_fixed_trim(all, overlap_count = overlap)
+        lig_mat[, overlap] = lig
+    }
+
+    # get unique vals 
+    unique_mh_list = apply(lig_mat, 1, unique)
+
+    # combine
+    adjusted_all = data.table(all, ligation_mh = unique_mh_list)
+
+    # Expand the rows
+    adjusted_grouped = as.data.table(adjusted_all[, unnest(.SD, cols = c("ligation_mh"))])
 
     # Get oriented full sequences and group genes by common features, also subset columns again
-    cols2 = c('v_gene', 'j_gene', 'v_frame', 'j_frame', 'v_seq_len', 'j_seq_len', 'v_trim', 'j_trim', 'ligation_mh', 'v_gene_sequence', 'j_gene_sequence')
-    adjusted_grouped = get_oriented_full_sequences(adjusted_all)
+    cols2 = c(cols, 'ligation_mh')
     adjusted_grouped = unique(adjusted_grouped[, ..cols2])
     
     # Filter by trimming length
@@ -479,7 +499,7 @@ get_stop_positions_with_frame <- function(framed_data){
 }
 
 frame_data_path <- function(){
-    output_location = file.path(MOD_OUTPUT_PATH, 'meta_data', ANNOTATION_TYPE, paste0(MOTIF_TYPE, '_motif_trims_bounded_', LOWER_TRIM_BOUND, '_', UPPER_TRIM_BOUND))
+    output_location = file.path(MOD_OUTPUT_PATH, 'meta_data', CHAIN_TYPE)
     dir.create(output_location, recursive = TRUE, showWarnings = FALSE)
     filename = file.path(output_location, 'frame_data.tsv')
     return(filename)

@@ -252,6 +252,3 @@ get_possible_ligation_mh_fixed_trim <- function(data, overlap_count){
     n = get_fully_contiguous_mh(subset[[v_seq_col]], subset[[j_seq_col]])
     return(n)
 }
-
-
-

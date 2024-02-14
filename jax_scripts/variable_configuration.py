@@ -19,6 +19,7 @@ class global_paramaters():
         self.insertions = getattr(self.param_config, "INSERTIONS")
         self.model_group = getattr(self.param_config, "MODEL_GROUP")
         self.gene_weight_type = getattr(self.param_config, "GENE_WEIGHT_TYPE")
+        self.chain_type = getattr(self.param_config, "CHAIN_TYPE")
 
     def R_processed_data_path(self, annotation = None):
         if annotation == None:
@@ -28,7 +29,7 @@ class global_paramaters():
         return(file_name)
 
     def R_input_domain_data_path(self):
-        path = self.root_path + '/meta_data/' + self.annotation_type + '/' + self.motif_type + '_motif_trims_bounded_' + str(self.lower_trim_bound) + '_' + str(self.upper_trim_bound)
+        path = self.root_path + '/meta_data/' + self.chain_type
         file_name = path + '/frame_data.tsv'
         return(file_name)
 
@@ -88,7 +89,11 @@ class model_specific_parameters():
         trims = self.choice_colname.replace('_ligation-mh', '')
         trims = trims.split('_')[0]
         trims = trims.split('-')
-        trims = [item + '_trim' for item in trims]
+        if 'adjusted_mh' in self.choice_colname:
+            trims = [item + '_trim_adjusted_mh' for item in trims]
+        else:
+            trims = [item + '_trim' for item in trims]
+
         if 'ligation-mh' in self.choice_colname:
             trims.append('ligation_mh')
         self.choice_colname = trims

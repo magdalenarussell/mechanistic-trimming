@@ -26,7 +26,7 @@ RIGHT_NUC_MOTIF_COUNT <<- 2
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond_ligation-mh'
 
 TRIMMING_PROB_TYPE <<- args[2]
-stopifnot(TRIMMING_PROB_TYPE %in% c('igor', 'motif_two-side-base-count-beyond'))
+stopifnot(TRIMMING_PROB_TYPE %in% c('igor', 'motif_two-side-base-count-beyond', 'uniform', 'mh_adjusted_motif-two-side-base-count-beyond'))
 
 LIGATION_MH_PARAM <<- as.numeric(args[3])
 
@@ -50,7 +50,7 @@ all_lig_probs = get_ligation_probabilities(LIGATION_MH_PARAM, seq(0, 15))
 all_lig_probs = all_lig_probs[names(all_lig_probs) != 'no_ligation']
 
 # get all possible configurations
-configs = get_all_possible_configs(gene_choice_probs, trim_probs)
+configs = read_frames_data()
 
 set.seed(123) 
 
@@ -88,7 +88,7 @@ sim_data = foreach(subset = seq(total/100), .combine=rbind) %dopar% {
 
         temp_configs = configs[v_gene == temp$v_gene & j_gene == temp$j_gene & v_trim == temp$v_trim & j_trim == temp$j_trim]
 
-        lig_probs = all_lig_probs[names(all_lig_probs) %in% unique(temp_configs$possible_ligation_mh)]
+        lig_probs = all_lig_probs[names(all_lig_probs) %in% unique(temp_configs$ligation_mh)]
 
         lig_draw = sample(names(lig_probs), 1, prob = lig_probs)
 
@@ -110,28 +110,14 @@ motif_data = get_all_nuc_contexts(condensed_sim, 'mh_sim', gene_type = GENE_NAME
 
 # Because there is no selection effect in these simulated data, I am not
 # restricting to nonproductive sequences! 
-# Filter motif data for possible sites
-filtered_motif_data = filter_motif_data_for_possible_sites(motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE)
+# fill in missing sites
+cols2 = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh')
+tog = merge(motif_data, configs, by = cols2)
 
-# Note: the above filtering function will filter out MH=0 cases (since they
-# can be converted to MH>0 scenarios), but since we are not doing any
-# adjustment for MH scenarios here, we can allow all MH=0 cases
-possible_zeros = get_possible_zero_mh_sites()
-possible_zeros = merge(possible_zeros, motif_data, by = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh'))
+filled_motif_data = fill_in_missing_possible_sites(configs, tog, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
 
-missing_possible_zeros = possible_zeros[!filtered_motif_data[ , on = colnames(possible_zeros), nomatch = 0L, which = TRUE]]
-
-filtered_motif_data = rbind(missing_possible_zeros, filtered_motif_data, fill = TRUE)
-
-processed = inner_aggregation_processing(filtered_motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE)
+processed = inner_aggregation_processing(filled_motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE)
 processed = subset_processed_data(processed, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
-
-file_name = frame_data_path()
-old_ANNOTATION_TYPE <<- ANNOTATION_TYPE
-ANNOTATION_TYPE <<- paste0(old_ANNOTATION_TYPE, '_from_', TRIMMING_PROB_TYPE, '_MHprob', LIGATION_MH_PARAM, '_always-ligate')
-
-frame_file_name = str_replace(file_name, old_ANNOTATION_TYPE, ANNOTATION_TYPE)
-file.copy(from = file_name, to = frame_file_name)
 
 filename = processed_data_path()
 fwrite(processed, filename, sep = '\t')
