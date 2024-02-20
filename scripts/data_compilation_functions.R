@@ -252,7 +252,7 @@ general_get_all_nuc_contexts <- function(tcr_dataframe, subject_id, gene_type = 
         if (length(genes) == 1){
             desired_count = length(unique(motif_dataframe[[paste0(genes)]]))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)
         } else if (length(genes) == 2){
-            desired_count = length(interaction(motif_dataframe[[paste0(genes[1])]], motif_dataframe[[paste0(genes[2])]]))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)
+            desired_count = length(unique(interaction(motif_dataframe[[paste0(genes[1])]], motif_dataframe[[paste0(genes[2])]])))*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)*(UPPER_TRIM_BOUND - LOWER_TRIM_BOUND + 1)
         }
  
         if (nrow(motif_dataframe) < desired_count){
