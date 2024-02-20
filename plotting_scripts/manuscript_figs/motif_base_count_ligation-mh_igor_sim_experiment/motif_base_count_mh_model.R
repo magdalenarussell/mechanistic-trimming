@@ -28,7 +28,7 @@ RIGHT_NUC_MOTIF_COUNT <<- as.numeric(2)
 
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond_ligation-mh'
 
-L2 <<- 'True'
+L2 <<- 'False'
 
 source(paste0(MOD_PROJECT_PATH, '/scripts/data_compilation_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
