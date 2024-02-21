@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/mrussel2/microhomology/jax_scripts/')
+sys.path.append('/home/mrussel2/microhomology/mechanistic-trimming/jax_scripts/')
 import os
 import pandas as pd
 import numpy as np
@@ -64,7 +64,7 @@ model = ConditionalLogisticRegressor(training_df = processed_data,
 print('initialized model')
 
 # train model
-model = model.train_model(l2=L2, maxiter=200000, tolerance=1e-5, step=0.001)
+model = model.train_model(l2=L2, maxiter=10000, tolerance=1e-8)
 print('trained model')
 
 # make predictions on full training dataset
@@ -83,8 +83,10 @@ training_pred.to_csv(predictions_filename, sep='\t', index=False)
 
 if MODEL_TYPE != 'null':
     coefs = model.get_coefficients_df()
+    coefs['training_error'] = float(model.training_info.state.error)
     coefs_filename = params.trained_coefs_path(L2)
     coefs.to_csv(coefs_filename, sep='\t', index=False)
+
 print('finished processing model predictions')
 
 # save trained model

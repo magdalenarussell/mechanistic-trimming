@@ -630,7 +630,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         assert counts_matrix is not None, "counts column is missing"
 
         # Create a jaxopt GradientDescent optimizer
-        solver = jaxopt.GradientDescent(fun=self.loss_fn, maxiter=maxiter, tol=tol, stepsize=step, implicit_diff=True, verbose=True)
+        solver = jaxopt.BFGS(fun=self.loss_fn, maxiter=maxiter, tol=tol, verbose=True)
 
         # Run gradient descent
         res = solver.run(initial_coefs,
