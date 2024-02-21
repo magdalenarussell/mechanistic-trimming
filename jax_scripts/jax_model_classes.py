@@ -390,14 +390,17 @@ class DataTransformer(DataPreprocessor):
         if coefs is None:
             coefs = self.coefs
         coefs = coefs.flatten().tolist()
-        d = {n: c for n, c in zip(self.variable_colnames, coefs)}
+        errors = self.standard_errors.flatten().tolist()
+        d = {n: {'value':c, 'error':e} for n, c, e in zip(self.variable_colnames, coefs, errors)}
         for col in list(set(self.original_variable_colnames) - set(self.variable_colnames)):
             contrast_vars, missing_var = self.get_dropped_contrast_var(self.training_df, col)
             for element in contrast_vars:
                 if element not in self.variable_colnames:
                     contrast_vars.remove(element)
-            d[missing_var] = -1*sum(d[var] for var in contrast_vars)
-        return d
+            d[missing_var] = {'value':-1*sum(d[var]['value'] for var in contrast_vars), 'error':None}
+
+        data = [{'coefficient': name, 'value': values['value'], 'error': values['error']} for name, values in d.items()]
+        return data
 
     def get_coefficients_df(self):
         """
@@ -406,8 +409,7 @@ class DataTransformer(DataPreprocessor):
         Returns:
             dict: A dictionary containing variable names as keys and their corresponding coefficients as values.
         """
-        df = pd.DataFrame.from_dict(self.get_coefficients(), columns = ['value'], orient = 'index')
-        df['coefficient'] = df.index
+        df = pd.DataFrame(self.get_coefficients())
         df.reset_index(drop=True, inplace=True)
 
         # get bases
@@ -749,7 +751,28 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.maxiter = maxiter
         self.tolerance = tolerance
         self.step = step
+        self.cov_matrix = self.get_cov_matrix(self.coefs, self.variable_matrix, self.counts_matrix, self.l2reg)
+        self.standard_errors = self.get_errors(self.coefs, self.variable_matrix, self.counts_matrix, self.l2reg)
         return self
+
+    def get_hessian(self, coefs, variables, counts, l2reg=0):
+         # Wrapper function
+        def wrapper_loss_fn(coefs):
+            return self.loss_fn(coefs, variables, counts, l2reg)
+
+        hessian_fn = jax.hessian(wrapper_loss_fn, argnums=0)
+        hessian_matrix = hessian_fn(coefs.reshape(-1))
+        return hessian_matrix
+
+    def get_cov_matrix(self, coefs, variables, counts, l2reg=0):
+        hess_mat = self.get_hessian(coefs, variables, counts, l2reg)
+        cov_matrix = jnp.linalg.inv(hess_mat)
+        return cov_matrix
+
+    def get_errors(self, coefs, variables, counts, l2reg=0):
+        cov = self.get_cov_matrix(coefs, variables, counts, l2reg)
+        standard_errors = np.sqrt(np.diag(cov))
+        return standard_errors
 
     def save_model(self, file_path):
         assert self.coefs is not None, "need to train model before saving"
