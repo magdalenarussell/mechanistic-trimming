@@ -69,7 +69,10 @@ file_info_df = pd.DataFrame(file_info)
 file_info_df = file_info_df.sort_values('gene_pair_count').reset_index(drop = True)
 
 prog_data = pd.DataFrame()
-old_coefs = jnp.array([[0.01]])
+if MODEL_TYPE == 'ligation-mh':
+    old_coefs = jnp.array([[0.01]])
+elif MODEL_TYPE == 'motif_two-side-base-count-beyond_ligation-mh':
+    old_coefs = jnp.full((25,1), 0.01)
 
 for file in file_info_df.file_path:
     processed_data = pd.read_csv(file, sep = '\t')
@@ -85,7 +88,7 @@ for file in file_info_df.file_path:
     model.initial_coefs = old_coefs
     print('initialized model')
     # train model
-    model = model.train_model(l2=L2, maxiter=100000, tolerance=1e-8, step=0.001)
+    model = model.train_model(l2=L2, maxiter=1000, tolerance=1e-8)
     old_coefs = model.coefs
     print('trained model')
     coefs = model.get_coefficients_df()
@@ -95,6 +98,7 @@ for file in file_info_df.file_path:
 
 
 coefs_filename = params.trained_coefs_path(L2)
+coefs_filename2 = os.path.dirname(coefs_filename) + '/progressively_trained_coefs_L2False.tsv'
 
-prog_data.to_csv(coefs_filename, sep='\t', index=False)
+prog_data.to_csv(coefs_filename2, sep='\t', index=False)
 print('finished processing model predictions')
