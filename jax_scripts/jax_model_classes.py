@@ -339,52 +339,63 @@ class DataTransformer(DataPreprocessor):
         Prepares data matrices for modeling.
 
         Returns:
-            tuple: A tuple containing three data matrices - variables, counts, and non-repeat groups.
+            tuple: A tuple containing four data matrices - variables, counts, non-repeat groups, and mask.
         """
         df = self.preprocess_data(df, pretrain)
 
-        # Create three-dimensional matrix
+        # Fill in missing counts with zero
+        df[self.count_colname] = df[self.count_colname].fillna(0).astype(float)
+
+        # Get matrix shapes
         groups = pd.unique(df[self.group_colname])
         choices = pd.unique(df[self.choice_colname])
 
-        shape = (len(groups), len(choices), len(self.variable_colnames))
+        final_shape = (len(groups), len(choices), len(self.variable_colnames))
+        int_shape = (len(groups), len(self.variable_colnames), len(choices))
         counts_shape = (len(groups), len(choices), 1)
-        nonrep_groups_shape = (len(groups), 1)
 
-        mat = np.empty(shape)
-        counts_mat = np.empty(counts_shape)
-        nonrepeat_groups_mat = np.empty(nonrep_groups_shape)
+        # map variables to indices
         var_mapping = {key: value for key, value in enumerate(self.variable_colnames)}
+        var_mapping_df = pd.DataFrame(list(var_mapping.items()), columns=['VarIndex', 'VarName'])
 
-        nonrepeat_groups = self.group_colname
-        # Fill the 3D arrays with the training_df data
-        for i in groups:
-            temp1 = df[df[self.group_colname] == i]
-            nonrepeat_groups_mat[i,] = pd.unique(temp1[nonrepeat_groups])
-            for j in choices:
-                temp2 = temp1[temp1[self.choice_colname] == j]
-                if self.count_colname in temp2.columns:
-                    if temp2.shape[0] == 0:
-                        counts_mat[i, j, 0] = 0
-                    elif np.isnan(temp2[self.count_colname].iloc[0]):
-                        counts_mat[i, j, 0] = 0
-                    else:
-                        counts_mat[i, j, 0] = float(temp2[self.count_colname].iloc[0])
-                else:
-                    counts_mat = None
-                for k in var_mapping.keys():
-                    if temp2.shape[0] == 0:
-                        mat[i, j, k] = 0
-                    else:
-                        mat[i, j, k] = float(temp2[var_mapping[k]].iloc[0])
+        # get counts matrix
+        pivot_counts = df.pivot_table(index=[self.group_colname],
+                                      columns=[self.choice_colname],
+                                      values=self.count_colname,
+                                      fill_value=0)
+        counts_mat = jnp.array(pivot_counts).reshape(counts_shape)
+
+        # get variable matrix
+        pivot_vars = df.pivot_table(index=[self.group_colname],
+                                    columns=[self.choice_colname],
+                                    values=var_mapping_df.VarName.tolist(),
+                                    fill_value=0)
+        # reorder columns to reflect correct order
+        pivot_vars = pivot_vars.reindex(var_mapping_df.VarName.tolist(), axis=1, level = 0)
+
+        mat = jnp.array(pivot_vars).reshape(int_shape)
+        mat = mat.transpose((0, 2, 1))
+        assert mat.shape == final_shape, "Variable matrix is the incorrect dimension"
+
+        # Assuming groups is a list of unique group identifiers
+        group_indices = {group: idx for idx, group in enumerate(groups)}
+        nonrepeat_groups_mat = jnp.array([group_indices[group] for group in df[self.group_colname].unique()])
+
+        # get mask matrix (1 for valid entries or 0 for nonvalid)
+        df['indicator'] = 1.0
+        pivot_mask = df.pivot_table(index=[self.group_colname],
+                                    columns=[self.choice_colname],
+                                    values=['indicator'],
+                                    fill_value=0)
+        mask_mat = jnp.array(pivot_mask).reshape(counts_shape)
 
         if replace_object is not None:
             setattr(self, replace_object, df)
 
         if return_df:
-            return mat, counts_mat, nonrepeat_groups_mat, df
+            return mat, counts_mat, nonrepeat_groups_mat, mask_mat, df
         else:
-            return mat, counts_mat, nonrepeat_groups_mat
+            return mat, counts_mat, nonrepeat_groups_mat, mask_mat
 
     def get_coefficients(self, coefs=None):
         if coefs is None:
@@ -479,7 +490,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         l2kfold (int): Number of folds for L2 regularization hyperparameter tuning.
 
     Methods:
-        get_prob(variables, coefs=None):
+        get_prob(variables, mask, coefs=None):
             Computes choice probabilities for given variables and coefficients.
 
         cross_entropy(probs, counts):
@@ -488,10 +499,10 @@ class ConditionalLogisticRegressor(DataTransformer):
         l2regularization(coefs, size, l2reg):
             Computes L2 regularization term.
 
-        loss_fn(coefs, variables, counts, l2reg=0):
+        loss_fn(coefs, variables, counts, mask, l2reg=0):
             Computes the loss function for optimization.
 
-        fit(variable_matrix, counts_matrix, l2reg, maxiter, tolerance, initial_coefs):
+        fit(variable_matrix, counts_matrix, mask_matrix, l2reg, maxiter, tolerance, initial_coefs):
             Fits the conditional logistic regression model using gradient descent.
 
         grid_search_cv(l2kfold, l2reg_values=[10**i for i in range(-2, 8)] + [0]):
@@ -513,7 +524,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.input_variable_colnames = variable_colnames
         self.input_group_colname = group_colname
         self.input_choice_colname = choice_colname
-        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix = self.get_matrices(training_df, replace_object='training_df')
+        self.variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix, self.mask_matrix = self.get_matrices(training_df, replace_object='training_df')
         self.initial_coefs = self.get_random_coefs()
         self.coefs = None
         self.training_info = None
@@ -525,12 +536,13 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.l2reg_grid = None
 
     # Get probability for input parameters given coefficients
-    def get_prob(self, variables, coefs=None):
+    def get_prob(self, variables, mask, coefs=None):
         """
         Compute choice probabilities for given variables and coefficients.
 
         Args:
             variables (ndarray): Data matrix of variables.
+            mask (ndarray): Data matrix of variable mask.
             coefs (ndarray, optional): Coefficients for the logistic regression model. If not provided, the trained coefficients will be used.
 
         Returns:
@@ -542,11 +554,13 @@ class ConditionalLogisticRegressor(DataTransformer):
         # Compute the logits for each choice
         cov = jnp.dot(variables, coefs)
         reshape = jnp.squeeze(cov)
+        reshaped_mask = jnp.squeeze(mask)
 
         # Calculate the probability of the observed choices
         # Dimensions of this matrix are groups x choices
         # replace missing choices with -INF so that they will not count towards probability
-        probs = jnp.where(reshape == 0, 0, jax.nn.softmax(jnp.where(reshape==0, jnp.NINF, reshape)))
+        probs = jax.nn.softmax(jnp.where(reshaped_mask, reshape, jnp.NINF))
+
         return probs
 
     # Get cross-entropy loss
@@ -592,7 +606,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         return(0.5*(1/size)*l2reg*c)
 
     # Compute the loss function
-    def loss_fn(self, coefs, variables, counts, l2reg=0):
+    def loss_fn(self, coefs, variables, counts, mask, l2reg=0):
         """
         Compute the loss function for optimization.
 
@@ -600,25 +614,28 @@ class ConditionalLogisticRegressor(DataTransformer):
             coefs (ndarray): Coefficients for the logistic regression model.
             variables (ndarray): Data matrix of variables.
             counts (ndarray): Counts of choices.
+            mask (ndarray): Data matrix of mask.
             l2reg (float): L2 regularization strength.
 
         Returns:
             float: Total loss, including cross-entropy and L2 regularization.
         """
-        probs = self.get_prob(variables, coefs)
+        probs = self.get_prob(variables, mask, coefs)
         if probs.ndim == 1:
             probs = probs.reshape((probs.shape[0], 1))
-        size = probs.shape[0]*probs.shape[1]
+        size = jnp.count_nonzero(mask).item()
+
         loss = self.cross_entropy(probs, counts) + self.l2regularization(coefs, size, l2reg)
         return loss
 
-    def fit(self, variable_matrix, counts_matrix, l2reg, maxiter, tol, step, initial_coefs):
+    def fit(self, variable_matrix, counts_matrix, mask_matrix, l2reg, maxiter, tol, step, initial_coefs):
         """
         Fit the conditional logistic regression model using gradient descent.
 
         Args:
             variable_matrix (ndarray): Data matrix of variables.
             counts_matrix (ndarray): Counts of choices.
+            mask_matrix (ndarray): Data matrix of masks.
             l2reg (float): L2 regularization strength.
             maxiter (int): Maximum number of optimization iterations.
             tolerance (float): tolerance for optimization.
@@ -636,6 +653,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         res = solver.run(initial_coefs,
                          variables=variable_matrix,
                          counts=counts_matrix,
+                         mask=mask_matrix,
                          l2reg=l2reg)
         return(res)
 
@@ -648,16 +666,18 @@ class ConditionalLogisticRegressor(DataTransformer):
         for train_index, val_index in kf.split(X=self.variable_matrix, y=self.counts_matrix, groups=self.nonrepeat_grp_matrix):
             train_data, val_data = self.variable_matrix[train_index], self.variable_matrix[val_index]
             train_counts, val_counts = self.counts_matrix[train_index], self.counts_matrix[val_index]
+            train_mask, val_mask = self.mask_matrix[train_index], self.mask_matrix[val_index]
             train_counts = self.reset_weighted_observations(train_counts)
             val_counts = self.reset_weighted_observations(val_counts)
 
             # Train the model on the training data
-            model = self.fit(train_data, train_counts, l2reg, self.maxiter, self.tolerance, self.step, self.initial_coefs)
+            model = self.fit(train_data, train_counts, train_mask, l2reg, self.maxiter, self.tolerance, self.step, self.initial_coefs)
 
             # Compute the loss on the validation data
             loss = self.loss_fn(model.params,
                                 val_data,
-                                val_counts)
+                                val_counts,
+                                val_mask)
 
             # Store the loss as a score (lower score is better)
             scores.append(float(loss))
@@ -740,6 +760,7 @@ class ConditionalLogisticRegressor(DataTransformer):
 
         res = self.fit(self.variable_matrix,
                        self.counts_matrix,
+                       self.mask_matrix,
                        self.l2reg,
                        maxiter,
                        tolerance,
@@ -751,26 +772,26 @@ class ConditionalLogisticRegressor(DataTransformer):
         self.maxiter = maxiter
         self.tolerance = tolerance
         self.step = step
-        self.cov_matrix = self.get_cov_matrix(self.coefs, self.variable_matrix, self.counts_matrix, self.l2reg)
-        self.standard_errors = self.get_errors(self.coefs, self.variable_matrix, self.counts_matrix, self.l2reg)
+        self.cov_matrix = self.get_cov_matrix(self.coefs, self.variable_matrix, self.counts_matrix, self.mask_matrix, self.l2reg)
+        self.standard_errors = self.get_errors(self.coefs, self.variable_matrix, self.counts_matrix, self.mask_matrix, self.l2reg)
         return self
 
-    def get_hessian(self, coefs, variables, counts, l2reg=0):
+    def get_hessian(self, coefs, variables, counts, mask, l2reg=0):
          # Wrapper function
         def wrapper_loss_fn(coefs):
-            return self.loss_fn(coefs, variables, counts, l2reg)
+            return self.loss_fn(coefs, variables, counts, mask, l2reg)
 
         hessian_fn = jax.hessian(wrapper_loss_fn, argnums=0)
         hessian_matrix = hessian_fn(coefs.reshape(-1))
         return hessian_matrix
 
-    def get_cov_matrix(self, coefs, variables, counts, l2reg=0):
-        hess_mat = self.get_hessian(coefs, variables, counts, l2reg)
+    def get_cov_matrix(self, coefs, variables, counts, mask, l2reg=0):
+        hess_mat = self.get_hessian(coefs, variables, counts, mask, l2reg)
         cov_matrix = jnp.linalg.inv(hess_mat)
         return cov_matrix
 
-    def get_errors(self, coefs, variables, counts, l2reg=0):
-        cov = self.get_cov_matrix(coefs, variables, counts, l2reg)
+    def get_errors(self, coefs, variables, counts, mask, l2reg=0):
+        cov = self.get_cov_matrix(coefs, variables, counts, mask, l2reg)
         standard_errors = np.sqrt(np.diag(cov))
         return standard_errors
 
@@ -833,12 +854,12 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
             ValueError: If the number of variable columns in the input DataFrame doesn't match the model's coefficients.
         """
         original_new_df = new_df
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix, new_df = self.get_matrices(new_df, pretrain=False, return_df=True)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix, new_df = self.get_matrices(new_df, pretrain=False, return_df=True)
 
         if not variable_matrix.shape[-1] == self.model.coefs.shape[0]:
             raise ValueError("Input dataframe variable column count doesn't match the trained model coefficient count")
         # get predicted probabilities
-        probs = self.model.get_prob(variable_matrix, self.model.coefs)
+        probs = self.model.get_prob(variable_matrix, mask_matrix, self.model.coefs)
         # transform probs to a dataframe
         choice_cols = self.get_mapping_dict(new_df, self.choice_colname)
         group_cols = self.get_mapping_dict(new_df, self.group_colname)
@@ -871,13 +892,14 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
         Returns:
             float: The computed loss.
         """
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(new_df, pretrain=False)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(new_df, pretrain=False)
 
         assert counts_matrix is not None, "counts column is needed"
 
         loss = self.model.loss_fn(self.model.coefs,
                                   variable_matrix,
-                                  counts_matrix)
+                                  counts_matrix,
+                                  mask_matrix)
         return(float(loss))
 
 
@@ -900,19 +922,20 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
 
     def calculate_log_loss(self):
         assert self.model.training_df is not None, 'No input training dataframe provided'
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.model.training_df, pretrain=False)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.model.training_df, pretrain=False)
 
         assert counts_matrix is not None, "counts column is needed"
 
         # Compute the loss on the training data
         loss = self.model.loss_fn(self.model.coefs,
                                   variable_matrix,
-                                  counts_matrix)
+                                  counts_matrix,
+                                  mask_matrix)
         return(loss)
 
     def calculate_expected_log_loss(self, fold_count=20):
         assert self.model.training_df is not None, 'No input training dataframe provided'
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.model.training_df, pretrain=False)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.model.training_df, pretrain=False)
 
         assert counts_matrix is not None, "counts column is needed"
 
@@ -927,13 +950,14 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
 
     def calculate_validation_log_loss(self):
         assert self.validation_df is not None, 'No input validation dataframe provided'
-        variable_matrix, counts_matrix, nonrepeat_grp_matrix = self.get_matrices(self.validation_df, pretrain=False)
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.validation_df, pretrain=False)
 
         assert counts_matrix is not None, "counts column is needed"
 
         loss = self.model.loss_fn(self.model.coefs,
                                   variable_matrix,
-                                  counts_matrix)
+                                  counts_matrix,
+                                  mask_matrix)
         return(loss)
 
     def compile_evaluation_results_df(self, calculate_validation_loss = False, calculate_expected_loss=False):
