@@ -25,6 +25,18 @@ MODEL_TYPE = 'motif_two-side-base-count-beyond_ligation-mh'
 L2 = False
 NCPU = int(sys.argv[1])
 
+# set global variables
+param_config = importlib.import_module(f"param_group_configs.{PARAM_GROUP}")
+params = variable_configuration.global_paramaters(param_config,
+                                                  MOD_OUTPUT_PATH,
+                                                  MOD_PROJECT_PATH,
+                                                  ANNOTATION_TYPE,
+                                                  PARAM_GROUP,
+                                                  LEFT_NUC_MOTIF_COUNT,
+                                                  RIGHT_NUC_MOTIF_COUNT,
+                                                  MODEL_TYPE)
+
+
 model_filename = params.model_output_path(L2)
 subset_filename = os.path.dirname(model_filename) + '/trained_model_L2False_missing_1_ligation_mh_cases.pkl'
 
