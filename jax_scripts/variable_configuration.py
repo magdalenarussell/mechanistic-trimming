@@ -9,7 +9,7 @@ class global_paramaters():
         self.param_group = param_group
         self.left_nuc_motif_count = left_motif_size
         self.right_nuc_motif_count = right_motif_size
-        self.model_type = model_type
+        self.model_type = model_type.replace('twostep_', '')
         self.trim_type = getattr(self.param_config, "TRIM_TYPE")
         self.productivity = getattr(self.param_config, "PRODUCTIVITY")
         self.motif_type = getattr(self.param_config, "MOTIF_TYPE")
@@ -80,10 +80,14 @@ class model_specific_parameters():
         self.left_nuc_motif_count = left_motif_size
         self.right_nuc_motif_count = right_motif_size
         self.variable_colnames = getattr(self.model_type_config, "VARIABLE_COLNAMES")
+        self.choice1_variable_colnames = getattr(self.model_type_config, "CHOICE1_VARIABLE_COLNAMES")
+        self.choice2_variable_colnames = getattr(self.model_type_config, "CHOICE2_VARIABLE_COLNAMES")
         self.count_colname = getattr(self.model_type_config, "COUNT_COLNAME")
         self.group_colname = getattr(self.param_config, "GENE_NAME")
         self.repeat_obs_colname = getattr(self.param_config, "REPEAT_OBS_COLNAME")
         self.choice_colname = getattr(self.param_config, "TRIM_TYPE")
+        self.choice2_colname = None
+        self.twostep = getattr(self.model_type_config, "TWOSTEP")
 
     def process_choice_colnames(self):
         trims = self.choice_colname.replace('_ligation-mh', '')
@@ -94,10 +98,14 @@ class model_specific_parameters():
         else:
             trims = [item + '_trim' for item in trims]
 
-        if 'ligation-mh' in self.choice_colname:
-            trims.append('ligation_mh')
-        self.choice_colname = trims
-        return(self.choice_colname)
+        if self.twostep:
+            self.choice_colname = trims
+            self.choice2_colname = 'ligation_mh'
+        else:
+            if 'ligation-mh' in self.choice_colname:
+                trims.append('ligation_mh')
+            self.choice_colname = trims
+        return(self.choice_colname, self.choice2_colname)
 
     def process_group_colnames(self):
         self.group_colname = self.group_colname.split('_')[0]
@@ -106,16 +114,33 @@ class model_specific_parameters():
         return(self.group_colname)
 
     def get_all_mh_variables(self, overlap_list=[0,1,2,3,4], prop=True, pos=['up', 'mid', 'down']):
-        if prop is True:
-            if 'mh' in self.variable_colnames:
-                self.variable_colnames.remove('mh')
-            elif 'interior_mh' in self.variable_colnames:
-                self.variable_colnames.remove('interior_mh')
-        elif prop is False:
-            if 'mh_count' in self.variable_colnames:
-                self.variable_colnames.remove('mh_count')
-            elif 'interior_mh_count' in self.variable_colnames:
-                self.variable_colnames.remove('interior_mh_count')
+        choice1 = False
+        choice2 = False
+
+        # Define the variables to check based on the value of 'prop'
+        if prop:
+            variables_to_check = ['mh', 'interior_mh']
+        else:
+            variables_to_check = ['mh_count', 'interior_mh_count']
+
+        # Loop through each variable in the list of variables to check
+        for variable in variables_to_check:
+            # Check if the variable is in the main variable_colnames list
+            if variable in self.variable_colnames:
+                # If the variable is found, remove it from the relevant lists
+                self.variable_colnames.remove(variable)
+
+                # Now, check if the variable is in the choice1 or choice variable lists
+                if variable in self.choice1_variable_colnames:
+                    choice1 = True
+                    self.choice1_variable_colnames.remove(variable)
+                if variable in self.choice2_variable_colnames:
+                    choice2 = True
+                    self.choice2_variable_colnames.remove(variable)
+
+                # Once the variable is found and processed, break out of the loop
+                # since no need to check the next variable in variables_to_check
+                break
 
         mh_vars = []
         for o in overlap_list:
@@ -128,127 +153,84 @@ class model_specific_parameters():
                     var = f'mh_count_{p}_overlap_{o}'
                 mh_vars.append(var)
         self.variable_colnames = self.variable_colnames + mh_vars
-        return(self.variable_colnames)
-
-    def get_all_mh_length_interaction_variables(self, overlap_list=[0,1,2,3,4], prop=True):
-        assert 'mh_length_interaction' in self.variable_colnames or 'mh_count_length_interaction' in self.variable_colnames, "mh_length_interaction is not a variable column"
-        if prop is True:
-            self.variable_colnames.remove('mh_length_interaction')
-        elif prop is False:
-            self.variable_colnames.remove('mh_count_length_interaction')
-
-        pos = ['up', 'down']
-        lengths = ['j_length', 'v_length']
-        mh_vars = []
-        for o in overlap_list:
-            for i in range(len(pos)):
-                if prop is True:
-                    var = f'mh_prop_{pos[i]}_overlap_{o}_{lengths[i]}_interaction'
-                else:
-                    var = f'mh_count_{pos[i]}_overlap_{o}_{lengths[i]}_interaction'
-                mh_vars.append(var)
-
-        self.variable_colnames = self.variable_colnames + mh_vars
-        return(self.variable_colnames)
-
-    def get_all_base_count_length_interaction_variables(self, side):
-        assert side + '_base_count_length_interaction' in self.variable_colnames, "base_count_length_interaction is not a variable column"
-        self.variable_colnames.remove(side + '_base_count_length_interaction')
-
-        bases = ['AT', 'GC']
-        trims = [t for t in self.choice_colname if 'trim' in t]
-        base_vars = [trim + '_' + side + '_base_count_' + base + '_prop' for trim in trims for base in bases if base + side != 'AT' + side]
-
-        interactions = []
-        for var in base_vars:
-            if 'v_trim' in var:
-                var = var + '_v_length_interaction'
-                interactions.append(var)
-            elif 'j_trim' in var:
-                var = var + '_j_length_interaction'
-                interactions.append(var)
-        self.variable_colnames = self.variable_colnames + interactions
-        return(self.variable_colnames)
+        if choice1:
+            self.choice1_variable_colnames = self.choice1_variable_colnames + mh_vars
+        if choice2:
+            self.choice2_variable_colnames = self.choice2_variable_colnames + mh_vars
+        return(self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames)
 
     def get_all_base_variables(self, side):
         assert side + '_base_count' in self.variable_colnames, "base_count is not a variable colname"
-        self.variable_colnames.remove(side + '_base_count')
+        variable= side + '_base_count'
+        self.variable_colnames.remove(variable)
+        choice1=False
+        choice2=False
+        if variable in self.choice1_variable_colnames:
+            choice1 = True
+            self.choice1_variable_colnames.remove(variable)
+        if variable in self.choice2_variable_colnames:
+            choice2 = True
+            self.choice2_variable_colnames.remove(variable)
+
         bases = ['AT', 'GC']
         trims = [t for t in self.choice_colname if 'trim' in t]
         base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT5end']
         self.variable_colnames = self.variable_colnames + base_vars
-        return(self.variable_colnames)
-
-    def get_all_base_prop_variables(self, side):
-        assert side + '_base_count_prop' in self.variable_colnames, "base_count_prop is not a variable colname"
-        self.variable_colnames.remove(side + '_base_count_prop')
-        bases = ['AT_prop', 'GC_prop']
-        trims = [t for t in self.choice_colname if 'trim' in t]
-        base_vars = [trim + '_' + side + '_base_count_' + base for trim in trims for base in bases if base + side != 'AT_prop5end']
-        self.variable_colnames = self.variable_colnames + base_vars
-        return(self.variable_colnames)
+        if choice1:
+            self.choice1_variable_colnames = self.choice1_variable_colnames + base_vars
+        if choice2:
+            self.choice2_variable_colnames = self.choice2_variable_colnames + base_vars
+        return(self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames)
 
     def get_all_motif_variables(self):
         assert 'motif' in self.variable_colnames, "motif is not a variable colname"
         assert self.left_nuc_motif_count > 0, "left motif size must be greater than zero"
         assert self.right_nuc_motif_count > 0, "right motif size must be greater than zero"
         self.variable_colnames.remove('motif')
+        choice1=False
+        choice2=False
+        if 'motif' in self.choice1_variable_colnames:
+            choice1 = True
+            self.choice1_variable_colnames.remove('motif')
+        if 'motif' in self.choice2_variable_colnames:
+            choice2 = True
+            self.choice2_variable_colnames.remove('motif')
+
         trims = [t for t in self.choice_colname if 'trim' in t]
         motif_vars_5 = [trim + '_motif_5end_pos' + str(pos) for trim in trims for pos in range(self.left_nuc_motif_count, 0, -1)]
         motif_vars_3 = [trim + '_motif_3end_pos' + str(pos) for trim in trims for pos in range(1, self.right_nuc_motif_count+1)]
         self.variable_colnames = self.variable_colnames + motif_vars_5 + motif_vars_3
-        return(self.variable_colnames)
+        if choice1:
+            self.choice1_variable_colnames = self.choice1_variable_colnames + motif_vars_5 + motif_vars_3
+        if choice2:
+            self.choice2_variable_colnames = self.choice2_variable_colnames + motif_vars_5 + motif_vars_3
+        return(self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames)
 
     def get_ligation_mh_variables(self):
         assert 'ligation_mh' in self.variable_colnames, "ligation_mh is not a varaible colname"
-        return(self.variable_colnames)
-
-    def get_all_length_variables(self):
-        assert 'length' in self.variable_colnames, "length is not a variable colname"
-        self.variable_colnames.remove('length')
-        trims = []
-        choices = [t for t in self.choice_colname if 'trim' in t]
-        for c in choices:
-            trims.append(c[0] + '_length')
-        self.variable_colnames = self.variable_colnames + trims
-        return(self.variable_colnames)
+        return(self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames)
 
     def process_model_parameters(self):
-        self.choice_colname = self.process_choice_colnames()
+        self.choice_colname, self.choice2_colname = self.process_choice_colnames()
         self.group_colname = self.process_group_colnames()
         if 'mh' in self.variable_colnames:
-            self.variable_colnames = self.get_all_mh_variables()
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_mh_variables()
         if 'interior_mh' in self.variable_colnames:
-            self.variable_colnames = self.get_all_mh_variables(overlap_list=[1, 2, 3, 4], pos = ['mid'])
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_mh_variables(overlap_list=[1, 2, 3, 4], pos = ['mid'])
         if 'mh_count' in self.variable_colnames:
-            self.variable_colnames = self.get_all_mh_variables(prop=False)
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_mh_variables(prop=False)
         if 'interior_mh_count' in self.variable_colnames:
-            self.variable_colnames = self.get_all_mh_variables(overlap_list=[1, 2, 3, 4], prop=False, pos = ['mid'])
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_mh_variables(overlap_list=[1, 2, 3, 4], prop=False, pos = ['mid'])
         if '5end_base_count' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_variables('5end')
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_base_variables('5end')
 
         if '3end_base_count' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_variables('3end')
-
-        if '5end_base_count_prop' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_prop_variables('5end')
-
-        if '3end_base_count_prop' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_prop_variables('3end')
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_base_variables('3end')
 
         if 'motif' in self.variable_colnames:
-            self.variable_colnames = self.get_all_motif_variables()
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_all_motif_variables()
 
-        if 'length' in self.variable_colnames:
-            self.variable_colnames = self.get_all_length_variables()
-
-        if 'mh_length_interaction' in self.variable_colnames:
-            self.variable_colnames = self.get_all_mh_length_interaction_variables()
-        if 'mh_count_length_interaction' in self.variable_colnames:
-            self.variable_colnames = self.get_all_mh_length_interaction_variables(prop=False)
-        if '3end_base_count_length_interaction' in self.variable_colnames:
-            self.variable_colnames = self.get_all_base_count_length_interaction_variables('3end')
         if 'ligation_mh' in self.variable_colnames:
-            self.variable_colnames = self.get_ligation_mh_variables()
+            self.variable_colnames, self.choice1_variable_colnames, self.choice2_variable_colnames = self.get_ligation_mh_variables()
 
         return(self)
