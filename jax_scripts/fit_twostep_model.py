@@ -12,7 +12,7 @@ import pickle
 from pandarallel import pandarallel
 from patsy.contrasts import Sum
 from sklearn.model_selection import GroupKFold
-from jax_model_classes import TwoStepConditionalLogisticRegressor, TwoStepConditionalLogisticRegressionPredictor
+from jax_twostep_model_classes import TwoStepDataTransformer, TwoStepConditionalLogisticRegressor, TwoStepConditionalLogisticRegressionPredictor
 from config import MOD_OUTPUT_PATH, MOD_PROJECT_PATH
 import variable_configuration
 
@@ -80,7 +80,7 @@ predictor = TwoStepConditionalLogisticRegressionPredictor(model=model,
                                                       group_colname = model_params.group_colname,
                                                       repeat_obs_colname = model_params.repeat_obs_colname,
                                                       choice_colname = model_params.choice_colname,
-                                                      choice2_colname = model.params.choice2_colname,
+                                                      choice2_colname = model_params.choice2_colname,
                                                       params = params)
 
 # write predictions and coefficients
