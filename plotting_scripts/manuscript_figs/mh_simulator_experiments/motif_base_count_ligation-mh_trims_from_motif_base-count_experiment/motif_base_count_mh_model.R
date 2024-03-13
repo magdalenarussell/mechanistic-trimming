@@ -28,51 +28,62 @@ MODEL_TYPE <<- 'motif_two-side-base-count-beyond_ligation-mh'
 
 L2 <<- 'False'
 
-LIGATION_PARAMS <<- c(1, 1.5, 2, 3)
-TRIMMING_PROB_MODEL <<- 'motif_two-side-base-count-beyond'
+LIGATION_PARAMS <<- c(0, 0.1, 1, 10)
+TRIMMING_PROB_MODEL <<- c('motif_two-side-base-count-beyond')
 
-for (param in LIGATION_PARAMS){
-    ANNOTATION_TYPE <<- 'igor_mh_sim_alpha'
-    old_annotation = ANNOTATION_TYPE
+for (trim_model in TRIMMING_PROB_MODEL){
+    for (param in LIGATION_PARAMS){
+        ANNOTATION_TYPE <<- 'igor_mh_sim_alpha'
+        old_annotation = ANNOTATION_TYPE
 
-    source(paste0(MOD_PROJECT_PATH, '/scripts/data_compilation_functions.R'))
-    source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
+        source(paste0(MOD_PROJECT_PATH, '/config/file_paths.R'))
+        source(paste0(MOD_PROJECT_PATH,'/plotting_scripts/plotting_functions.R'))
 
-    ANNOTATION_TYPE <<- paste0(old_annotation, '_from_', TRIMMING_PROB_MODEL, '_MHprob', param)
-    # Read in model coefficient data 
-    coef_path = get_model_coef_file_path(L2)
-    coefs = fread(coef_path)
+        ANNOTATION_TYPE <<- paste0(old_annotation, '_from_', trim_model, '_MHprob', param)
+        # Read in model coefficient data 
+        coef_path = get_model_coef_file_path(L2)
+        if (!file.exists(coef_path)){
+            assign(paste0('together', param), NULL)
 
-    fwrite(coefs, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/mh_simulator_experiments/motif_base_count_ligation-mh_trims_from_motif_base-count_experiment/coefs_MHprob', param, '.tsv'), sep = '\t')
-    v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.301, 0.301)) + ggtitle('   V-trimming coefficients')
-    j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.301, 0.301)) + ggtitle('   J-trimming coefficients')
+            next
+        }
+        coefs = fread(coef_path)
 
-    v_motif_heatmap = v_motif_heatmap + theme(legend.position = 'none') 
-    j_motif_heatmap = j_motif_heatmap + theme(legend.position = 'none') 
+        fwrite(coefs, paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/mh_simulator_experiments/motif_base_count_ligation-mh_trims_from_motif_base-count_experiment/coefs_MHprob', param, '_', trim_model, '_trim-model.tsv'), sep = '\t')
 
-    # plot base count heatmap of coefficients
-    v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.301, 0.301))
-    j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.301, 0.301))
+        v_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.301, 0.301)) + ggtitle('   V-trimming coefficients')
+        j_motif_heatmap = plot_motif_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.301, 0.301)) + ggtitle('   J-trimming coefficients')
 
-    v_base_count_heatmap = v_base_count_heatmap + theme(legend.position = 'none') 
-    j_base_count_heatmap = j_base_count_heatmap + theme(legend.position = 'none') 
+        v_motif_heatmap = v_motif_heatmap + theme(legend.position = 'none') 
+        j_motif_heatmap = j_motif_heatmap + theme(legend.position = 'none') 
 
-    # plot mh heatmap
-    mh_heatmap = plot_ligation_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.301, 0.301))
+        # plot base count heatmap of coefficients
+        v_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'v_trim'], with_values = FALSE, limits = c(-0.301, 0.301))
+        j_base_count_heatmap = plot_base_count_coefficient_heatmap_single_group(coefs[trim_type == 'j_trim'], with_values = FALSE, limits = c(-0.301, 0.301))
 
-    # isolate legend
-    legend = get_legend(mh_heatmap) 
-    mh_heatmap = mh_heatmap + theme(legend.position = 'none')
+        v_base_count_heatmap = v_base_count_heatmap + theme(legend.position = 'none') 
+        j_base_count_heatmap = j_base_count_heatmap + theme(legend.position = 'none') 
 
-    all = align_plots(v_motif_heatmap, j_motif_heatmap, v_base_count_heatmap, j_base_count_heatmap, mh_heatmap, legend, align = 'vh', axis = 'lbr')
+        # plot mh heatmap
+        mh_heatmap = plot_ligation_mh_coefficient_heatmap_single_group(coefs, with_values = FALSE, limits = c(-0.301, 0.301))
 
-    first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, rel_widths = c(1, 1), align = 'h')
-    second_grid = plot_grid(all[[3]], all[[4]], nrow = 1, rel_widths = c(1, 1), align = 'h')
-    third_grid = plot_grid(NULL, all[[5]], NULL, nrow = 1, rel_widths = c(0.1, 0.4, 0.1), align = 'h')
-    together = plot_grid(first_grid, NULL, second_grid, NULL, third_grid, NULL, legend, nrow = 7, rel_heights = c(1, 0.08, 1, 0.08, 0.75, 0.08, 0.2))
+        # isolate legend
+        legend = get_legend(mh_heatmap) 
+        mh_heatmap = mh_heatmap + theme(legend.position = 'none')
+
+        all = align_plots(v_motif_heatmap, j_motif_heatmap, v_base_count_heatmap, j_base_count_heatmap, mh_heatmap, legend, align = 'vh', axis = 'lbr')
+
+        first_grid = plot_grid(all[[1]], all[[2]], nrow = 1, rel_widths = c(1, 1), align = 'h')
+        second_grid = plot_grid(all[[3]], all[[4]], nrow = 1, rel_widths = c(1, 1), align = 'h')
+        third_grid = plot_grid(NULL, all[[5]], NULL, nrow = 1, rel_widths = c(0.1, 0.4, 0.1), align = 'h')
+        # name = paste0('ligation-MH prob effect = ', param)
+        assign(paste0('together', param), plot_grid(first_grid, NULL, second_grid, NULL, third_grid, NULL, legend, nrow = 7, rel_heights = c(1, 0.08, 1, 0.08, 0.75, 0.08, 0.2)))
+    }
+
+    together = plot_grid(together0, NULL, together0.1, NULL, together1, NULL, together10, NULL, ncol = 8, rel_widths = c(1, 0.10, 1, 0.10, 1, 0.10, 1, 0.10))
 
     # save plot
-    file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/mh_simulator_experiments/motif_base_count_ligation-mh_trims_from_motif_base-count_experiment/coef_heatmap_MHprob', param, '.pdf')
+    file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/mh_simulator_experiments/motif_base_count_ligation-mh_trims_from_motif_base-count_experiment/coef_heatmap_', trim_model, '_trim-model.pdf')
 
-    ggsave(file_name, plot = together, width = 18, height = 21.5, units = 'in', dpi = 750, device = cairo_pdf)
+    ggsave(file_name, plot = together, width = 72, height = 21.5, units = 'in', dpi = 750, device = cairo_pdf, limitsize=FALSE)
 }

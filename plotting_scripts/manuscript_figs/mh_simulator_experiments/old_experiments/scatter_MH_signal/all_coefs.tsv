@@ -1,7 +1,0 @@
-coefficient	ligation_param	trimming_prob_model	baseline_igor_norm_ligation-mh	motif_two-side-base-count-beyond_ligation-mh
-ligation_mh	1.5	igor	0.0681217342662629	0.0623721824278415
-ligation_mh	1.5	motif_two-side-base-count-beyond	0.074497985397754	0.0744358655452738
-ligation_mh	1.25	igor	0.0202122219236915	0.0136296385923267
-ligation_mh	1.25	motif_two-side-base-count-beyond	0.028662002214803	0.0267559423272402
-ligation_mh	1	igor	-0.115631041449215	-0.123351117325685
-ligation_mh	1	motif_two-side-base-count-beyond	-0.102430809006647	-0.108900456711843
