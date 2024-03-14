@@ -176,7 +176,7 @@ class TwoStepDataTransformer(DataTransformer):
 class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
     def __init__(self, training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params, l2kfold=10):
         super().__init__(training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params)
-        if training_df != None:
+        if training_df is not None:
             self.choice1_variable_matrix, self.choice2_variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix, self.mask_matrix = self.get_matrices(training_df, replace_object='training_df')
         self.initial_coefs = self.get_random_coefs()
         self.coefs = None

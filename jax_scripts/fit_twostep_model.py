@@ -68,7 +68,7 @@ print('initialized model')
 
 
 # train model
-model = model.train_model(l2=L2, maxiter=10000, tolerance=1e-8)
+model = model.train_model(l2=L2, maxiter=1000, tolerance=1e-8)
 print('trained model')
 
 # make predictions on full training dataset
