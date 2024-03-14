@@ -16,21 +16,22 @@ blas_set_num_threads(1)
 args = commandArgs(trailingOnly=TRUE)
 
 ANNOTATION_TYPE <<- 'igor_mh_sim_alpha'
-PARAM_GROUP <<- 'nonproductive_v-j_trim_ligation-mh'
+PARAM_GROUP <<- args[1]
+stopifnot(PARAM_GROUP %in% c('nonproductive_v-j_trim_ligation-mh', 'both_v-j_trim_ligation-mh'))
 source(paste0(MOD_PROJECT_PATH, '/scripts/param_groups/', PARAM_GROUP, '.R'))
-NCPU <<- as.numeric(args[1])
+NCPU <<- as.numeric(args[2])
 # 5' motif nucleotide count
 LEFT_NUC_MOTIF_COUNT <<- 1
 # 3' motif nucleotide count
 RIGHT_NUC_MOTIF_COUNT <<- 2
 MODEL_TYPE <<- 'motif_two-side-base-count-beyond_ligation-mh'
 
-TRIMMING_PROB_TYPE <<- args[2]
+TRIMMING_PROB_TYPE <<- args[3]
 stopifnot(TRIMMING_PROB_TYPE %in% c('igor', 'motif_two-side-base-count-beyond', 'uniform', 'mh_adjusted_motif-two-side-base-count-beyond'))
 
-LIGATION_MH_PARAM <<- as.numeric(args[3])
+LIGATION_MH_PARAM <<- as.numeric(args[4])
 
-source(paste0(MOD_PROJECT_PATH,'/analysis_scripts/ligation-mh_signal_simulator_scripts/ligation-mh_simulator_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/analysis_scripts/ligation-mh_signal_simulator_always-ligate/ligation-mh_simulator_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 
 # total number of sequences
@@ -114,7 +115,11 @@ motif_data = get_all_nuc_contexts(condensed_sim, 'mh_sim', gene_type = GENE_NAME
 cols2 = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh')
 tog = merge(motif_data, configs, by = cols2)
 
-filled_motif_data = fill_in_missing_possible_sites(configs, tog, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
+if (grepl('both', PARAM_GROUP)){
+    filled_motif_data = fill_in_missing_possible_sites(configs, tog, trim_type = TRIM_TYPE, gene_type = GENE_NAME)
+} else if (grepl('nonprod', PARAM_GROUP)){
+    filled_motif_data = filter_motif_data_for_possible_sites(tog)
+}
 
 processed = inner_aggregation_processing(filled_motif_data, gene_type = GENE_NAME, trim_type = TRIM_TYPE)
 processed = subset_processed_data(processed, trim_type = TRIM_TYPE, gene_type = GENE_NAME)

@@ -4,11 +4,12 @@ conda activate mechanistic-trimming_jax
 set -eu
 
 MOD_OUTPUT_PATH=$1
-NCPU=$2
-TRIM_SAMPLING_TYPE=$3
-LIGATION_MH_PARAM=$4
+PARAM_GROUP=$2
+NCPU=$3
+TRIM_SAMPLING_TYPE=$4
+LIGATION_MH_PARAM=$5
 
-param_path=$(python $PWD/mechanistic-trimming/analysis_scripts/ligation-mh_signal_simulator_scripts/get_igor_params.py $MOD_OUTPUT_PATH)
+param_path=$(python $PWD/mechanistic-trimming/analysis_scripts/ligation-mh_signal_simulator_always-ligate/get_igor_params.py $MOD_OUTPUT_PATH)
 echo "finished getting baseline igor parameters"
 
-Rscript $PWD/mechanistic-trimming/analysis_scripts/ligation-mh_signal_simulator_always-ligate_scripts/process_data_for_ligation-mh_signal_simulation.R $NCPU $TRIM_SAMPLING_TYPE $LIGATION_MH_PARAM
+Rscript $PWD/mechanistic-trimming/analysis_scripts/ligation-mh_signal_simulator_always-ligate/process_data_for_ligation-mh_signal_simulation.R $PARAM_GROUP $NCPU $TRIM_SAMPLING_TYPE $LIGATION_MH_PARAM

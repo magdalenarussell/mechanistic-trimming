@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 MOD_OUTPUT_PATH=sys.argv[1]
+print(MOD_OUTPUT_PATH)
 
 mdl_hb = p3.get_default_IgorModel("human", "tcr_alpha")
 
