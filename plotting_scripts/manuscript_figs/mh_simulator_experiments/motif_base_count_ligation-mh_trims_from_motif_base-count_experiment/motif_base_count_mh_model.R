@@ -28,7 +28,7 @@ MODEL_TYPE <<- 'motif_two-side-base-count-beyond_ligation-mh'
 
 L2 <<- 'False'
 
-LIGATION_PARAMS <<- c(0, 0.1, 1, 10)
+LIGATION_PARAMS <<- c(0, 0.1, 1)
 TRIMMING_PROB_MODEL <<- c('motif_two-side-base-count-beyond')
 
 for (trim_model in TRIMMING_PROB_MODEL){
@@ -80,10 +80,10 @@ for (trim_model in TRIMMING_PROB_MODEL){
         assign(paste0('together', param), plot_grid(first_grid, NULL, second_grid, NULL, third_grid, NULL, legend, nrow = 7, rel_heights = c(1, 0.08, 1, 0.08, 0.75, 0.08, 0.2)))
     }
 
-    together = plot_grid(together0, NULL, together0.1, NULL, together1, NULL, together10, NULL, ncol = 8, rel_widths = c(1, 0.10, 1, 0.10, 1, 0.10, 1, 0.10))
+    together = plot_grid(together0, NULL, together0.1, NULL, together1, NULL, ncol = 6, rel_widths = c(1, 0.10, 1, 0.10, 1, 0.10))
 
     # save plot
     file_name = paste0(MOD_PROJECT_PATH, '/plotting_scripts/manuscript_figs/mh_simulator_experiments/motif_base_count_ligation-mh_trims_from_motif_base-count_experiment/coef_heatmap_', trim_model, '_trim-model.pdf')
 
-    ggsave(file_name, plot = together, width = 72, height = 21.5, units = 'in', dpi = 750, device = cairo_pdf, limitsize=FALSE)
+    ggsave(file_name, plot = together, width = 54, height = 21.5, units = 'in', dpi = 750, device = cairo_pdf, limitsize=FALSE)
 }

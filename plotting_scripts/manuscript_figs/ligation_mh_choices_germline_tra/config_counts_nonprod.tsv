@@ -1,0 +1,11 @@
+zero_nonzero	count	type
+zero MH	1392813	Total possible configurations
+nonzero MH	443557	Total possible configurations
+zero MH	1392813	"Total possible annotations
+before MH adjustment"
+nonzero MH	0	"Total possible annotations
+before MH adjustment"
+zero MH	832111	"Total possible annotations
+after MH adjustment"
+nonzero MH	264001	"Total possible annotations
+after MH adjustment"
