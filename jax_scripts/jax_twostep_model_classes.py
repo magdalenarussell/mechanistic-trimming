@@ -12,6 +12,32 @@ from sklearn.model_selection import GroupKFold
 from jax_model_classes import DataTransformer
 
 class TwoStepDataTransformer(DataTransformer):
+    """
+    A specialized data transformer for handling two-step conditional logistic regression models. This class extends
+    the DataTransformer to preprocess data specifically for models that make two sequential choices with potentially
+    different sets of variables influencing each choice.
+
+    Inherits from:
+        DataTransformer: For base data preprocessing and transformation capabilities.
+
+    Args:
+        training_df (pd.DataFrame): DataFrame containing the training data.
+        variable_colnames (list of str): Names of the columns to be used as variables.
+        choice1_variable_colnames (list of str): Names of the columns for the first choice variables.
+        choice2_variable_colnames (list of str): Names of the columns for the second choice variables.
+        count_colname (str): Name of the column for count data.
+        group_colname (str): Name of the column for grouping data.
+        repeat_obs_colname (str): Name of the column indicating repeat observations.
+        choice_colname (str): Name of the column for the first choice data.
+        choice2_colname (str): Name of the column for the second choice data.
+        params (dict): Configuration parameters for preprocessing.
+
+    Attributes:
+        choice2_colname (str): Additional attribute to store the column name for the second choice.
+        choice1_variable_colnames (list of str): Stores the variable column names for the first choice.
+        choice2_variable_colnames (list of str): Stores the variable column names for the second choice.
+        coefs (ndarray): Placeholder for model coefficients, to be initialized or loaded separately.
+    """
     def __init__(self, training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params):
         super().__init__(training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
         self.choice2_colname = choice2_colname
@@ -27,10 +53,15 @@ class TwoStepDataTransformer(DataTransformer):
 
     def preprocess_data(self, df, pretrain=True):
         """
-        Preprocesses the training data, transforming columns as necessary.
+        Preprocesses the input DataFrame for the two-step modeling process, including filtering domain space,
+        transforming categorical variables, expanding multivariable columns into strings, and handling zero counts.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to be preprocessed.
+            pretrain (bool, optional): Indicates if preprocessing is for pretraining purposes. Defaults to True.
 
         Returns:
-            pd.DataFrame: The preprocessed training DataFrame.
+            pd.DataFrame: The preprocessed DataFrame, ready for modeling.
         """
         # filter for possible sites
         if 'ligation_mh' in self.input_choice_colname:
@@ -76,12 +107,17 @@ class TwoStepDataTransformer(DataTransformer):
 
     def get_matrices(self, df, pretrain=True, replace_object=None, return_df=False):
         """
-        Prepares data matrices for twostep modeling.
+        Prepares and returns data matrices necessary for the two-step modeling approach from the preprocessed DataFrame.
+
+        Args:
+            df (pd.DataFrame): The DataFrame from which matrices are to be generated, typically after preprocessing.
+            pretrain (bool, optional): Indicates if the matrix preparation is for pretraining purposes. Defaults to True.
+            replace_object (str, optional): Name of the attribute to replace with the preprocessed DataFrame. Defaults to None.
+            return_df (bool, optional): Flag indicating whether to return the preprocessed DataFrame along with the matrices. Defaults to False.
 
         Returns:
-            tuple: A tuple containing four data matrices - variables, counts, non-repeat groups, and mask.
+            tuple: Contains matrices for choice1 variables, choice2 variables, counts, non-repeat groups, and mask, along with the optionally returned preprocessed DataFrame.
         """
-        #TODO may need to create a second mask for nonproductive filtering!!!
         df = self.preprocess_data(df, pretrain)
 
         # Fill in missing counts with zero
@@ -174,6 +210,37 @@ class TwoStepDataTransformer(DataTransformer):
 
 
 class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
+    """
+    Implements a two-step conditional logistic regression model for scenarios where decisions are made in two sequential steps. This class extends TwoStepDataTransformer to include model fitting, prediction, and evaluation functionalities specific to the two-step conditional logistic regression approach.
+
+    Inherits from:
+        TwoStepDataTransformer: For preprocessing and transforming data suitable for two-step modeling.
+
+    Args:
+        training_df (pd.DataFrame): DataFrame containing the training data.
+        variable_colnames (list of str): List of column names to be used as variables in the model.
+        choice1_variable_colnames (list of str): List of column names for the first choice variables.
+        choice2_variable_colnames (list of str): List of column names for the second choice variables.
+        count_colname (str): Name of the column for count data.
+        group_colname (str): Name of the column for grouping data.
+        repeat_obs_colname (str): Name of the column indicating repeat observations.
+        choice_colname (str): Name of the column for the first choice data.
+        choice2_colname (str): Name of the column for the second choice data.
+        params (dict): Dictionary containing parameters for preprocessing and modeling.
+        l2kfold (int): Number of folds for L2 regularization hyperparameter tuning.
+
+    Attributes:
+        Inherits all attributes from TwoStepDataTransformer.
+        initial_coefs (ndarray): Initial coefficients for model fitting.
+        coefs (ndarray): Trained model coefficients.
+        training_info: Stores information about the training process including optimization details.
+        maxiter (int): Maximum number of iterations for the optimizer.
+        tolerance (float): Convergence tolerance for the optimizer.
+        step (float): Step size for the gradient descent optimization.
+        l2reg (float): L2 regularization strength.
+        l2kfold (int): Number of folds for L2 regularization hyperparameter tuning.
+        l2reg_grid (pd.DataFrame or None): DataFrame containing the results of the L2 regularization grid search.
+    """
     def __init__(self, training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params, l2kfold=10):
         super().__init__(training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params)
         if training_df is not None:
@@ -190,6 +257,18 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
 
     # Get probability for input parameters given coefficients
     def get_indiv_prob(self, choice1_variables, choice2_variables, mask, coefs=None):
+        """
+        Computes individual probabilities for the first and second choices given the input variables and coefficients.
+
+        Args:
+            choice1_variables (ndarray): Variables influencing the first choice.
+            choice2_variables (ndarray): Variables influencing the second choice.
+            mask (ndarray): Mask indicating valid data entries.
+            coefs (ndarray, optional): Coefficients for the logistic regression model. If None, uses the trained model coefficients.
+
+        Returns:
+            tuple: A tuple containing two ndarrays for the probabilities of the first and second choices, respectively.
+        """
         if coefs is None:
             coefs = self.coefs
 
@@ -215,6 +294,18 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         return choice1_probs, choice2_probs
 
     def get_joint_prob(self, choice1_variables, choice2_variables, mask, coefs=None):
+        """
+        Computes the joint probabilities for the two-step choices using the individual choice probabilities.
+
+        Args:
+            choice1_variables (ndarray): Variables influencing the first choice.
+            choice2_variables (ndarray): Variables influencing the second choice.
+            mask (ndarray): Mask indicating valid data entries.
+            coefs (ndarray, optional): Coefficients for the logistic regression model. If None, uses the trained model coefficients.
+
+        Returns:
+            ndarray: An array of joint probabilities for the two-step choices.
+        """
         choice1_probs, choice2_probs = self.get_indiv_prob(choice1_variables, choice2_variables, mask, coefs)
         choice1_probs_reshape = choice1_probs.reshape(choice1_probs.shape[0], choice1_probs.shape[1], 1)
         prob = choice1_probs_reshape * choice2_probs
@@ -223,14 +314,15 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
     # Get cross-entropy loss
     def cross_entropy(self, choice1_probs, choice2_probs, counts):
         """
-        Calculate the cross-entropy loss.
+        Calculates the cross-entropy loss for the two-step choice probabilities against the observed counts.
 
         Args:
-            probs (ndarray): Choice probabilities.
-            counts (ndarray): Counts of choices.
+            choice1_probs (ndarray): Probabilities for the first choice.
+            choice2_probs (ndarray): Probabilities for the second choice.
+            counts (ndarray): Observed counts for the choices.
 
         Returns:
-            float: Cross-entropy loss.
+            float: The computed cross-entropy loss.
         """
         counts1 = counts.sum(axis = 2)
         counts2 = counts
@@ -246,15 +338,15 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
 
     def l2regularization(self, coefs, size, l2reg):
         """
-        Compute L2 regularization term for only non-base-count and non-motif coefficients.
+        Computes the L2 regularization term for the model coefficients.
 
         Args:
-            coefs (ndarray): Coefficients for the logistic regression model.
-            size (int): Size of the training data
+            coefs (ndarray): Coefficients of the model.
+            size (int): The sample size.
             l2reg (float): L2 regularization strength.
 
         Returns:
-            float: L2 regularization term.
+            float: The L2 regularization term.
         """
         def calculate_coef_sum(choice_var_colnames, coefs):
             var_list = [var for var in choice_var_colnames if 'base_count' not in var or 'interaction' in var]
@@ -276,13 +368,14 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
     # Compute the loss function
     def loss_fn(self, coefs, choice1_variables, choice2_variables, counts, mask, l2reg=0):
         """
-        Compute the loss function for optimization.
+        Computes the total loss for the two-step conditional logistic regression model, including the cross-entropy loss and L2 regularization.
 
         Args:
             coefs (ndarray): Coefficients for the logistic regression model.
-            variables (ndarray): Data matrix of variables.
+            choice1_variables (ndarray): Data matrix for the first choice variables.
+            choice2_variables (ndarray): Data matrix for the second choice variables.
             counts (ndarray): Counts of choices.
-            mask (ndarray): Data matrix of mask.
+            mask (ndarray): Data matrix indicating valid data entries.
             l2reg (float): L2 regularization strength.
 
         Returns:
@@ -301,19 +394,20 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
 
     def fit(self, choice1_variable_matrix, choice2_variable_matrix, counts_matrix, mask_matrix, l2reg, maxiter, tol, step, initial_coefs):
         """
-        Fit the conditional logistic regression model using gradient descent.
+        Fits the two-step conditional logistic regression model to the data using an optimization algorithm.
 
         Args:
-            variable_matrix (ndarray): Data matrix of variables.
+            choice1_variable_matrix (ndarray), choice2_variable_matrix (ndarray): Data matrices for the first and second choice variables.
             counts_matrix (ndarray): Counts of choices.
-            mask_matrix (ndarray): Data matrix of masks.
+            mask_matrix (ndarray): Mask indicating valid data entries.
             l2reg (float): L2 regularization strength.
             maxiter (int): Maximum number of optimization iterations.
-            tolerance (float): tolerance for optimization.
-            initial_coefs (ndarray): Initial coefficients for model training.
+            tol (float): Convergence tolerance.
+            step (float): Step size for the optimization.
+            initial_coefs (ndarray): Initial coefficients for the model fitting.
 
         Returns:
-            OptimizationResult: Result of the optimization process.
+            The result of the optimization process, including the optimized coefficients.
         """
         assert counts_matrix is not None, "counts column is missing"
 
@@ -330,6 +424,17 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         return(res)
 
     def cv_loss(self, fold_count, l2reg):
+        """
+        Computes the cross-validation loss for the given L2 regularization strength across the specified number of folds.
+
+        Args:
+            fold_count (int): The number of folds to use for cross-validation.
+            l2reg (float): The L2 regularization strength to use when fitting the model on each fold.
+
+        Returns:
+            list of float: A list containing the cross-validation loss for each fold. This provides an estimate of
+                           the model's performance on unseen data when trained with the specified regularization strength.
+        """
         assert self.counts_matrix is not None, "counts column is needed"
 
         kf = GroupKFold(n_splits=fold_count)
@@ -396,15 +501,18 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
 
     def train_model(self, l2=False, l2reg_value=None, maxiter=None, tolerance=None, step=None):
         """
-        Train the conditional logistic regression model with optional L2 regularization.
+        Trains the two-step conditional logistic regression model using the specified parameters and optionally applies L2 regularization.
 
         Args:
-            l2 (bool): Whether to use L2 regularization.
-            maxiter (int, optional): Maximum number of optimization iterations. If not provided, the default value is used.
-            tolerance (float, optional): tolerance for optimization. If not provided, the default value is used.
+            l2 (bool): Indicates whether to apply L2 regularization during training.
+            l2reg_value (float, optional): Specifies the L2 regularization strength to be used if L2 is True. If None, the optimal value
+                                           determined by cross-validation is used.
+            maxiter (int, optional): The maximum number of iterations for the optimization algorithm.
+            tolerance (float, optional): The convergence tolerance for the optimization algorithm.
+            step (float, optional): The step size for the gradient descent optimization algorithm.
 
         Returns:
-            self: The trained ConditionalLogisticRegressor instance.
+            The instance itself with updated attributes, including the trained model coefficients.
         """
         assert self.counts_matrix is not None, "counts column is needed"
 
@@ -451,6 +559,21 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         return self
 
     def get_hessian(self, coefs, choice1_variables, choice2_variables, counts, mask, l2reg=0):
+        """
+        Computes the Hessian matrix of the loss function with respect to the model coefficients at the current coefficient values.
+        The Hessian matrix is used to calculate the covariance matrix of the coefficients for standard error estimation.
+
+        Args:
+            coefs (ndarray): The current model coefficients.
+            choice1_variables (ndarray): Data matrix for the first choice variables.
+            choice2_variables (ndarray): Data matrix for the second choice variables.
+            counts (ndarray): Counts of choices.
+            mask (ndarray): Mask indicating valid data entries.
+            l2reg (float): L2 regularization strength.
+
+        Returns:
+            ndarray: The Hessian matrix evaluated at the current coefficients.
+        """
          # Wrapper function
         def wrapper_loss_fn(coefs):
             return self.loss_fn(coefs, choice1_variables, choice2_variables, counts, mask, l2reg)
@@ -460,16 +583,51 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         return hessian_matrix
 
     def get_cov_matrix(self, coefs, choice1_variables, choice2_variables, counts, mask, l2reg=0):
+        """
+        Computes the covariance matrix of the model coefficients based on the inverse of the Hessian matrix. This is crucial for estimating the standard errors of the coefficients.
+
+        Args:
+            coefs (ndarray): The current model coefficients.
+            choice1_variables (ndarray), choice2_variables (ndarray): Data matrices for the first and second choice variables.
+            counts (ndarray): Counts of choices.
+            mask (ndarray): Mask indicating valid data entries.
+            l2reg (float): L2 regularization strength.
+
+        Returns:
+            ndarray: The covariance matrix of the model coefficients.
+        """
         hess_mat = self.get_hessian(coefs, choice1_variables, choice2_variables, counts, mask, l2reg)
         cov_matrix = jnp.linalg.inv(hess_mat)
         return cov_matrix
 
     def get_errors(self, coefs, choice1_variables, choice2_variables, counts, mask, l2reg=0):
+        """
+        Calculates the standard errors of the model coefficients using the diagonal of the covariance matrix.
+
+        Args:
+            coefs (ndarray): The current model coefficients.
+            choice1_variables (ndarray), choice2_variables (ndarray): Data matrices for the first and second choice variables.
+            counts (ndarray): Counts of choices.
+            mask (ndarray): Mask indicating valid data entries.
+            l2reg (float): L2 regularization strength.
+
+        Returns:
+            ndarray: An array of the standard errors of the model coefficients.
+        """
         cov = self.get_cov_matrix(coefs, choice1_variables, choice2_variables, counts, mask, l2reg)
         standard_errors = np.sqrt(np.diag(cov))
         return standard_errors
 
     def save_model(self, file_path):
+        """
+        Saves the trained model to a specified file path for later use or analysis. This method serializes the model instance, including its coefficients and configuration.
+
+        Args:
+            file_path (str): The path where the model should be saved.
+
+        Note:
+            Before saving, large attributes such as the training and validation data matrices are set to None to minimize the file size.
+        """
         assert self.coefs is not None, "need to train model before saving"
         self.training_df = None
         self.choice1_variable_matrix = None
@@ -483,28 +641,24 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
 
 class TwoStepConditionalLogisticRegressionPredictor(TwoStepDataTransformer):
     """
-    A class for making predictions using a trained conditional logistic regression model.
+    Enables prediction and evaluation for a trained Two-Step Conditional Logistic Regression model.
+    This class leverages a trained model to make predictions on new data and compute losses for evaluation.
+    It inherits data transformation capabilities to ensure data is in the correct format for prediction.
 
     Args:
-        model (ConditionalLogisticRegressor): A trained conditional logistic regression model.
-        variable_colnames (list): List of variable column names.
-        count_colname (str): The column name for the count variable.
-        group_colname (list): List of column names representing group identifiers.
-        choice_colname (list): List of column names representing choice identifiers.
+        model (TwoStepConditionalLogisticRegressor): A trained TwoStepConditionalLogisticRegressor model instance.
+        variable_colnames (list of str): List of all variable column names used in the model.
+        choice1_variable_colnames (list of str): Variable names influencing the first choice.
+        choice2_variable_colnames (list of str): Variable names influencing the second choice.
+        count_colname (str): Name of the column for count data.
+        group_colname (str): Name of the column for grouping data.
+        repeat_obs_colname (str): Name of the column indicating repeat observations.
+        choice_colname (str): Name of the column for the first choice data.
+        choice2_colname (str): Name of the column for the second choice data.
+        params (dict): Dictionary containing parameters for preprocessing and prediction.
 
     Attributes:
-        model (ConditionalLogisticRegressor): The trained conditional logistic regression model.
-        original_variable_colnames (list): List of original variable column names.
-        original_group_colname (list): List of original column names representing group identifiers.
-        original_choice_colname (list): List of original column names representing choice identifiers.
-        variable_matrix (numpy.ndarray): The matrix of predictor variables for prediction.
-        counts_matrix (numpy.ndarray): The matrix of counts for prediction.
-        nonrepeat_grp_matrix (numpy.ndarray): The matrix of non-repeated group identifiers.
-
-    Methods:
-        predict(): Make predictions using the model.
-        compute_loss(): Compute the loss for the given data.
-        get_coefficients(): Get the model coefficients as a dictionary.
+        Inherits all attributes from TwoStepDataTransformer and adds none specific to this class.
     """
     def __init__(self, model, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params):
         super().__init__(None, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params)
@@ -597,6 +751,27 @@ class TwoStepConditionalLogisticRegressionPredictor(TwoStepDataTransformer):
 
 
 class TwoStepConditionalLogisticRegressionEvaluator(TwoStepDataTransformer):
+    """
+    Evaluates a trained Two-Step Conditional Logistic Regression model by calculating log loss on both training and validation datasets. This class extends the TwoStepDataTransformer for consistent data preparation before evaluation and supports loading a saved model for evaluation purposes.
+
+    Args:
+        model_path (str): Path to the saved trained model file.
+        params (dict): Parameters used for data transformation and evaluation.
+        training_df (pd.DataFrame, optional): The DataFrame containing the training data.
+        validation_df (pd.DataFrame, optional): The DataFrame containing the validation data for evaluation.
+
+    Attributes:
+        model (TwoStepConditionalLogisticRegressor): The trained Two-Step Conditional Logistic Regression model.
+        log_loss (float, optional): Log loss on the training data, initialized as None.
+        expected_log_loss (float, optional): Expected log loss calculated through cross-validation, initialized as None.
+        validation_df (pd.DataFrame): DataFrame containing validation data.
+
+    Methods:
+        calculate_log_loss: Calculates log loss on the training dataset.
+        calculate_expected_log_loss: Estimates log loss on the training dataset using cross-validation.
+        calculate_validation_log_loss: Calculates log loss on the validation dataset.
+        compile_evaluation_results_df: Compiles evaluation results into a DataFrame.
+    """
     def __init__(self, model_path, params, training_df = None, validation_df = None):
         self.model = self.load_model(model_path)
         self.model.training_df = training_df
@@ -608,12 +783,27 @@ class TwoStepConditionalLogisticRegressionEvaluator(TwoStepDataTransformer):
         self.expected_log_loss = None
 
     def load_model(self, file_path):
+        """
+        Loads a trained Two-Step Conditional Logistic Regression model from a specified file path.
+
+        Args:
+            file_path (str): The file path to the saved model.
+
+        Returns:
+            TwoStepConditionalLogisticRegressor: The loaded trained model.
+        """
         with open(file_path, 'rb') as file:
             model = dill.load(file)
         assert model.coefs is not None, "model is not trained"
         return(model)
 
     def calculate_log_loss(self):
+        """
+        Calculates the log loss on the training dataset using the loaded model's coefficients.
+
+        Returns:
+            float: The log loss value for the training dataset.
+        """
         assert self.model.training_df is not None, 'No input training dataframe provided'
         choice1_variable_matrix, choice2_variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.model.training_df, pretrain=False)
 
@@ -628,6 +818,15 @@ class TwoStepConditionalLogisticRegressionEvaluator(TwoStepDataTransformer):
         return(loss)
 
     def calculate_expected_log_loss(self, fold_count=20):
+        """
+        Calculates the expected log loss on the training dataset using cross-validation. This provides an estimate of the model's performance.
+
+        Args:
+            fold_count (int, optional): The number of folds to use for cross-validation. Default is 20.
+
+        Returns:
+            float: The average log loss across all cross-validation folds.
+        """
         assert self.model.training_df is not None, 'No input training dataframe provided'
         choice1_variable_matrix, choice2_variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.model.training_df, pretrain=False)
 
@@ -644,6 +843,12 @@ class TwoStepConditionalLogisticRegressionEvaluator(TwoStepDataTransformer):
         return(e_loss)
 
     def calculate_validation_log_loss(self):
+        """
+        Calculates the log loss on the validation dataset using the loaded model's coefficients.
+
+        Returns:
+            float: The log loss value for the validation dataset.
+        """
         assert self.validation_df is not None, 'No input validation dataframe provided'
         choice1_variable_matrix, choice2_variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.validation_df, pretrain=False)
 
@@ -657,6 +862,16 @@ class TwoStepConditionalLogisticRegressionEvaluator(TwoStepDataTransformer):
         return(loss)
 
     def compile_evaluation_results_df(self, calculate_validation_loss = False, calculate_expected_loss=False):
+        """
+        Compiles the evaluation results, including training log loss, expected log loss, and validation log loss, into a DataFrame for easy comparison and analysis.
+
+        Args:
+            calculate_validation_loss (bool, optional): If True, calculates and includes the log loss on the validation dataset in the results. Default is False.
+            calculate_expected_loss (bool, optional): If True, calculates and includes the expected log loss using cross-validation in the results. Default is False.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the compiled evaluation results and the model parameters used during training and evaluation.
+        """
         result = {'training_annotation_type':[self.params.annotation_type],
                   'productivity':[self.params.productivity],
                   'motif_length_5_end':[self.params.left_nuc_motif_count],

@@ -12,42 +12,20 @@ from sklearn.model_selection import GroupKFold
 
 class DataPreprocessor():
     """
-    A class for preprocessing and transforming data.
-
-    Args:
-        training_df (pd.DataFrame): The training DataFrame.
-        variable_colnames (list): List of variable column names.
-        count_colname (str): The column name for the count variable.
-        group_colname (str): The column name representing group identifiers.
-        repeat_obs_colname (str): The column name representing repeated observation identifiers.
-        choice_colname (str): The column name representing choice identifiers.
+    A class for preprocessing training data for conditional logit models,
+    specifically designed to handle transformations and encoding of categorical
+    variables, expansion of multivariable columns, and filtering based on various criteria.
 
     Attributes:
-        training_df (pd.DataFrame): The training DataFrame.
-        variable_colnames (list): List of variable column names.
-        count_colname (str): The column name for the count variable.
-        group_colname (str): The column name representing group identifiers.
-        repeat_obs_colname (str): The column name representing repeated observation identifiers.
-        choice_colname (str): The column name representing choice identifiers.
-
-    Methods:
-        get_mapping_dict(training_df, col):
-            Create a mapping dictionary for unique values in a column.
-
-        transform_categorical_response_vars(training_df, col, new_col):
-            Transform a categorical variable into integers.
-
-        get_contrast_matrix(training_df, col):
-            Get the contrast matrix for categorical variables.
-
-        get_dropped_contrast_var(training_df, original_col):
-            Get the names of dropped contrast variables after transformation.
-
-        transform_categorical_vars(training_df, col):
-            Transform categorical variable columns into contrast columns.
-
-        expand_multivariable(training_df, col, new_col):
-            Expand multi-variable columns into a single string column.
+        training_df (pd.DataFrame): DataFrame containing the training data.
+        variable_colnames (list): List of column names to be used as variables in the model.
+        choice1_variable_colnames (list): List of column names representing the first choice variables, if applicable.
+        choice2_variable_colnames (list): List of column names representing the second choice variables, if applicable.
+        count_colname (str): Name of the column containing count data.
+        group_colname (str): Name of the column used to group the data.
+        repeat_obs_colname (str): Name of the column indicating repeated observations.
+        choice_colname (str): Name of the column containing choice data.
+        params (dict): Dictionary containing parameters for preprocessing.
     """
     def __init__(self, training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params):
         self.training_df = training_df
@@ -62,14 +40,14 @@ class DataPreprocessor():
 
     def get_mapping_dict(self, training_df, col):
         """
-        Create a mapping dictionary for unique values in a column.
+        Generates a mapping dictionary that maps each unique value in a specified column to a unique integer.
 
-        Args:
-            training_df (pd.DataFrame): The DataFrame containing the data.
-            col (str): The name of the column for which the mapping is generated.
+        Parameters:
+            training_df (pd.DataFrame): DataFrame containing the data.
+            col (str): Name of the column for which to generate the mapping.
 
         Returns:
-            dict: A dictionary mapping unique values to their corresponding indices.
+            dict: A dictionary where keys are unique values from `col` and values are unique integers.
         """
         # Create a mapping dictionary for unique values in a column
         unique = sorted(list(pd.unique(training_df[col])))
@@ -151,14 +129,15 @@ class DataPreprocessor():
 
     def transform_categorical_vars(self, training_df, col, pretrain=True):
         """
-        Transform categorical variable columns into contrast columns.
+        Transforms categorical variables in the DataFrame into contrast columns for model training.
 
-        Args:
-            training_df (pd.DataFrame): The DataFrame containing the data.
-            col (str): The name of the categorical column to be transformed.
+        Parameters:
+            training_df (pd.DataFrame): DataFrame containing the data.
+            col (str): Name of the categorical column to be transformed.
+            pretrain (bool, optional): If set to True, performs transformations assuming pretraining. Defaults to True.
 
         Returns:
-            pd.DataFrame: The DataFrame with categorical variables transformed into contrast columns.
+            pd.DataFrame: Updated DataFrame with categorical variables transformed into contrast columns.
         """
         assert col in self.variable_colnames, "Input column name is not a variable name"
         first = training_df[col].iloc[0]
@@ -196,6 +175,13 @@ class DataPreprocessor():
         return training_df
 
     def check_within_set_variance(self, training_df, pretrain=True):
+         """
+        Checks and removes variables with insufficient within-set variance, modifying the class attribute lists of variable names.
+
+        Parameters:
+            training_df (pd.DataFrame): DataFrame containing the data.
+            pretrain (bool, optional): Determines if the check is performed under the assumption of pretraining. Defaults to True.
+        """
         if pretrain:
             for col in self.variable_colnames:
                 var_counts = training_df.groupby([self.group_colname, col]).size().reset_index(name = 'N')
@@ -213,6 +199,15 @@ class DataPreprocessor():
 
 
     def remove_zero_set_counts(self, training_df):
+        """
+        Removes groups from the DataFrame that have zero counts in the specified count column.
+
+        Parameters:
+            training_df (pd.DataFrame): DataFrame containing the data.
+
+        Returns:
+            pd.DataFrame: Updated DataFrame with groups having zero counts removed.
+        """
         count_sums = training_df.groupby([self.group_colname])[self.count_colname].sum()
         if 0 in count_sums.unique():
             zeros = count_sums[count_sums == 0]
@@ -222,6 +217,15 @@ class DataPreprocessor():
         return(training_df)
 
     def filter_input_domain_space(self, df):
+        """
+        Filters the input DataFrame based on a predefined domain space, ensuring data compatibility.
+
+        Parameters:
+            df (pd.DataFrame): DataFrame containing the data to be filtered.
+
+        Returns:
+            pd.DataFrame: Filtered DataFrame that fits within the specified domain space.
+        """
         domain_file = self.params.R_input_domain_data_path()
         domain_data = pd.read_csv(domain_file, sep = '\t')
 
@@ -245,36 +249,25 @@ class DataPreprocessor():
 
 class DataTransformer(DataPreprocessor):
     """
-    A class for data preprocessing and transformation.
+    A class for transforming and preprocessing data for modeling.
+    This class introduces methods for initializing model coefficients randomly,
+    preprocessing data (including categorical variable transformation and expansion of multivariable
+    columns), and preparing data matrices for model input.
+
+    Attributes inherited from DataPreprocessor are complemented with:
+    - original_variable_colnames (list): Original variable column names before transformation.
+    - original_group_colname (str): Original group identifier column name.
+    - original_choice_colname (str): Original choice identifier column name.
+    - coefs (ndarray): Model coefficients, initialized as None and can be set using get_random_coefs or externally.
 
     Args:
-        training_df (pd.DataFrame): The training DataFrame.
-        variable_colnames (list): List of variable column names.
-        count_colname (str): The column name for the count variable.
-        group_colname (str): The column name representing group identifiers.
-        repeat_obs_colname (str): The column name representing repeated observation identifiers.
-        choice_colname (str): The column name representing choice identifiers.
-
-    Attributes:
-        original_variable_colnames (list): List of original variable column names.
-        original_group_colname (str): The original column name representing group identifiers.
-        original_choice_colname (str): The original column name representing choice identifiers.
-        coefs (ndarray): Coefficients for the model.
-
-    Methods:
-        get_random_coefs():
-            Generates random coefficients for model initialization.
-
-        preprocess_data():
-            Preprocesses the training data, transforming columns as necessary.
-
-        get_matrices():
-            Prepares data matrices for modeling.
-
-        get_coefficients(coefs=None):
-            Retrieves model coefficients as a dictionary.
-
-    Inherits Attributes and Methods from DataPreprocessor class.
+        training_df (pd.DataFrame): The DataFrame containing training data.
+        variable_colnames (list of str): List of variable column names to be used in the model.
+        count_colname (str): Column name for count data, used in count-based models.
+        group_colname (str): Column name for group identifiers.
+        repeat_obs_colname (str): Column name for identifiers of repeated observations.
+        choice_colname (str): Column name for choice identifiers.
+        params (dict): Additional parameters for data preprocessing and transformation.
     """
     def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params):
         super().__init__(training_df, variable_colnames, None, None, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
@@ -300,10 +293,17 @@ class DataTransformer(DataPreprocessor):
 
     def preprocess_data(self, df, pretrain=True):
         """
-        Preprocesses the training data, transforming columns as necessary.
+        Applies a series of preprocessing steps to the provided DataFrame, preparing it for model training.
+        The preprocessing steps include filtering domain space, expanding multivariable columns,
+        removing entries with zero counts, and transforming categorical variables into numerical
+        or encoded forms as required.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to be preprocessed.
+            pretrain (bool, optional): Flag indicating whether preprocessing is for pretraining purposes. Defaults to True.
 
         Returns:
-            pd.DataFrame: The preprocessed training DataFrame.
+            pd.DataFrame: The preprocessed DataFrame, ready for modeling.
         """
         # filter for possible sites
         if 'ligation_mh' in self.input_choice_colname:
@@ -341,16 +341,39 @@ class DataTransformer(DataPreprocessor):
         return(df)
 
     def reset_weighted_observations(self, counts_mat):
+        """
+        Normalizes the counts matrix so that the sum of all counts equals 1, effectively resetting the observations
+        to a weighted distribution. This function is useful for adjusting the counts data for modeling purposes,
+        ensuring that the data represents probabilities or normalized weights rather than absolute counts.
+
+        Args:
+            counts_mat (ndarray): A NumPy array containing counts data. This matrix should have dimensions
+                                  corresponding to the number of groups by the number of choices.
+
+        Returns:
+            ndarray: A NumPy array of the same shape as `counts_mat`, with values normalized so that
+                     the total sum of the matrix equals 1.
+        """
         mat_sum = jnp.nansum(counts_mat)
         reset_mat = counts_mat/mat_sum
         return(reset_mat)
 
     def get_matrices(self, df, pretrain=True, replace_object=None, return_df=False):
         """
-        Prepares data matrices for modeling.
+        Prepares and returns data matrices necessary for modeling from the preprocessed DataFrame.
+
+        The method prepares matrices for variables, counts, non-repeat groups, and a mask indicating valid data points,
+        which are essential for training count-based and choice-based models.
+
+        Args:
+            df (pd.DataFrame): The DataFrame from which matrices are to be generated, typically after preprocessing.
+            pretrain (bool, optional): Indicates if the matrix preparation is for pretraining purposes. Defaults to True.
+            replace_object (str, optional): Name of the attribute to replace with the preprocessed DataFrame. Defaults to None.
+            return_df (bool, optional): Flag indicating whether to return the preprocessed DataFrame along with the matrices. Defaults to False.
 
         Returns:
-            tuple: A tuple containing four data matrices - variables, counts, non-repeat groups, and mask.
+            tuple: Contains the variable matrix, counts matrix, non-repeat groups matrix, and mask matrix as NumPy arrays.
+                   Optionally returns the preprocessed DataFrame if `return_df` is True.
         """
         df = self.preprocess_data(df, pretrain)
 
@@ -409,6 +432,28 @@ class DataTransformer(DataPreprocessor):
             return mat, counts_mat, nonrepeat_groups_mat, mask_mat
 
     def get_coefficients(self, coefs=None):
+        """
+        Retrieves the model coefficients, optionally using an external set of coefficients. This method formats
+        the coefficients into a structured dictionary, including both the coefficient values and their standard errors,
+        if available. It also adjusts for dropped contrast variables by computing the implied value of the base category
+        from the contrasted variables.
+
+        Args:
+            coefs (ndarray, optional): An array of coefficients to be used instead of the instance's attribute.
+                                       If not provided, the method will use the `self.coefs` attribute. Defaults to None.
+
+        Returns:
+            list of dict: A list where each element is a dictionary containing the 'coefficient' name, its 'value',
+                          and its 'error'. The list includes one dictionary for each model variable, including
+                          inferred coefficients for base categories of categorical variables transformed into contrasts.
+
+        Notes:
+            - The method assumes that `self.coefs` and `self.standard_errors` are properly initialized and match
+              the dimensions of the model variables.
+            - For categorical variables transformed into contrasts, the base category's coefficient is computed
+              as the negative sum of the contrast coefficients, and its error is set to None since it's derived
+              indirectly.
+        """
         if coefs is None:
             coefs = self.coefs
         coefs = coefs.flatten().tolist()
@@ -429,10 +474,13 @@ class DataTransformer(DataPreprocessor):
 
     def get_coefficients_df(self):
         """
-        Get the model coefficients as a DataFrame.
+        Constructs and returns a DataFrame of model coefficients, including additional information like base, position, and side
+        derived from the coefficient names.
+
+        This method simplifies the interpretation of coefficients by parsing their names and organizing them into a structured format.
 
         Returns:
-            dict: A dictionary containing variable names as keys and their corresponding coefficients as values.
+            pd.DataFrame: A DataFrame containing detailed information on each model coefficient, including its value and error if available.
         """
         df = pd.DataFrame(self.get_coefficients())
         df.reset_index(drop=True, inplace=True)
@@ -476,58 +524,46 @@ class DataTransformer(DataPreprocessor):
 
 class ConditionalLogisticRegressor(DataTransformer):
     """
-    A class for training a conditional logistic regression model and performing cross-validation for hyperparameter tuning.
+    Implements a conditional logistic regression model, extending the DataTransformer class
+    with functionalities specific to logistic regression, including fitting the model using
+    gradient descent, cross-validation for hyperparameter tuning, and model evaluation.
 
     Args:
         training_df (pd.DataFrame): The training DataFrame.
-        variable_colnames (list): List of variable column names.
-        count_colname (str): The column name for the count variable.
-        group_colname (str): The column name representing group identifiers.
-        repeat_obs_colname (str): The column name representing repeated observation identifiers.
-        choice_colname (str): The column name representing choice identifiers.
-        l2kfold (int): Number of folds for L2 regularization hyperparameter tuning.
+        variable_colnames (list of str): List of variable column names.
+        count_colname (str): Name of the column representing count data.
+        group_colname (str): Name of the column representing group identifiers.
+        repeat_obs_colname (str): Name of the column representing repeated observation identifiers.
+        choice_colname (str): Name of the column representing choice identifiers.
+        params (dict): Dictionary of parameters for data preprocessing and transformation.
+        l2kfold (int): Number of folds for L2 regularization hyperparameter tuning. Default is 10.
 
     Attributes:
-        original_variable_colnames (list): List of original variable column names.
-        original_group_colname (str): The original column name representing group identifiers.
-        original_choice_colname (str): The original column name representing choice identifiers.
-        variable_matrix (ndarray): Data matrix of variables.
-        counts_matrix (ndarray): Data matrix of counts.
-        nonrepeat_grp_matrix (ndarray): Data matrix of non-repeating groups.
-        initial_coefs (ndarray): Initial coefficients for model training.
-        coefs (ndarray): Trained model coefficients.
-        training_info: Information about the training process.
-        maxiter (int): Maximum number of iterations for optimization.
-        tolerance (float): tolerance for optimization.
-        l2reg (float): L2 regularization strength.
+        Inherits all attributes from DataTransformer.
+        l2reg (float): L2 regularization strength. Default is 0.
         l2kfold (int): Number of folds for L2 regularization hyperparameter tuning.
+        l2reg_grid (pd.DataFrame): DataFrame containing the grid search results for L2 regularization tuning.
+        maxiter (int): Maximum number of iterations for the optimization algorithm. Default is 1000.
+        tolerance (float): Tolerance for convergence in the optimization algorithm. Default is 1e-6.
+        step (float): Step size for the gradient descent optimization. Default is 0.1.
+        coefs (ndarray): Fitted coefficients of the logistic regression model.
+        training_info: Stores information returned by the optimizer during model fitting.
+        cov_matrix (ndarray): Covariance matrix of the model coefficients, computed from the Hessian matrix.
+        standard_errors (ndarray): Standard errors of the model coefficients, derived from the covariance matrix.
 
     Methods:
-        get_prob(variables, mask, coefs=None):
-            Computes choice probabilities for given variables and coefficients.
-
-        cross_entropy(probs, counts):
-            Calculates the cross-entropy loss.
-
-        l2regularization(coefs, size, l2reg):
-            Computes L2 regularization term.
-
-        loss_fn(coefs, variables, counts, mask, l2reg=0):
-            Computes the loss function for optimization.
-
-        fit(variable_matrix, counts_matrix, mask_matrix, l2reg, maxiter, tolerance, initial_coefs):
-            Fits the conditional logistic regression model using gradient descent.
-
-        grid_search_cv(l2kfold, l2reg_values=[10**i for i in range(-2, 8)] + [0]):
-            Performs grid search cross-validation for hyperparameter tuning.
-
-        get_l2reg():
-            Determines the optimal L2 regularization strength.
-
-        train_model(l2=False, maxiter=None, tolerance=None):
-            Trains the conditional logistic regression model with optional L2 regularization.
-
-    Inherits Attributes and Methods from DataTransformer class.
+        fit: Fits the conditional logistic regression model using gradient descent.
+        get_prob: Computes choice probabilities for given variables and coefficients.
+        cross_entropy: Calculates the cross-entropy loss.
+        l2regularization: Computes the L2 regularization term.
+        loss_fn: Computes the loss function for optimization, including cross-entropy and L2 regularization.
+        grid_search_cv: Performs grid search cross-validation for hyperparameter tuning of L2 regularization.
+        get_l2reg: Determines the optimal L2 regularization strength based on cross-validation.
+        train_model: Trains the conditional logistic regression model, optionally with L2 regularization.
+        get_hessian: Computes the Hessian matrix of the loss function with respect to the coefficients.
+        get_cov_matrix: Computes the covariance matrix of the model coefficients from the Hessian matrix.
+        get_errors: Computes the standard errors of the model coefficients from the covariance matrix.
+        save_model: Saves the model to a file for later use.
     """
     def __init__(self, training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params, l2kfold=10):
         super().__init__(training_df, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
@@ -645,7 +681,7 @@ class ConditionalLogisticRegressor(DataTransformer):
             mask_matrix (ndarray): Data matrix of masks.
             l2reg (float): L2 regularization strength.
             maxiter (int): Maximum number of optimization iterations.
-            tolerance (float): tolerance for optimization.
+            tol (float): tolerance for optimization.
             initial_coefs (ndarray): Initial coefficients for model training.
 
         Returns:
@@ -665,6 +701,21 @@ class ConditionalLogisticRegressor(DataTransformer):
         return(res)
 
     def cv_loss(self, fold_count, l2reg):
+        """
+        Computes the cross-validation loss for a given L2 regularization strength across a specified number of folds. 
+        This method splits the data into training and validation sets according to the fold count, trains the model on 
+        each training set while applying the specified L2 regularization strength, and then calculates and returns the 
+        loss on each validation set.
+
+        Args:
+            fold_count (int): The number of folds to use for cross-validation.
+            l2reg (float): The L2 regularization strength to use when training the model.
+
+        Returns:
+            list of float: A list containing the cross-validation loss for each fold. The length of the list will 
+                           be equal to `fold_count`. Each element in the list represents the loss computed on the 
+                           validation set of the corresponding fold.
+        """
         assert self.counts_matrix is not None, "counts column is needed"
 
         kf = GroupKFold(n_splits=fold_count)
@@ -730,15 +781,28 @@ class ConditionalLogisticRegressor(DataTransformer):
 
     def train_model(self, l2=False, l2reg_value=None, maxiter=None, tolerance=None, step=None):
         """
-        Train the conditional logistic regression model with optional L2 regularization.
+        Trains the conditional logistic regression model with optional L2 regularization. This method allows for the model
+        to be trained with or without L2 regularization, and various training parameters can be specified to control the
+        optimization process.
 
         Args:
-            l2 (bool): Whether to use L2 regularization.
-            maxiter (int, optional): Maximum number of optimization iterations. If not provided, the default value is used.
-            tolerance (float, optional): tolerance for optimization. If not provided, the default value is used.
+            l2 (bool): Indicates whether L2 regularization should be applied during model training. If `True`, L2
+                       regularization is applied using either the specified `l2reg_value` or an optimal value determined
+                       via cross-validation. Default is `False`, indicating no regularization.
+            l2reg_value (float, optional): Specifies the L2 regularization strength to be used if L2 regularization is
+                                           enabled. If `None` and `l2` is `True`, the method performs cross-validation to
+                                           determine the optimal regularization strength. Default is `None`.
+            maxiter (int, optional): The maximum number of iterations for the optimization algorithm. If not provided,
+                                     the model uses a default value.
+            tolerance (float, optional): The convergence tolerance for the optimization algorithm. Optimization stops when
+                                         the loss value change is less than this tolerance between iterations. If not
+                                         provided, the model uses a default value.
+            step (float, optional): The step size for the gradient descent optimization algorithm. Only applicable if
+                                    a gradient descent-based optimizer is used. If not provided, the model uses a default value.
 
         Returns:
-            self: The trained ConditionalLogisticRegressor instance.
+            self: Returns an instance of `ConditionalLogisticRegressor` after training. The trained coefficients can
+                  be accessed through the `coefs` attribute of the instance.
         """
         assert self.counts_matrix is not None, "counts column is needed"
 
@@ -784,6 +848,21 @@ class ConditionalLogisticRegressor(DataTransformer):
         return self
 
     def get_hessian(self, coefs, variables, counts, mask, l2reg=0):
+        """
+        Computes the Hessian matrix of the loss function with respect to the model coefficients. This matrix is
+        crucial for understanding the curvature of the loss function around the optimal coefficients and is used
+        to compute the covariance matrix of the coefficients.
+
+        Args:
+            coefs (ndarray): A NumPy array containing the current coefficients of the model.
+            variables (ndarray): A NumPy array containing the predictor variables.
+            counts (ndarray): A NumPy array containing the counts of each choice.
+            mask (ndarray): A NumPy array indicating valid choices with a boolean value.
+            l2reg (float, optional): The strength of L2 regularization. Default is 0.
+
+        Returns:
+            ndarray: The Hessian matrix of the loss function evaluated at the given coefficients.
+        """
          # Wrapper function
         def wrapper_loss_fn(coefs):
             return self.loss_fn(coefs, variables, counts, mask, l2reg)
@@ -793,16 +872,56 @@ class ConditionalLogisticRegressor(DataTransformer):
         return hessian_matrix
 
     def get_cov_matrix(self, coefs, variables, counts, mask, l2reg=0):
+        """
+        Computes the covariance matrix of the model coefficients, derived from the inverse of the Hessian matrix.
+
+        Args:
+            coefs (ndarray): A NumPy array containing the current coefficients of the model.
+            variables (ndarray): A NumPy array containing the predictor variables.
+            counts (ndarray): A NumPy array containing the counts of each choice.
+            mask (ndarray): A NumPy array indicating valid choices with a boolean value.
+            l2reg (float, optional): The strength of L2 regularization. Default is 0.
+
+        Returns:
+            ndarray: The covariance matrix of the model coefficients.
+        """
         hess_mat = self.get_hessian(coefs, variables, counts, mask, l2reg)
         cov_matrix = jnp.linalg.inv(hess_mat)
         return cov_matrix
 
     def get_errors(self, coefs, variables, counts, mask, l2reg=0):
+        """
+        Computes the standard errors of the model coefficients, which are derived from the square root of the diagonal
+        elements of the covariance matrix. These standard errors are essential for assessing the statistical significance
+        of the coefficients.
+
+        Args:
+            coefs (ndarray): A NumPy array containing the current coefficients of the model.
+            variables (ndarray): A NumPy array containing the predictor variables.
+            counts (ndarray): A NumPy array containing the counts of each choice.
+            mask (ndarray): A NumPy array indicating valid choices with a boolean value.
+            l2reg (float, optional): The strength of L2 regularization. Default is 0.
+
+        Returns:
+            ndarray: An array containing the standard errors of the model coefficients.
+        """
         cov = self.get_cov_matrix(coefs, variables, counts, mask, l2reg)
         standard_errors = np.sqrt(np.diag(cov))
         return standard_errors
 
     def save_model(self, file_path):
+        """
+        Saves the current model to a file. This includes the model coefficients and configuration but excludes
+        the training data and matrices to minimize file size.
+
+        Args:
+            file_path (str): The path to the file where the model should be saved.
+
+        Note:
+            - Before saving, the method removes large attributes such as the training data and matrices from the model
+              to prevent excessive file sizes. These attributes must be reloaded or recomputed for further model use.
+              be overwritten.
+        """
         assert self.coefs is not None, "need to train model before saving"
         self.training_df = None
         self.variable_matrix = None
@@ -815,28 +934,31 @@ class ConditionalLogisticRegressor(DataTransformer):
 
 class ConditionalLogisticRegressionPredictor(DataTransformer):
     """
-    A class for making predictions using a trained conditional logistic regression model.
+    Facilitates making predictions and computing loss using a pre-trained Conditional Logistic Regression model
+    on new or unseen data. This class handles the preprocessing of new data to match the format expected by the
+    model and computes probabilities and loss values using the model's coefficients.
+
+    Inherits from:
+        DataTransformer: Inherits data transformation capabilities for consistent preprocessing.
 
     Args:
-        model (ConditionalLogisticRegressor): A trained conditional logistic regression model.
-        variable_colnames (list): List of variable column names.
-        count_colname (str): The column name for the count variable.
-        group_colname (list): List of column names representing group identifiers.
-        choice_colname (list): List of column names representing choice identifiers.
+        model (ConditionalLogisticRegressor): A trained ConditionalLogisticRegressor model instance.
+        variable_colnames (list of str): List of variable column names as used in the training phase.
+        count_colname (str): The column name for the count variable, used in the training phase.
+        group_colname (list of str): List of column names representing group identifiers, as used in the training phase.
+        choice_colname (list of str): List of column names representing choice identifiers, as used in the training phase.
+        params (dict): Additional parameters for data preprocessing and transformation.
 
     Attributes:
-        model (ConditionalLogisticRegressor): The trained conditional logistic regression model.
-        original_variable_colnames (list): List of original variable column names.
-        original_group_colname (list): List of original column names representing group identifiers.
-        original_choice_colname (list): List of original column names representing choice identifiers.
-        variable_matrix (numpy.ndarray): The matrix of predictor variables for prediction.
-        counts_matrix (numpy.ndarray): The matrix of counts for prediction.
-        nonrepeat_grp_matrix (numpy.ndarray): The matrix of non-repeated group identifiers.
+        model (ConditionalLogisticRegressor): Stores the trained logistic regression model.
+        original_variable_colnames, original_group_colname, original_choice_colname:
+            Store the original column names for variables, groups, and choices, facilitating data preparation for prediction.
+        variable_matrix, counts_matrix, nonrepeat_grp_matrix:
+            Numpy arrays prepared for prediction, storing variables, counts, and non-repeating group identifiers respectively.
 
     Methods:
-        predict(): Make predictions using the model.
-        compute_loss(): Compute the loss for the given data.
-        get_coefficients(): Get the model coefficients as a dictionary.
+        predict(new_df): Uses the trained model to make predictions on new data.
+        compute_loss(new_df): Computes the loss on new data using the model's loss function.
     """
     def __init__(self, model, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params):
         super().__init__(None, variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, params)
@@ -911,6 +1033,26 @@ class ConditionalLogisticRegressionPredictor(DataTransformer):
 
 
 class ConditionalLogisticRegressionEvaluator(DataTransformer):
+    """
+    A class dedicated to evaluating a trained Conditional Logistic Regression model. It provides functionalities
+    to load a trained model, calculate log loss on training data, expected log loss through cross-validation,
+    and log loss on validation data. It compiles evaluation results into a DataFrame for easy analysis and comparison.
+
+    Inherits from:
+        DataTransformer: For consistent data preprocessing and transformation.
+
+    Args:
+        model_path (str): Path to the file containing the saved trained model.
+        params (dict): Dictionary of parameters used for data preprocessing and model evaluation.
+        training_df (pd.DataFrame, optional): DataFrame containing the training data. Default is None.
+        validation_df (pd.DataFrame, optional): DataFrame containing the validation data. Default is None.
+
+    Attributes:
+        model (ConditionalLogisticRegressor): The loaded trained logistic regression model.
+        log_loss (float): Log loss calculated on the training data.
+        expected_log_loss (float): Expected log loss calculated through cross-validation on the training data.
+        validation_df (pd.DataFrame): DataFrame containing the validation data.
+    """
     def __init__(self, model_path, params, training_df = None, validation_df = None):
         self.model = self.load_model(model_path)
         self.model.training_df = training_df
@@ -922,12 +1064,27 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
         self.expected_log_loss = None
 
     def load_model(self, file_path):
+        """
+        Loads the trained Conditional Logistic Regression model from a specified file path.
+
+        Args:
+            file_path (str): The path to the file containing the trained model.
+
+        Returns:
+            ConditionalLogisticRegressor: The loaded model.
+        """
         with open(file_path, 'rb') as file:
             model = dill.load(file)
         assert model.coefs is not None, "model is not trained"
         return(model)
 
     def calculate_log_loss(self):
+        """
+        Calculates the log loss on the training dataset using the loaded model.
+
+        Returns:
+            float: The log loss value on the training dataset.
+        """
         assert self.model.training_df is not None, 'No input training dataframe provided'
         variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.model.training_df, pretrain=False)
 
@@ -941,6 +1098,15 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
         return(loss)
 
     def calculate_expected_log_loss(self, fold_count=20):
+        """
+        Calculates the expected log loss on the training dataset using cross-validation.
+
+        Args:
+            fold_count (int, optional): The number of folds to use for cross-validation. Default is 20.
+
+        Returns:
+            float: The expected log loss value averaged across all folds.
+        """
         assert self.model.training_df is not None, 'No input training dataframe provided'
         variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.model.training_df, pretrain=False)
 
@@ -956,6 +1122,12 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
         return(e_loss)
 
     def calculate_validation_log_loss(self):
+         """
+        Calculates the log loss on the validation dataset using the loaded model.
+
+        Returns:
+            float: The log loss value on the validation dataset.
+        """
         assert self.validation_df is not None, 'No input validation dataframe provided'
         variable_matrix, counts_matrix, nonrepeat_grp_matrix, mask_matrix = self.get_matrices(self.validation_df, pretrain=False)
 
@@ -968,6 +1140,19 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
         return(loss)
 
     def compile_evaluation_results_df(self, calculate_validation_loss = False, calculate_expected_loss=False):
+        """
+        Compiles the model evaluation results, including log loss on training data, expected log loss through
+        cross-validation, and log loss on validation data, into a DataFrame.
+
+        Args:
+            calculate_validation_loss (bool, optional): Whether to calculate and include log loss on validation data.
+                                                         Default is False.
+            calculate_expected_loss (bool, optional): Whether to calculate and include expected log loss through
+                                                      cross-validation. Default is False.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the compiled evaluation results and model parameters.
+        """
         result = {'training_annotation_type':[self.params.annotation_type],
                   'productivity':[self.params.productivity],
                   'motif_length_5_end':[self.params.left_nuc_motif_count],
