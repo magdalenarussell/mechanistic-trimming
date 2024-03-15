@@ -245,6 +245,12 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         super().__init__(training_df, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params)
         if training_df is not None:
             self.choice1_variable_matrix, self.choice2_variable_matrix, self.counts_matrix, self.nonrepeat_grp_matrix, self.mask_matrix = self.get_matrices(training_df, replace_object='training_df')
+        self.original_choice1_variable_colnames = choice1_variable_colnames
+        self.original_choice2_variable_colnames = choice2_variable_colnames
+        self.original_choice2_colname = choice2_colname
+        self.input_choice1_variable_colnames = choice1_variable_colnames
+        self.input_choice2_variable_colnames = choice2_variable_colnames
+        self.input_choice2_colname = choice2_colname
         self.initial_coefs = self.get_random_coefs()
         self.coefs = None
         self.training_info = None
@@ -664,6 +670,12 @@ class TwoStepConditionalLogisticRegressionPredictor(TwoStepDataTransformer):
     """
     def __init__(self, model, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params):
         super().__init__(None, variable_colnames, choice1_variable_colnames, choice2_variable_colnames, count_colname, group_colname, repeat_obs_colname, choice_colname, choice2_colname, params)
+        self.original_choice1_variable_colnames = choice1_variable_colnames
+        self.original_choice2_variable_colnames = choice2_variable_colnames
+        self.original_choice2_colname = choice2_colname
+        self.input_choice1_variable_colnames = choice1_variable_colnames
+        self.input_choice2_variable_colnames = choice2_variable_colnames
+        self.input_choice2_colname = choice2_colname
         self.model = model
         if not isinstance(model, TwoStepConditionalLogisticRegressor):
             raise TypeError("'model' must be a TwoStepConditionalLogisticRegressor object")
