@@ -283,11 +283,13 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         choice2_cov = jnp.dot(choice2_variables, choice2_coefs)
         choice2_reshape = jnp.squeeze(choice2_cov)
         reshaped_mask = jnp.squeeze(mask)
+        choice1_mask = reshaped_mask.sum(axis = 2)
+        choice1_mask = jnp.where(choice1_mask != 0, 1, choice1_mask)
 
         # Calculate the probability of the observed choices
         # Dimensions of this matrix are groups x choices
         # replace missing choices with -INF so that they will not count towards probability
-        choice1_probs = jax.nn.softmax(choice1_reshape)
+        choice1_probs = jax.nn.softmax(jnp.where(choice1_mask, choice1_reshape, jnp.NINF))
         choice2_probs = jax.nn.softmax(jnp.where(reshaped_mask, choice2_reshape, jnp.NINF))
         # choice2_probs = jnp.where(jnp.isnan(choice2_probs), 0, choice2_probs)
 
@@ -574,7 +576,7 @@ class TwoStepConditionalLogisticRegressor(TwoStepDataTransformer):
         Returns:
             ndarray: The Hessian matrix evaluated at the current coefficients.
         """
-         # Wrapper function
+        # Wrapper function
         def wrapper_loss_fn(coefs):
             return self.loss_fn(coefs, choice1_variables, choice2_variables, counts, mask, l2reg)
 

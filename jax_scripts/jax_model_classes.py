@@ -175,7 +175,7 @@ class DataPreprocessor():
         return training_df
 
     def check_within_set_variance(self, training_df, pretrain=True):
-         """
+        """
         Checks and removes variables with insufficient within-set variance, modifying the class attribute lists of variable names.
 
         Parameters:
@@ -863,7 +863,7 @@ class ConditionalLogisticRegressor(DataTransformer):
         Returns:
             ndarray: The Hessian matrix of the loss function evaluated at the given coefficients.
         """
-         # Wrapper function
+        # Wrapper function
         def wrapper_loss_fn(coefs):
             return self.loss_fn(coefs, variables, counts, mask, l2reg)
 
@@ -1122,7 +1122,7 @@ class ConditionalLogisticRegressionEvaluator(DataTransformer):
         return(e_loss)
 
     def calculate_validation_log_loss(self):
-         """
+        """
         Calculates the log loss on the validation dataset using the loaded model.
 
         Returns:

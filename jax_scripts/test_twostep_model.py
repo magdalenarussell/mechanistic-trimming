@@ -40,6 +40,8 @@ indices = np.random.choice(total_elements, num_zeros, replace=False)
 
 # Convert linear indices to multi-dimensional indices and set those positions to zero
 np.put(mask, indices, 0)
+np.put(mask, np.array([i for i in range(0, 24)]), 0)
+
 
 # Generate outcome based on the predictors and known coefficients
 model = TwoStepConditionalLogisticRegressor(training_df = None,
