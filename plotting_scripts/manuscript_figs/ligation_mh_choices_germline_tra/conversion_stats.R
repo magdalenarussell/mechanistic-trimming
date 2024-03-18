@@ -45,7 +45,7 @@ converted_configs = get_possible_mh(zero_configs, keep_gene_seqs = FALSE)
 converted_configs = count_mh_bordering_trim(converted_configs)
 converted_configs = reassign_trimming_sites_with_mh(converted_configs)
 
-cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'adjusted_v_trim', 'adjusted_j_trim', 'ligation_mh', 'frame_type', 'frame_stop')
+cols = c('v_gene', 'j_gene', 'v_trim', 'j_trim', 'v_seq_len', 'j_seq_len', 'adjusted_v_trim', 'adjusted_j_trim', 'ligation_mh', 'overall_frame', 'frame_type', 'frame_stop')
 converted_subset = converted_configs[, ..cols]
 
 

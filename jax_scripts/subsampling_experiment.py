@@ -33,7 +33,9 @@ pandarallel.initialize(nb_workers=NCPU, progress_bar=True)
 
 # set global variables
 param_config = importlib.import_module(f"param_group_configs.{PARAM_GROUP}")
+annotation_config = importlib.import_module(f"annotation_configs.{ANNOTATION_TYPE}")
 params = variable_configuration.global_paramaters(param_config,
+                                                  annotation_config,
                                                   MOD_OUTPUT_PATH,
                                                   MOD_PROJECT_PATH,
                                                   ANNOTATION_TYPE,

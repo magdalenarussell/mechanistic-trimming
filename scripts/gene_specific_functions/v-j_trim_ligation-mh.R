@@ -48,7 +48,11 @@ get_all_possible_sites <- function(gene_type = GENE_NAME){
 
     # Read frame data and filter for possible sites
     frame_data = read_frames_data()
-    possible_sites = frame_data[frame_type == 'Out' | frame_stop == TRUE] 
+    if (PRODUCTIVITY == 'nonproductive'){
+        possible_sites = frame_data[frame_type == 'Out' | frame_stop == TRUE] 
+    else if (PRODUCTIVITY == 'productive'){
+        possible_sites = frame_data[frame_type == 'In' & frame_stop == FALSE] 
+    }
 
     # Define columns for filtering possible sites
     cols = c(paste0(genes), 'frame_type', 'overall_frame', 'frame_stop', 'v_trim', 'j_trim', 'ligation_mh')

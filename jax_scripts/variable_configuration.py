@@ -1,8 +1,9 @@
 import os
 
 class global_paramaters():
-    def __init__(self, param_config, root_path, project_path, annotation_type, param_group, left_motif_size, right_motif_size, model_type):
+    def __init__(self, param_config, annotation_config, root_path, project_path, annotation_type, param_group, left_motif_size, right_motif_size, model_type):
         self.param_config = param_config
+        self.annotation_config = annotation_config
         self.root_path = root_path
         self.project_path = project_path
         self.annotation_type = annotation_type
@@ -20,6 +21,7 @@ class global_paramaters():
         self.model_group = getattr(self.param_config, "MODEL_GROUP")
         self.gene_weight_type = getattr(self.param_config, "GENE_WEIGHT_TYPE")
         self.chain_type = getattr(self.param_config, "CHAIN_TYPE")
+        self.trimming_ligation_domain = getattr(self.annotation_config, "TRIMMING_LIGATION_DOMAIN")
 
     def R_processed_data_path(self, annotation = None):
         if annotation == None:
@@ -29,7 +31,7 @@ class global_paramaters():
         return(file_name)
 
     def R_input_domain_data_path(self):
-        path = self.root_path + '/meta_data/' + self.chain_type
+        path = self.root_path + '/meta_data/' + self.chain_type + '/' + self.trimming_ligation_domain
         file_name = path + '/frame_data.tsv'
         return(file_name)
 

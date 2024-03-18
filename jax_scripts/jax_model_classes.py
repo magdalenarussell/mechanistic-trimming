@@ -229,20 +229,10 @@ class DataPreprocessor():
         domain_file = self.params.R_input_domain_data_path()
         domain_data = pd.read_csv(domain_file, sep = '\t')
 
-        # fill in zeros
-        # Create a DataFrame of all unique pairs
-        unique_genes = domain_data[['v_gene', 'j_gene']].drop_duplicates()
-        unique_trims = domain_data[['v_trim', 'j_trim']].drop_duplicates()
-
-        unique_pairs = unique_genes.merge(unique_trims, how='cross')
-        unique_pairs['ligation_mh'] = 0
-
-        # merge
-        domain_data_subset = domain_data[unique_pairs.columns]
-        tog = domain_data_subset.merge(unique_pairs, how='outer').drop_duplicates()
+        cols = ['v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh']
 
         # filter input df
-        filtered_df = pd.merge(tog, df, how='inner', on=tog.columns.tolist())
+        filtered_df = pd.merge(domain_data, df, how='inner', on=cols)
 
         return filtered_df
 
