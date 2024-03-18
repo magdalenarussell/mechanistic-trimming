@@ -50,7 +50,7 @@ get_all_possible_sites <- function(gene_type = GENE_NAME){
     frame_data = read_frames_data()
     if (PRODUCTIVITY == 'nonproductive'){
         possible_sites = frame_data[frame_type == 'Out' | frame_stop == TRUE] 
-    else if (PRODUCTIVITY == 'productive'){
+    } else if (PRODUCTIVITY == 'productive'){
         possible_sites = frame_data[frame_type == 'In' & frame_stop == FALSE] 
     }
 

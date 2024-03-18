@@ -1,6 +1,6 @@
-TRIMMING_LIGATION_DOMAIN <<- 'adjusted_mh'
-
 source(paste0(MOD_PROJECT_PATH,'/scripts/annotation_specific_functions/frame_data_functions/all_frames.R'))
+
+TRIMMING_LIGATION_DOMAIN <<- 'adjusted_mh'
 
 get_frames_data <- function(){
     # get all possible configurations
