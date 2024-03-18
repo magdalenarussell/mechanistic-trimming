@@ -31,7 +31,7 @@ stopifnot(TRIMMING_PROB_TYPE %in% c('igor', 'motif_two-side-base-count-beyond', 
 
 LIGATION_MH_PARAM <<- as.numeric(args[4])
 
-source(paste0(MOD_PROJECT_PATH,'/analysis_scripts/ligation-mh_signal_simulator_always-ligate/ligation-mh_simulator_functions.R'))
+source(paste0(MOD_PROJECT_PATH,'/analysis_scripts/ligation-mh_signal_simulator/ligation-mh_simulator_functions.R'))
 source(paste0(MOD_PROJECT_PATH,'/scripts/data_compilation_functions.R'))
 
 # total number of sequences
