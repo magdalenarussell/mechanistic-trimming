@@ -31,11 +31,7 @@ VALIDATION_NAME=sys.argv[9]
 pandarallel.initialize(nb_workers=NCPU, progress_bar=True)
 
 # set global variables
-param_config = importlib.import_module(f"param_group_configs.{PARAM_GROUP}")
-annotation_config = importlib.import_module(f"annotation_configs.{ANNOTATION_TYPE}")
-params = variable_configuration.global_paramaters(param_config,
-                                                  annotation_config,
-                                                  MOD_OUTPUT_PATH,
+params = variable_configuration.global_paramaters(MOD_OUTPUT_PATH,
                                                   MOD_PROJECT_PATH,
                                                   ANNOTATION_TYPE,
                                                   PARAM_GROUP,
@@ -44,9 +40,8 @@ params = variable_configuration.global_paramaters(param_config,
                                                   MODEL_TYPE)
 
 # set model type specific parameters
-model_config = importlib.import_module(f"model_type_configs.{MODEL_TYPE}")
-model_params = variable_configuration.model_specific_parameters(param_config,
-                                                                model_config,
+model_params = variable_configuration.model_specific_parameters(PARAM_GROUP,
+                                                                MODEL_TYPE,
                                                                 LEFT_NUC_MOTIF_COUNT,
                                                                 RIGHT_NUC_MOTIF_COUNT)
 model_params = model_params.process_model_parameters()

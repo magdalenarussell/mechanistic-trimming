@@ -1,1 +1,0 @@
-TRIMMING_LIGATION_DOMAIN='adjusted_mh'

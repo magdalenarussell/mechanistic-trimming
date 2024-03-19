@@ -1,9 +1,8 @@
 import os
+import importlib
 
 class global_paramaters():
-    def __init__(self, param_config, annotation_config, root_path, project_path, annotation_type, param_group, left_motif_size, right_motif_size, model_type):
-        self.param_config = param_config
-        self.annotation_config = annotation_config
+    def __init__(self, root_path, project_path, annotation_type, param_group, left_motif_size, right_motif_size, model_type):
         self.root_path = root_path
         self.project_path = project_path
         self.annotation_type = annotation_type
@@ -11,6 +10,7 @@ class global_paramaters():
         self.left_nuc_motif_count = left_motif_size
         self.right_nuc_motif_count = right_motif_size
         self.model_type = model_type.replace('twostep_', '')
+        self.param_config = self.import_param_config()
         self.trim_type = getattr(self.param_config, "TRIM_TYPE")
         self.productivity = getattr(self.param_config, "PRODUCTIVITY")
         self.motif_type = getattr(self.param_config, "MOTIF_TYPE")
@@ -21,7 +21,21 @@ class global_paramaters():
         self.model_group = getattr(self.param_config, "MODEL_GROUP")
         self.gene_weight_type = getattr(self.param_config, "GENE_WEIGHT_TYPE")
         self.chain_type = getattr(self.param_config, "CHAIN_TYPE")
+        self.annotation_config = self.import_annotation_config()
         self.trimming_ligation_domain = getattr(self.annotation_config, "TRIMMING_LIGATION_DOMAIN")
+
+    def import_param_config(self):
+        param_config = importlib.import_module(f"param_group_configs.{self.param_group}")
+        return(param_config)
+
+    def import_annotation_config(self):
+        if '_from_' in self.annotation_type:
+            root_annotation = self.annotation_type.split('_from_')[0]
+        else:
+            root_annotation = self.annotation_type
+
+        annotation_config = importlib.import_module(f"annotation_configs.{root_annotation}")
+        return(annotation_config)
 
     def R_processed_data_path(self, annotation = None):
         if annotation == None:
@@ -32,6 +46,11 @@ class global_paramaters():
 
     def R_input_domain_data_path(self):
         path = self.root_path + '/meta_data/' + self.chain_type + '/' + self.trimming_ligation_domain
+        file_name = path + '/frame_data.tsv'
+        return(file_name)
+
+    def R_prediction_domain_data_path(self):
+        path = self.root_path + '/meta_data/' + self.chain_type + '/all_mh'
         file_name = path + '/frame_data.tsv'
         return(file_name)
 
@@ -76,11 +95,13 @@ class global_paramaters():
 
 
 class model_specific_parameters():
-    def __init__(self, param_config, model_type_config, left_motif_size, right_motif_size):
-        self.param_config = param_config
-        self.model_type_config = model_type_config
+    def __init__(self, param_group, model_type, left_motif_size, right_motif_size):
+        self.param_group = param_group
+        self.model_type = model_type
         self.left_nuc_motif_count = left_motif_size
         self.right_nuc_motif_count = right_motif_size
+        self.param_config = self.import_param_config()
+        self.model_type_config = self.import_model_type_config()
         self.variable_colnames = getattr(self.model_type_config, "VARIABLE_COLNAMES")
         self.choice1_variable_colnames = getattr(self.model_type_config, "CHOICE1_VARIABLE_COLNAMES")
         self.choice2_variable_colnames = getattr(self.model_type_config, "CHOICE2_VARIABLE_COLNAMES")
@@ -90,6 +111,14 @@ class model_specific_parameters():
         self.choice_colname = getattr(self.param_config, "TRIM_TYPE")
         self.choice2_colname = None
         self.twostep = getattr(self.model_type_config, "TWOSTEP")
+
+    def import_param_config(self):
+        param_config = importlib.import_module(f"param_group_configs.{self.param_group}")
+        return(param_config)
+
+    def import_model_type_config(self):
+        model_config = importlib.import_module(f"model_type_configs.{self.model_type}")
+        return(model_config)
 
     def process_choice_colnames(self):
         trims = self.choice_colname.replace('_ligation-mh', '')
