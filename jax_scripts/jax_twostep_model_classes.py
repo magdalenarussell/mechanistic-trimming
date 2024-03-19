@@ -65,9 +65,9 @@ class TwoStepDataTransformer(DataTransformer):
         """
         # filter for possible sites
         if 'ligation_mh' in self.input_choice_colname:
-            df = self.filter_input_domain_space(df)
+            df = self.filter_input_domain_space(df, pretrain)
         if 'ligation_mh' in self.input_choice2_colname:
-            df = self.filter_input_domain_space(df)
+            df = self.filter_input_domain_space(df, pretrain)
 
         # Transform group column lists into strings
         df = self.expand_multivariable(df, "original_group_colname", "group_colname")

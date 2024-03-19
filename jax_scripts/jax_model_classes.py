@@ -168,9 +168,12 @@ class DataPreprocessor():
         """
         # Expand multi-variable columns into a single string column
         if type(getattr(self, col)) == list:
-            new_col_name = '_'.join(getattr(self, col))
-            setattr(self, new_col, new_col_name)
-            training_df[new_col_name] = training_df.parallel_apply(lambda row: '_'.join(row[getattr(self, col)].astype(str)), axis=1)
+            if len(getattr(self, col)) > 1:
+                new_col_name = '_'.join(getattr(self, col))
+                setattr(self, new_col, new_col_name)
+                training_df[new_col_name] = training_df.parallel_apply(lambda row: '_'.join(row[getattr(self, col)].astype(str)), axis=1)
+            else:
+                new_col_name = getattr(self, col)[0]
             setattr(self, col, new_col_name)
         return training_df
 
@@ -216,7 +219,7 @@ class DataPreprocessor():
             print('removing ' + str(zero_groups) + ' groups from model due to zero counts')
         return(training_df)
 
-    def filter_input_domain_space(self, df):
+    def filter_input_domain_space(self, df, pretrain=True):
         """
         Filters the input DataFrame based on a predefined domain space, ensuring data compatibility.
 
@@ -226,10 +229,14 @@ class DataPreprocessor():
         Returns:
             pd.DataFrame: Filtered DataFrame that fits within the specified domain space.
         """
-        domain_file = self.params.R_input_domain_data_path()
+        if pretrain:
+            domain_file = self.params.R_input_domain_data_path()
+        else:
+            domain_file = self.params.R_prediction_domain_data_path()
+
         domain_data = pd.read_csv(domain_file, sep = '\t')
 
-        cols = ['v_gene', 'j_gene', 'v_trim', 'j_trim', 'ligation_mh']
+        cols = list(set(domain_data.columns) & set(df.columns))
 
         # filter input df
         filtered_df = pd.merge(domain_data, df, how='inner', on=cols)
@@ -297,7 +304,8 @@ class DataTransformer(DataPreprocessor):
         """
         # filter for possible sites
         if 'ligation_mh' in self.input_choice_colname:
-            df = self.filter_input_domain_space(df)
+            df = self.filter_input_domain_space(df, pretrain)
+
 
         # Transform group column lists into strings
         df = self.expand_multivariable(df, "original_group_colname", "group_colname")
