@@ -52,6 +52,8 @@ get_all_possible_sites <- function(gene_type = GENE_NAME){
         possible_sites = frame_data[frame_type == 'Out' | frame_stop == TRUE] 
     } else if (PRODUCTIVITY == 'productive'){
         possible_sites = frame_data[frame_type == 'In' & frame_stop == FALSE] 
+    } else {
+        possible_sites = frame_data
     }
 
     # Define columns for filtering possible sites
